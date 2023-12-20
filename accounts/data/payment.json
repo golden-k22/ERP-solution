@@ -1,0 +1,106 @@
+[
+    {
+        "model": "sales.payment",
+        "pk": 1,
+        "fields": {
+            "method": "COD",
+            "description": "COD"
+        }
+    },
+    {
+        "model": "sales.payment",
+        "pk": 2,
+        "fields": {
+          "method": "30% on confirmation, monthly progress claim, 7 days from invoice",
+          "description": "30% on confirmation, monthly progress claim, 7 days from invoice"
+        }
+    },
+    {
+        "model": "sales.payment",
+        "pk": 3,
+        "fields": {
+          "method": "30% on confirmation, 70% on completion",
+          "description": "30% on confirmation, 70% on completion"
+        }
+    },
+    {
+        "model": "sales.payment",
+        "pk": 4,
+        "fields": {
+          "method": "50% on confirmation, 50% on completion",
+          "description": "50% on confirmation, 50% on completion"
+        }
+    },
+    {
+        "model": "sales.payment",
+        "pk": 5,
+        "fields": {
+          "method": "30% on confirmation, 70% on Delivery",
+          "description": "30% on confirmation, 70% on Delivery"
+        }
+    },
+    {
+        "model": "sales.payment",
+        "pk": 6,
+        "fields": {
+          "method": "50% on confirmation, 50% on Delivery",
+          "description": "50% on confirmation, 50% on Delivery"
+        }
+    },
+    {
+        "model": "sales.payment",
+        "pk": 7,
+        "fields": {
+          "method": "50% on confirmation, 40% on Delivery, 10% on completion",
+          "description": "50% on confirmation, 40% on Delivery, 10% on completion"
+        }
+    },
+    {
+        "model": "sales.payment",
+        "pk": 8,
+        "fields": {
+          "method": "60% on delivery, 40% on completion",
+          "description": "60% on delivery, 40% on completion"
+        }
+    },
+    {
+        "model": "sales.payment",
+        "pk": 9,
+        "fields": {
+          "method": "7 days from Date of Invoice",
+          "description": "7 days from Date of Invoice"
+        }
+    },
+    {
+        "model": "sales.payment",
+        "pk": 10,
+        "fields": {
+          "method": "15 days from Date of Invoice",
+          "description": "15 days from Date of Invoice"
+        }
+    },
+    {
+        "model": "sales.payment",
+        "pk": 11,
+        "fields": {
+          "method": "30 days from Date of Invoice",
+          "description": "30 days from Date of Invoice"
+        }
+    },
+    {
+        "model": "sales.payment",
+        "pk": 12,
+        "fields": {
+          "method": "Monthly progress claim. 30 days from Date of Invoice",
+          "description": "Monthly progress claim. 30 days from Date of Invoice"
+        }
+    },
+    {
+        "model": "sales.payment",
+        "pk": 13,
+        "fields": {
+          "method": "100% upon completion",
+          "description": "100% upon completion"
+        }
+    }
+]

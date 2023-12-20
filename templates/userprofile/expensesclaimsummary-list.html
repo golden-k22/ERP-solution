@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block page-title %}Expenses Claim Summary{% endblock%}
+{% block css %}
+    <link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'assets/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" /> 
+    <link href="{% static 'assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" rel="stylesheet"> 
+
+{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="page-title-box">
+                <h4>Expenses Claim Summary
+                    <button type="button" id="expenseclaimadd" class="btn btn-primary btn-sm"><i class="mdi mdi-calendar-plus mr-2"></i> New</button>
+                </h4>
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'all_expenses_claim' %}"><b>Expenses Claim Summary</b></a></li>
+                        <li class="breadcrumb-item active">All Expenses Claim Summary</li>
+                    </ol>
+                    
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card ">
+                <div class="card-body">
+                    <h4 class="text-primary"><b>Expenses Claim Summary</b></h4>
+                    <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="table-responsive pt-1">
+                                        <table id="datatable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                                            <thead>
+                                                <tr>
+                                                    <th>S/N</th>
+                                                    <th>Claim No</th>
+                                                    <th>Date</th>
+                                                    <th>Emp No</th>
+                                                    <th>Total</th>
+                                                    <th>Status</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                             {% for expensesclaim in expensesclaims %}
+                                                <tr>
+                                                    <td class="align-middle">{{expensesclaim.id|default_if_none:""}}</td>
+                                                    <td class="align-middle">{{expensesclaim.ec_id|default_if_none:""}}</td>
+                                                    <td class="align-middle">{{expensesclaim.date|date:'d M, Y'|default_if_none:""}}</td>
+                                                    
+                                                    <td class="align-middle">{{expensesclaim.emp_id|default_if_none:""}}</td>
+                                                    <td class="align-middle">{{expensesclaim.total|default_if_none:""}}</td>
+                                                    <td class="align-middle">{{expensesclaim.status|default_if_none:""}}</td>
+                                                    <td class="align-middle">
+                                                        <!-- <a href="{% url 'quotation_detail' projectot.id %}" class="btn btn-outline-secondary btn-sm" title="View">
+                                                            <i class="ion ion-md-eye"></i>
+                                                        </a> -->
+                                                        <a href="javascript:void(0);" onclick="updateexpense('{{expensesclaim.id}}')" class="btn btn-outline-primary btn-sm edit com_update" title="Edit">
+                                                            <i class="fas fa-pencil-alt"></i>
+                                                        </a>
+                                                        <a href="javascript:void(0);" onclick="deleteexpense('{{expensesclaim.id}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
+                                                            <i class="far fa-trash-alt"></i>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'assets/libs/select2/js/select2.full.min.js' %}"></script>
+<script src="{% static 'assets/libs/bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+<!-- Responsive examples -->
+<script src="{% static 'assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+<script>
+    $(document).ready(function(){
+        $("#datatable").DataTable();
+        $("#text_error").hide();
+    });
+</script>
+{% endblock %}

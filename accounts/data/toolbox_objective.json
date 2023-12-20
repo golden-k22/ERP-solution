@@ -1,0 +1,16 @@
+[
+    {
+        "model": "toolbox.toolboxobjective",
+        "pk": 1,
+        "fields": {
+            "classify": "Health"
+        }
+    },
+    {
+        "model": "toolbox.toolboxobjective",
+        "pk": 2,
+        "fields": {
+            "classify": "Worksite Specific"
+        }
+    }
+]

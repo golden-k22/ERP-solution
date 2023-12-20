@@ -1,0 +1,63 @@
+{% load static %}
+<div class="table-responsive pt-1">
+    <table id="overviewdt" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+        <thead>
+            <tr>
+                <th>S/N</th>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Qty</th>
+                <th>UOM</th>
+                <th>Updated By</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+         {% for overview in overviews %}
+         {% with forloop.counter as outer_counter %}
+            <tr>
+                <td class="align-middle">{{outer_counter}}</td>
+                <td class="align-middle">{{overview.date|date:"d M,Y"|default_if_none:""}}</td>
+                <td class="align-middle">{{overview.description|wordwrap:150|linebreaks|default_if_none:""}}</td>
+                <td class="align-middle">{{overview.qty|default_if_none:""}}</td>
+                <td class="align-middle">{{overview.uom|default_if_none:""}}</td>
+                <td class="align-middle">{{overview.updated_by|default_if_none:""}}</td>
+                <td class="align-middle">
+                    <a href="javascript:void(0);" onclick="updateprolog('{{overview.id}}')" class="btn btn-outline-primary btn-sm edit com_update" title="Edit">
+                        <i class="fas fa-pencil-alt"></i>
+                    </a>
+                    <a href="javascript:void(0);" onclick="deleteprolog('{{overview.id}}','{{overview.description}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
+                        <i class="far fa-trash-alt"></i>
+                    </a>
+                </td>
+            </tr>
+            <!-- {% for overview in overviews %}
+            <tr>
+                <td class="align-middle">{{forloop.counter}}.{{outer_counter}}</td>
+                <td class="align-middle">{{overview.date|date:"d M,Y"|default_if_none:""}}</td>
+                <td class="align-middle">{{overview.description|default_if_none:""}}</td>
+                <td class="align-middle">{{overview.qty|default_if_none:""}}</td>
+                <td class="align-middle">{{overview.uom|default_if_none:""}}</td>
+                <td class="align-middle">{{overview.updated_by|default_if_none:""}}</td>
+            </tr>
+            {% endfor %} -->
+        {% endwith %}
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script>
+    var odtTable = $("#overviewdt").DataTable({
+        "aaSorting": [[ 0, "desc" ]],
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+            paging: true,
+            searching: true, 
+            ordering: false,
+            info: true
+    });
+   // $(".dataTables_length").hide();
+    $("#oSearchPlace").html('');
+    $("#oSearchPlace").html($("#overviewdt_filter"));
+</script>

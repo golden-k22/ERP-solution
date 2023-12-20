@@ -1,0 +1,118 @@
+{% load static %}
+{% load custom_tags %}
+<div class="table-responsive">
+    <table id="projplantable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+        <thead>
+            <tr>
+                <th width="6%">SN</th>
+                <th width="40%">Description</th>
+                <th width="6%" class="align-middle align-center">QTY</th>
+                <th width="6%" class="align-middle align-center">{{start_date|date:"d/M" }}</th>
+                {% addDays start_date 1 as next_day %}
+                <th width="6%" class="align-middle align-center">{{next_day|date:"d/M"}}</th>
+                {% addDays start_date 2 as next_day %}
+                <th width="6%" class="align-middle align-center">{{next_day|date:"d/M"}}</th>
+                {% addDays start_date 3 as next_day %}
+                <th width="6%" class="align-middle align-center">{{next_day|date:"d/M"}}</th>
+                {% addDays start_date 4 as next_day %}
+                <th width="6%" class="align-middle align-center">{{next_day|date:"d/M"}}</th>
+                {% addDays start_date 5 as next_day %}
+                <th width="6%" class="align-middle align-center">{{next_day|date:"d/M"}}</th>
+                {% addDays start_date 6 as next_day %}
+                <th width="6%" class="align-middle align-center">{{next_day|date:"d/M"}}</th>
+                {% addDays start_date 7 as next_day %}
+                <th width="6%" class="align-middle align-center">{{next_day|date:"d/M"}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for activity in activities %}
+            {% with forloop.counter as outer_counter %}
+            <tr>
+                <td width="6%" class="align-middle align-center"> {{outer_counter}} </td>
+                <td width="40%">{{activity.description|wordwrap:50|linebreaksbr|default_if_none:""}}</td>
+                <td width="6%" class="align-middle align-center">{{activity.qty|default_if_none:""}}</td>
+                {% resolve qtys.0 forloop.counter0 as qty %}
+                <td width="6%" class="align-middle align-center">{{qty}}</td>
+                {% resolve qtys.1 forloop.counter0 as qty %}
+                <td width="6%" class="align-middle align-center">{{qty}}</td>
+                {% resolve qtys.2 forloop.counter0 as qty %}
+                <td width="6%" class="align-middle align-center">{{qty}}</td>
+                {% resolve qtys.3 forloop.counter0 as qty %}
+                <td width="6%" class="align-middle align-center">{{qty}}</td>
+                {% resolve qtys.4 forloop.counter0 as qty %}
+                <td width="6%" class="align-middle align-center">{{qty}}</td>
+                {% resolve qtys.5 forloop.counter0 as qty %}
+                <td width="6%" class="align-middle align-center">{{qty}}</td>
+                {% resolve qtys.6 forloop.counter0 as qty %}
+                <td width="6%" class="align-middle align-center">{{qty}}</td>
+                {% resolve qtys.7 forloop.counter0 as qty %}
+                <td width="6%" class="align-middle align-center">{{qty}}</td>
+            </tr>
+            {% endwith %}
+            {% endfor %}
+            <tr>
+                <td width="6%" class="align-middle"></td>
+                <td width="40%"> Team </td>
+                <td width="6%"></td>
+
+
+                <td width="6%" class="align-middle align-center">
+                    {% for sub_users in users.0 %}
+                    <div>{{sub_users}}</div>
+                    {% endfor %}
+                </td>
+                <td width="6%" class="align-middle align-center">
+                    {% for sub_users in users.1 %}
+                    <div>{{sub_users}}</div>
+                    {% endfor %}
+                </td>
+                <td width="6%" class="align-middle align-center">
+                    {% for sub_users in users.2 %}
+                    <div>{{sub_users}}</div>
+                    {% endfor %}
+                </td>
+                <td width="6%" class="align-middle align-center">
+                    {% for sub_users in users.3 %}
+                    <div>{{sub_users}}</div>
+                    {% endfor %}
+                </td>
+                <td width="6%" class="align-middle align-center">
+                    {% for sub_users in users.4 %}
+                    <div>{{sub_users}}</div>
+                    {% endfor %}
+                </td>
+                <td width="6%" class="align-middle align-center">
+                    {% for sub_users in users.5 %}
+                    <div>{{sub_users}}</div>
+                    {% endfor %}
+                </td>
+                <td width="6%" class="align-middle align-center">
+                    {% for sub_users in users.6 %}
+                    <div>{{sub_users}}</div>
+                    {% endfor %}
+                </td>
+                <td width="6%" class="align-middle align-center">
+                    {% for sub_users in users.7 %}
+                    <div>{{sub_users}}</div>
+                    {% endfor %}
+                </td>
+
+            </tr>
+            <tr>
+                <td width="6%" class="align-middle"></td>
+                <td width="40%"> Shift </td>
+                <td width="6%"></td>
+                <td width="6%" class="align-middle align-center">{{shifts.0}}</td>
+                <td width="6%" class="align-middle align-center">{{shifts.1}}</td>
+                <td width="6%" class="align-middle align-center">{{shifts.2}}</td>
+                <td width="6%" class="align-middle align-center">{{shifts.3}}</td>
+                <td width="6%" class="align-middle align-center">{{shifts.4}}</td>
+                <td width="6%" class="align-middle align-center">{{shifts.5}}</td>
+                <td width="6%" class="align-middle align-center">{{shifts.6}}</td>
+                <td width="6%" class="align-middle align-center">{{shifts.7}}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+<script>
+</script>

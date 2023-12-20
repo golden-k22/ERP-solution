@@ -1,0 +1,51 @@
+[
+    {
+        "model": "accounts.uom",
+        "pk": 1,
+        "fields": {
+            "name": "Nos"
+        }
+    },
+    {
+        "model": "accounts.uom",
+        "pk": 2,
+        "fields": {
+            "name": "Pcs"
+        }
+    },
+    {
+        "model": "accounts.uom",
+        "pk": 3,
+        "fields": {
+            "name": "Lgth"
+        }
+    },
+    {
+        "model": "accounts.uom",
+        "pk": 4,
+        "fields": {
+            "name": "Box"
+        }
+    },
+    {
+        "model": "accounts.uom",
+        "pk": 5,
+        "fields": {
+            "name": "Lot"
+        }
+    },
+    {
+        "model": "accounts.uom",
+        "pk": 6,
+        "fields": {
+            "name": "Points"
+        }
+    },
+    {
+        "model": "accounts.uom",
+        "pk": 7,
+        "fields": {
+            "name": "Drums"
+        }
+    }
+]

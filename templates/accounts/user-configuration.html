@@ -1,0 +1,353 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block page-title %}User Configuration{% endblock%}
+{% block css %}
+    <link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- Sweet Alert-->
+    <link href="{% static 'assets/libs/sweetalert2/sweetalert2.min.css' %}" rel="stylesheet" type="text/css" />
+{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="page-title-box">
+                <h4>Users</h4>
+                <ol class="breadcrumb m-0 mb-3">
+                    <li class="breadcrumb-item"><a class="text-primary" href="{% url 'all_users' %}"><b>Users</b></a></li>
+                    <li class="breadcrumb-item active">User Configuration</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <!-- <div class="button-items mb-3">
+                        <a href="javascript:void(0);" id="userupdate" class="align-middle btn-lg"><i class="fas fa-pencil-alt mr-2"></i></a>
+                        <a href="javascript:void(0);" id="userdelete" class="align-middle btn-lg"><i class="far fa-trash-alt mr-2"></i></a>
+                        <button type="button" id="userdetailsave" class="btn btn-primary btn-sm" style="margin-bottom: 0px!important;"><i class="mdi mdi-content-save-move"></i> Save</button>
+                    </div> -->
+                    <!-- <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;"> -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        {% for role_list in role_lists %}
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link {% if forloop.counter0 == 0 %}active{% endif %}" data-bs-toggle="tab" href="#{{role_list}}" role="tab">
+                                    <span class="d-block d-sm-none">{{role_list|make_list|first|title}}</span>
+                                    <span class="d-none d-sm-block">{{role_list}}</span>
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        {% for user_classify in users_classify %}
+                        <div class="tab-pane {% if forloop.counter0 == 0 %}active{% endif %} p-3" id="{{user_classify.0}}" role="tabpanel">
+                            <div class="mb-3 mt-3 row">
+                                <div class="col-md-4">
+                                    <div class="row">
+                                        <label for="s_{{user_classify.0}}" class="col-md-4 col-form-label">Name:</label>
+                                        <div class="col-md-8">
+                                            <select class="form-control change_user select2" id="s_{{user_classify.0}}" data-classfiy="{{user_classify.0}}" required>
+                                                <option value="">Select the Name</option>
+                                                {% for user in user_classify.1 %}
+                                                    <option value="{{user.id}}">{{user.username}}</option>
+                                                {% endfor %}
+                                                
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <hr class="my-auto flex-grow-1 mt-3" style="height:2px;">
+                                <div class="mt-3 row">
+                                    <div class="justify-content-between">
+                                        <div class="float-start">
+                                            <h5 class="fst-italic text-primary" ><b>Privilege Settings:</b></h5>
+                                        </div>
+                                        <div class="float-end">
+                                            <a href="javascript:void(0);" data-classfiy="{{user_classify.0}}" class="align-middle userupdate btn-lg"><i class="fas fa-pencil-alt mr-2"></i></a>
+                                            <a href="javascript:void(0);" class="align-middle btn-lg usercancel btn-outline-danger"><i class="ion ion-ios-close-circle mr-2"></i></a>
+                                            <!-- <a href="javascript:void(0);" id="usercancel" class="align-middle btn-lg"><i class="far fa-trash-alt mr-2"></i></a> -->
+                                            <button type="button" class="btn btn-primary btn-sm save_privilege" data-classfiy="{{user_classify.0}}"><i class="mdi mdi-content-save-move"></i> Save</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <div class="accordion" id="userconfig_{{user_classify.0}}">
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="headingSale">
+                                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSale" aria-expanded="true" aria-controls="collapseSale">
+                                                Sales
+                                                </button>
+                                            </h2>
+                                            
+                                            <div id="collapseSale" class="accordion-collapse collapse show" aria-labelledby="headingSale" data-bs-parent="#userconfig_{{user_classify.0}}">
+                                                <div class="accordion-body">
+                                                    <div class="row">
+                                                        <h5 class="fst-italic text-primary" ><b>Sales:</b></h5>
+                                                    </div>
+                                                    <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;">
+                                                    <div class="row mt-3 mb-3">
+                                                        <div class="col-md-6">
+                                                            <div class="row">
+                                                                <label for="summ_{{user_classify.0}}" class="col-md-4 col-form-label">Sales Summary:</label>
+                                                                <div class="col-md-8">
+                                                                    <select class="form-control select2" id="summ_{{user_classify.0}}" required>
+                                                                        <option value="Not Allowed">Not Allowed</option>
+                                                                        <option value="Full Access">Yes (Full Access)</option>
+                                                                        <option value="Only View">Only View</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="row">
+                                                                <label for="report_{{user_classify.0}}" class="col-md-4 col-form-label">Sales Report:</label>
+                                                                <div class="col-md-8">
+                                                                    <select class="form-control select2" id="report_{{user_classify.0}}" required>
+                                                                        <option value="Not Allowed">Not Allowed</option>
+                                                                        <option value="Full Access">Yes (Full Access)</option>
+                                                                        <option value="Only View">Only View</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="headingProject">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProject" aria-expanded="false" aria-controls="collapseProject">
+                                                Project
+                                                </button>
+                                            </h2>
+                                            <div id="collapseProject" class="accordion-collapse collapse" aria-labelledby="headingProject" data-bs-parent="#userconfig_{{user_classify.0}}">
+                                                <div class="accordion-body">
+                                                    <div class="accordion-body">
+                                                        <div class="row">
+                                                            <h5 class="fst-italic text-primary" ><b>Project:</b></h5>
+                                                        </div>
+                                                        <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;">
+                                                        <div class="row mt-3 mb-3">
+                                                            <div class="col-md-6">
+                                                                <div class="row">
+                                                                    <label for="proj_summ_{{user_classify.0}}" class="col-md-4 col-form-label">Project Summary:</label>
+                                                                    <div class="col-md-8">
+                                                                        <select class="form-control select2" id="proj_summ_{{user_classify.0}}" required>
+                                                                            <option value="Not Allowed">Not Allowed</option>
+                                                                            <option value="Full Access">Yes (Full Access)</option>
+                                                                            <option value="Only View">Only View</option>
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <div class="row">
+                                                                    <label for="proj_ot_{{user_classify.0}}" class="col-md-4 col-form-label">Project OT:</label>
+                                                                    <div class="col-md-8">
+                                                                        <select class="form-control select2" id="proj_ot_{{user_classify.0}}" required>
+                                                                            <option value="Not Allowed">Not Allowed</option>
+                                                                            <option value="Full Access">Yes (Full Access)</option>
+                                                                            <option value="Only View">Only View</option>
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="headingInventory">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseInventory" aria-expanded="false" aria-controls="collapseInventory">
+                                                Inventory
+                                                </button>
+                                            </h2>
+                                            <div id="collapseInventory" class="accordion-collapse collapse" aria-labelledby="headingInventory" data-bs-parent="#userconfig_{{user_classify.0}}">
+                                                <div class="accordion-body">
+                                                    <div class="accordion-body">
+                                                        <div class="accordion-body">
+                                                            <div class="row">
+                                                                <h5 class="fst-italic text-primary" ><b>Inventory:</b></h5>
+                                                            </div>
+                                                            <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;">
+                                                            <div class="row mt-3 mb-3">
+                                                                <div class="col-md-6">
+                                                                    <div class="row">
+                                                                        <label for="invent_mat_{{user_classify.0}}" class="col-md-4 col-form-label">Inventory Summary:</label>
+                                                                        <div class="col-md-8">
+                                                                            <select class="form-control select2" id="invent_mat_{{user_classify.0}}" required>
+                                                                                <option value="Not Allowed">Not Allowed</option>
+                                                                                <option value="Full Access">Yes (Full Access)</option>
+                                                                                <option value="Only View">Only View</option>
+                                                                            </select>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <!-- <div class="col-md-6">
+                                                                    <div class="row">
+                                                                        <label for="proj_ot_{{user_classify.0}}" class="col-md-4 col-form-label">Project OT:</label>
+                                                                        <div class="col-md-8">
+                                                                            <select class="form-control select2" id="proj_ot_{{user_classify.0}}" required>
+                                                                                <option value="Not Allowed">Not Allowed</option>
+                                                                                <option value="Full Access">Yes (Full Access)</option>
+                                                                                <option value="Only View">Only View</option>
+                                                                            </select>
+                                                                        </div>
+                                                                    </div>
+                                                                </div> -->
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="headingProfile">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProfile" aria-expanded="false" aria-controls="collapseProfile">
+                                                    Profile
+                                                </button>
+                                            </h2>
+                                            <div id="collapseProfile" class="accordion-collapse collapse" aria-labelledby="headingProfile" data-bs-parent="#userconfig_{{user_classify.0}}">
+                                                <div class="accordion-body">
+                                                    <div class="accordion-body">
+                                                        <div class="accordion-body">
+                                                            <div class="row">
+                                                                <h5 class="fst-italic text-primary" ><b>Profile:</b></h5>
+                                                            </div>
+                                                            <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;">
+                                                            <div class="row mt-3 mb-3">
+                                                                <div class="col-md-6">
+                                                                    <div class="row">
+                                                                        <label for="prof_summ_{{user_classify.0}}" class="col-md-4 col-form-label">Profile Summary:</label>
+                                                                        <div class="col-md-8">
+                                                                            <select class="form-control select2" id="prof_summ_{{user_classify.0}}" required>
+                                                                                <option value="Not Allowed">Not Allowed</option>
+                                                                                <option value="Full Access">Yes (Full Access)</option>
+                                                                                <option value="Only View">Only View</option>
+                                                                            </select>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <!-- <div class="col-md-6">
+                                                                    <div class="row">
+                                                                        <label for="prof_ot_{{user_classify.0}}" class="col-md-4 col-form-label">Profile OT:</label>
+                                                                        <div class="col-md-8">
+                                                                            <select class="form-control select2" id="proj_ot_{{user_classify.0}}" required>
+                                                                                <option value="Not Allowed">Not Allowed</option>
+                                                                                <option value="Full Access">Yes (Full Access)</option>
+                                                                                <option value="Only View">Only View</option>
+                                                                            </select>
+                                                                        </div>
+                                                                    </div>
+                                                                </div> -->
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                        
+                        {% endfor %}
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock%}
+{% block scripts %}
+<script src="{% static 'assets/libs/select2/js/select2.full.min.js' %}"></script>
+<!-- Sweet Alerts js -->
+<script src="{% static 'assets/libs/sweetalert2/sweetalert2.min.js' %}"></script>
+<script>
+    $(".select2").select2({width: '100%'});
+    $('select').prop('disabled', true);
+    $(".save_privilege").prop('disabled', true);
+    $(".save_privilege").on('click', function(e){
+        var prefix = $(this).data('classfiy');
+        if ($("#s_"+prefix).val() == "") {
+            Swal.fire(
+                {
+                    title:"Please Select User!",
+                    text:"You did't select user!",
+                    icon:"warning",
+                    confirmButtonColor:"#34c38f",
+                }
+            );
+        } else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_privilege" %}',
+                data: {
+                    salesummery: $("#summ_"+prefix).val(),
+                    salereport: $("#report_"+prefix).val(),
+                    projsummery: $("#proj_summ_"+prefix).val(),
+                    projot: $("#proj_ot_"+prefix).val(),
+                    inventmat: $("#invent_mat_"+prefix).val(),
+                    profsummary: $("#prof_summ_"+prefix).val(),
+                    username: $("#s_"+prefix).val()
+                },
+                type: 'POST',
+                success: function (data) {
+                    if (data.status == "ok") {
+                        location.reload(); 
+                    }
+                     
+                }
+            });
+        }
+        
+    });
+    $(".usercancel").hide();
+    $(".userupdate").on('click', function(e){
+        $('select').prop('disabled', false);
+        $(".save_privilege").prop('disabled', false);
+        $(".userupdate").hide();
+        $(".usercancel").show();
+    });
+    $(".usercancel").on('click', function(e){
+        $('select').prop('disabled', true);
+        $(".save_privilege").prop('disabled', true);
+        $(".userupdate").show();
+        $(".usercancel").hide();
+    });
+    $(".change_user").on('change', function(e){
+        var prefix = $(this).data('classfiy');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_privilege_user_check" %}',
+            data: {
+                userid: $("#s_"+prefix).val()
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data);
+                console.log(up_data)
+                $("#summ_"+prefix).val(up_data.sales_summary);
+                $("#summ_"+prefix).trigger('change');
+                $("#report_"+prefix).val(up_data.sales_report);
+                $("#report_"+prefix).trigger('change');
+                $("#proj_summ_"+prefix).val(up_data.proj_summary);
+                $("#proj_summ_"+prefix).trigger('change');
+                $("#proj_ot_"+prefix).val(up_data.proj_ot);
+                $("#proj_ot_"+prefix).trigger('change');
+                $("#invent_mat_"+prefix).val(up_data.invent_material);
+                $("#invent_mat_"+prefix).trigger('change');
+                $("#prof_summ_"+prefix).val(up_data.prof_summary);
+                $("#prof_summ_"+prefix).trigger('change');
+            }
+        });
+    });
+</script>
+
+{% endblock %}

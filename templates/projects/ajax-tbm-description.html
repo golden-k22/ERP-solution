@@ -1,0 +1,5 @@
+{% load static %}
+<option value="">Select..</option>
+{% for description in descriptions %}
+    <option value="{{description.description}}">{{description.description}}</option>
+{% endfor %}

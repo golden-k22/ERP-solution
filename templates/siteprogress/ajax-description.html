@@ -1,0 +1,7 @@
+{% load static %}
+<select class="form-control select2" id="progressdescription" required>
+    <option value="">Select Description</option>
+    {% for description in scopedescriptions %}
+        <option value="{{description.description}}">{{description.description}}</option>
+    {% endfor %}
+</select>

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load static %}
+{% block extra_media %}
+  {{ form.media }}
+{% endblock %}
+{% block css %}
+    <link href="{% static 'assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" rel="stylesheet">
+{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="page-title-box">
+                <h4>Delivery Order Details
+                </h4>
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'all_project_summary' %}"><b>Project Summary</b></a></li>
+                        <li class="breadcrumb-item active">Project Details</li>
+                        <li class="breadcrumb-item active">Do Details</li>
+                    </ol>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form class="needs-validation" id="deliverySignForm" action="." method="POST" novalidate>
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-12">
+                                {{ form.signature }}
+                            </div>
+                        </div>
+                        <div class="mb-3 mt-3 row">
+                            <div class="col-md-3">
+                                <label for="sign_name" class="form-label">Name:</label>
+                                <input type="text" class="form-control" id="sign_name"  style="height: 38px;" name="sign_name" required {{form.name}}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="sign_date" class="form-label">Date:</label>
+                                <input type="text" class="form-control" id="sign_date"  name="sign_date" data-date-format="dd M yyyy" data-provide="datepicker" data-date-autoclose="true" autocomplete="off" style="height: 38px;" value="{{form.update_date.value|date:'d M, Y'|default_if_none:''}}" required {{form.update_date}}
+                            </div>
+                        </div>
+                        <div class="mb-3 mt-3 row">
+                            <div class="col-md-3">
+                                <label for="sign_nric" class="form-label">NRIC(Last 4 Digit):</label>
+                                <input type="text" class="form-control" id="sign_nric" style="height: 38px;" name="sign_nric" required {{form.nric}}
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-3">
+                                <button type="button" id="dosignaturebtn" class="btn btn-primary">Save</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'assets/libs/bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+<script>
+    $("#dosignaturebtn").on('click', function(e){
+        if($("#id_signature").val().replace('[', '').replace(']','').trim() != "") {
+            $('#deliverySignForm').parsley().validate();
+            if ($('#deliverySignForm').parsley().validate() === false) {         
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            } else {
+                $("#deliverySignForm").submit();
+            }
+        }
+    });
+</script>
+{% endblock %}

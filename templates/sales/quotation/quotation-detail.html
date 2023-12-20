@@ -1,0 +1,1711 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load jsignature_filters %}
+{% block page-title %}Quotation Detail{% endblock%}
+{% block css %}
+    <link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" rel="stylesheet">
+    <!-- DataTables -->
+    <link href="{% static 'assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'assets/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <style>
+        .avatar-input {
+            position: relative;
+            overflow: hidden;
+            padding: 5px;
+        }
+        .signature-img {
+            /* height: 7rem; */
+            width: auto;
+        }
+        .avatar-input .avatar-input-icon {
+            position: absolute;
+            top: 0;
+            display: flex;
+            width: 100%;
+            height: 100%;
+            transition: all ease .2s;
+            opacity: 0;
+            color: #fff;
+            background: rgba(0,0,0,.37);
+            justify-content: center;
+            align-items: center;
+        }
+        .avatar-input .avatar-file-picker {
+            position: absolute;
+            z-index: 2;
+            width: 1px;
+            height: 1px;
+            margin: 0;
+            opacity: 0;
+        }
+        #newSearchPlace div.dataTables_filter {
+            text-align: right;
+            padding-top: 5px;
+        }
+        #newSearchPlace div.dataTables_filter label {
+            font-weight: normal;
+            white-space: nowrap;
+            text-align: left;
+        }
+        #newSearchPlace div.dataTables_filter input {
+            margin-left: 0.5em;
+            margin-right: 0;
+            display: inline-block;
+            width: auto;
+        }
+        #newfilePlace div.dataTables_filter {
+            text-align: right;
+            padding-top: 5px;
+        }
+        #newfilePlace div.dataTables_filter label {
+            font-weight: normal;
+            white-space: nowrap;
+            text-align: left;
+        }
+        #newfilePlace div.dataTables_filter input {
+            margin-left: 0.5em;
+            margin-right: 0;
+            display: inline-block;
+            width: auto;
+        }
+        .accordion {
+          background-color: #eee;
+          color: #444;
+          padding: 10px !important;
+          width: 100%;
+          border: none;
+          text-align: left;
+          outline: none;
+          font-size: 15px;
+          transition: 0.4s;
+          display: flex
+        }
+        .plussign::before {
+          content: "\2795";
+        }
+
+    </style>
+{% endblock %}
+{% block content %}
+{% load humanize %}
+<div class="container-fluid">
+    <div id="loading" style="z-index:1151 !important;font-size: 30px; position: absolute; top: 40%; left: 50%;">
+        <img src="{% static 'assets/images/spinning-circles.svg' %}" width="80" alt="" style="background: transparent;">
+    </div>
+    <!-- start page title -->
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="page-title-box">
+                <h4>Quotation Details
+                </h4>
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'all_quotation' %}"><b>Quotation</b></a></li>
+                        <li class="breadcrumb-item active">Quotation Details</li>
+                    </ol>
+            </div>
+        </div>
+    </div>
+    <!-- end page title -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link" style="padding-left: 30px;padding-right: 30px;" id="qdetailtab" data-bs-toggle="tab" href="#qdetails" role="tab">
+                                <span class="d-block d-sm-none">DT</span>
+                                <span class="d-none d-sm-block">Details</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" style="padding-left: 30px;padding-right: 30px;" id="qitemtab" href="#qitems" role="tab">
+                                <span class="d-block d-sm-none">IT</span>
+                                <span class="d-none d-sm-block">Items</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" style="padding-left: 30px;padding-right: 30px;" id="qfiletab" href="#qfiles" role="tab">
+                                <span class="d-block d-sm-none">FL</span>
+                                <span class="d-none d-sm-block">Files</span>
+                            </a>
+                        </li>
+                    </ul>
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        <div class="tab-pane p-3" id="qdetails" role="tabpanel">
+                            <form data-parsley-validate id="QuotationDetailForm">
+                                {% csrf_token %}
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="justify-content-start d-flex">
+                                            {% if quotation.flag %}
+                                            <div class="button-items mb-3">
+                                                <a href="javascript:void(0);" id="quotupdate" class="align-middle btn-lg btn-outline-primary"><i class="fas fa-pencil-alt mr-2"></i></a>
+                                                <a href="javascript:void(0);" id="quotcancel" class="align-middle btn-lg btn-outline-danger"><i class="ion ion-ios-close-circle mr-2"></i></a>
+<!--                                                <a href="javascript:void(0);" id="quotdelete" class="align-middle btn-lg btn-outline-danger"><i class="far fa-trash-alt mr-2"></i></a>-->
+
+                                                <button type="button" id="quotsave" class="btn btn-primary btn-sm" style="margin-bottom: 0px!important;"><i class="mdi mdi-content-save-move"></i> Save</button>
+                                                <button type="button" id="quotsaveandoverwrite" class="btn btn-primary btn-sm" style="margin-bottom: 0px!important;"><i class="mdi mdi-content-save-move"></i> Save & Create Revision</button>
+
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="justify-content-end d-flex">
+                                            <div class="dropdown d-inline-block">
+                                                <a class="btn btn-primary dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                        Print <i class="mdi mdi-chevron-down"></i>
+                                                    </a>
+
+                                                <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                                                    <a class="dropdown-item" href="{% url 'export_quotation_pdf' value=quote %}">PDF</a>
+                                                    <!-- a class="dropdown-item" href="{% url 'export_quotation_excel' value=quote %}">Excel</a -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <hr class="my-auto flex-grow-1 mt-1 mb-1" style="height:2px;">
+                                <div id="text_error" class="alert alert-danger alert-dismissible fade show mb-0" style="display: none;" role="alert">
+                                </div>
+                                <div class="row p-3" >
+                                    <div class="col-md-7">
+                                        <div class="row pt-2">
+                                            <div class="mb-3">
+                                                <label class="form-label" for="company_nameid">Company</label>
+                                                <select class="form-control select2" id="company_nameid" name="company_nameid" required>
+                                                    <option value="">Select the Company</option>
+                                                    {% for company in companies %}
+                                                        <option value="{{company.id}}" {% if company.id == quotation.company_nameid.id %}selected{% endif %}>{{company.name}}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="row pt-2">
+                                            <div class="mb-3">
+                                                <label class="form-label" for="address">Address</label>
+                                                <input type="text" class="form-control" id="address" name="address" style="height:38px;" value="{{quotation.address|default_if_none:''}}" required readonly>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="contact_person">Contact Person</label>
+                                                    <select class="form-control select2" id="contact_person" name="contact_person" required>
+                                                        <option value="">Select the Contacts</option>
+                                                        {% for contact in contacts %}
+                                                            <option value="{{contact.id}}" {% if contact.id == quotation.contact_person.id %}selected{% endif %}>{{contact.contact_person}}</option>
+                                                        {% endfor %}
+                                                    </select>
+
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="email">Email</label>
+                                                    <input type="email" class="form-control" id="email" name="email" style="height:38px;" value="{{quotation.email|default_if_none:''}}" required>
+                                                </div>
+                                            </div>
+                                        </div>
+
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="tel">Tel</label>
+                                                    <input type="text" class="form-control" id="tel" name="tel" style="height:38px;" value="{{quotation.tel|default_if_none:''}}" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="fax">Fax</label>
+                                                    <input type="text" class="form-control" id="fax" name="fax" style="height:38px;" value="{{quotation.fax|default_if_none:''}}">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row pt-2">
+                                            <div class="mb-3">
+                                                <label class="form-label" for="qre">Subject</label>
+                                                <textarea class="form-control" id="qre" name="qre" rows="5" required>{{quotation.RE|default_if_none:''}}</textarea>
+                                            </div>
+                                        </div>
+                                        <div class="row pt-2">
+                                            <div class="mb-3">
+                                                <label class="form-label" for="note">Note</label>
+                                                <textarea class="form-control" id="note" name="note" rows="5">{{quotation.note|default_if_none:''}}</textarea>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3 mb-3 row">
+                                            <div class="col-md-6">
+                                                <label for="sale_type" class="form-label">Sales Type:</label>
+                                                <select class="form-control select2" id="sale_type" name="sale_type" required>
+                                                    <option value="" >Please select Sales Type</option>
+                                                    <option value="Project" {% if quotation.sale_type == "Project" %}selected{% endif %}>Project</option>
+                                                    <option value="Maintenance" {% if quotation.sale_type == "Maintenance" %}selected{% endif %}>Maintenance</option>
+                                                    <option value="Sales" {% if quotation.sale_type == "Sales" %}selected{% endif %}>Sales</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="sale_person" class="form-label">Sales Person:</label>
+                                                <!-- <select class="form-control select2" id="sale_person" name="sale_person" required>
+                                                    <option value="">Select Sale Person</option>
+                                                    {% for saleperson in salepersons %}
+                                                        <option value="{{saleperson.first_name}}"{% if saleperson.first_name == quotation.sale_person %} selected{% endif %}>{{saleperson.username}}</option>
+                                                    {% endfor %}
+                                                </select> -->
+                                                <input type="text" class="form-control" id="sale_person" style="height:38px;" name="sale_person" value="{{quotation.sale_person|default_if_none:''}}" readonly />
+                                            </div>
+                                        </div>
+                                        <div class="mt-3 mb-3 row">
+                                            <div class="col-md-6">
+                                                <label for="quo_validity" class="form-label">Quotation Validity (Days): </label>
+                                                <input type="text" class="form-control" id="quo_validity" style="height:38px;" name="quo_validity" value="{{quotation.company_nameid.validity|default_if_none:''}}" readonly />
+
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="quo_terms" class="form-label">Payment Terms (Days):</label>
+                                                <input type="text" class="form-control" id="quo_terms" style="height:38px;" name="quo_terms" value="{{quotation.company_nameid.payment|default_if_none:''}}" readonly />
+                                            </div>
+                                        </div>
+                                        <div class="mb-3 row">
+
+                                            <div class="col-md-6" id="estimated_mandays_container">
+                                                <label class="form-label" for="estimated_mandays">Estimated Mandays</label>
+                                                <input class="form-control js-number2" id="estimated_mandays" style="height:38px;" name="estimated_mandays" value="{{quotation.estimated_mandays|default_if_none:''}}" />
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label" for="material_lead_time">Material Lead Time</label>
+                                                <select class="form-control select2" id="material_lead_time" name="material_lead_time">
+                                                    <option value="">Select ..</option>
+                                                    <option value="NA" {% if quotation.material_leadtime == "NA" %}selected{% endif %}>NA</option>
+                                                    <option value="TBA" {% if quotation.material_leadtime == "TBA" %}selected{% endif %}>TBA</option>
+                                                    <option value="Ex-stock" {% if quotation.material_leadtime == "Ex-stock" %}selected{% endif %}>Ex-stock</option>
+                                                    <option value="Ex-stock or 6 to 8 weeks" {% if quotation.material_leadtime == "Ex-stock or 6 to 8 weeks" %}selected{% endif %}>Ex-stock or 6 to 8 weeks</option>
+                                                    <option value="Ex-stock or 8 to 12 weeks" {% if quotation.material_leadtime == "Ex-stock or 8 to 12 weeks" %}selected{% endif %}>Ex-stock or 8 to 12 weeks</option>
+                                                    <option value="Ex-stock or 12 to 16 weeks" {% if quotation.material_leadtime == "Ex-stock or 12 to 16 weeks" %}selected{% endif %}>Ex-stock or 12 to 16 weeks</option>
+                                                    <option value="3 to 4 weeks" {% if quotation.material_leadtime == "3 to 4 weeks" %}selected{% endif %}>3 to 4 weeks</option>
+                                                    <option value="6 to 8 weeks" {% if quotation.material_leadtime == "6 to 8 weeks" %}selected{% endif %}>6 to 8 weeks</option>
+                                                    <option value="8 to 12 weeks" {% if quotation.material_leadtime == "8 to 12 weeks" %}selected{% endif %}>8 to 12 weeks</option>
+                                                    <option value="12 to 16 weeks" {% if quotation.material_leadtime == "12 to 16 weeks" %}selected{% endif %}>12 to 16 weeks</option>
+                                                    <option value="16 to 20 weeks" {% if quotation.material_leadtime == "16 to 20 weeks" %}selected{% endif %}>16 to 20 weeks</option>
+
+
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-1"></div>
+                                    <div class="col-md-4">
+                                        <div class="row pt-2 me-3 ms-3">
+                                            <span class="badge bg-primary pt-3 pb-3 fst-italic" style="font-size: 18px!important;">QUOTATION NO.</span>
+                                        </div>
+                                        <div class="row mt-3 mb-3 me-5 ms-5">
+                                            <input type="text" class="form-control fw-bold" id="qtt_id" style="text-align: center;padding-top: 10px;padding-bottom: 10px;font-size: 20px;height:38px;" name="qtt_id" value="{{quotation.qtt_id|default_if_none:''}}" required>
+                                        </div>
+
+                                        <div class="mt-3 mb-3 me-2 ms-2 row">
+                                            <label for="po_no" class="form-label col-md-3 col-form-label">PO No:</label>
+                                            <div class="col-md-9">
+                                                <input type="text" class="form-control" id="po_no" style="height:38px;" name="po_no" value="{{quotation.po_no|default_if_none:''}}"/>
+                                                <ul id="po_no_valid" style="display: none;" class="parsley-errors-list filled">
+                                                    <li class="parsley-required">
+                                                        PO No is required to unlock status update.
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3 mb-3 me-2 ms-2 row">
+                                            <label for="date" class="form-label col-md-3 col-form-label">Date:</label>
+                                            <div class="col-md-9">
+                                                <div class="input-group">
+                                                    <span class="input-group-text"><i class="mdi mdi-calendar"></i></span>
+                                                    <input type="text" class="form-control" id="date" style="height:38px;" name="date" data-date-format="dd M yyyy" data-provide="datepicker" data-date-autoclose="true" value="{{quotation.date|date:'d M, Y'|default_if_none:''}}" required>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-3 mb-3 me-2 ms-2 row">
+                                            <label for="qtt_status" class="form-label col-md-3 col-form-label">Status:</label>
+                                            <div class="col-md-9">
+                                                <select class="form-control select2" id="qtt_status" name="qtt_status" required>
+                                                    <option value="">Select the Status</option>
+                                                    <option value="Open" {% if quotation.qtt_status == "Open" %}selected{% endif %}>Open</option>
+                                                    <option value="Awarded" {% if quotation.qtt_status == "Awarded" %}selected{% endif %}>Awarded</option>
+                                                    <option value="Closed" {% if quotation.qtt_status == "Closed" %}selected{% endif %}>Closed</option>
+                                                    <option value="Loss" {% if quotation.qtt_status == "Loss" %}selected{% endif %}>Loss</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3 mb-3 me-2 ms-2 row">
+                                            <label for="date" class="form-label col-md-3 col-form-label">Project Id:</label>
+                                            <div class="col-md-9">
+                                                <div class="input-group">
+                                                    {% if project_type == "Project" %}
+                                                    <a class="form-control" href="{% url 'project_summary_detail' pk=link_id %}">{{project_id}}</a>
+                                                    {% elif project_type == "Sales" %}
+                                                    <a class="form-control" href="{% url 'sales_summary_detail' pk=link_id %}">{{project_id}}</a>
+                                                    {% elif project_type == "Maintenance" %}
+                                                    <a class="form-control" href="{% url 'maintenance_detail' pk=link_id %}">{{project_id}}</a>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </form>
+                            <hr>
+<!--                            <div class="row p-3 mt-3">-->
+<!--                                <div class="col-md-7">-->
+<!--                                    <form class="needs-validation" id="SignatureForm">-->
+<!--                                        <div class="row mb-3">-->
+<!--                                            <div class="col-md-6">-->
+<!--                                                <div class="mb-3 row">-->
+<!--                                                    <label for="signature" class="form-label">Autorised's Signatures:</label>-->
+<!--                                                    <div class="justify-content-start d-flex">-->
+<!--                                                        <label class="avatar-input">-->
+<!--                                                            {% if request.user.signature %}-->
+<!--                                                            <img src="{{request.user.signature.url}}" alt="..." style="height: 95px"-->
+<!--                                                                class="img-thumbnail" style="border: 1px solid rgba(0,0,0,.37);">-->
+<!--                                                            {% else %}-->
+<!--                                                            <img src="{% static 'assets/images/logo.png' %}" alt="..."-->
+<!--                                                                class="img-thumbnail" style="border: 1px solid rgba(0,0,0,.37);">-->
+<!--                                                            {% endif %}-->
+<!--                                                            &lt;!&ndash; <span class="avatar-input-icon">-->
+<!--                                                                <i class="mdi mdi-upload mdi-24px"></i>-->
+<!--                                                            </span> &ndash;&gt;-->
+<!--                                                            &lt;!&ndash; <input type="file" id="signature" name="signature" class="avatar-file-picker" > &ndash;&gt;-->
+<!--                                                        </label>-->
+<!--                                                    </div>-->
+<!--                                                </div>-->
+<!--                                            </div>-->
+<!--                                            &lt;!&ndash; div class="col-md-6">-->
+<!--                                                <div class="mb-3 row">-->
+<!--                                                    <label for="companystamp" class="form-label">Company Stamp:</label>-->
+<!--                                                    <div class="justify-content-start d-flex">-->
+<!--                                                        <label class="avatar-input">-->
+<!--                                                            <img src="{% static 'assets/images/logo.png' %}" alt="..."-->
+<!--                                                                    class="img-thumbnail" style="border: 1px solid rgba(0,0,0,.37);">-->
+<!--                                                            <span class="avatar-input-icon">-->
+<!--                                                                <i class="mdi mdi-upload mdi-24px"></i>-->
+<!--                                                            </span>-->
+<!--                                                            <input type="file" id="companystamp" name="companystamp" class="avatar-file-picker" >-->
+<!--                                                        </label>-->
+<!--                                                    </div>-->
+
+<!--                                                </div>-->
+<!--                                            </div &ndash;&gt;-->
+
+<!--                                        </div>-->
+<!--                                        <div class="mb-3 row">-->
+<!--                                            <div class="col-md-6">-->
+<!--                                                <label for="sname" class="col-form-label">Name:</label>-->
+<!--                                                <input class="form-control" type="text" style="height:38px;"  id="sname" name="sname" value="{{request.user.username|default_if_none:''}}"  readonly>-->
+<!--                                            </div>-->
+<!--                                            &lt;!&ndash; div class="col-md-6">-->
+<!--                                                <label for="sdate" class="col-form-label">Date:</label>-->
+<!--                                                <input type="text" class="form-control" style="height:38px;" id="sdate" name="sdate" value="{{signaturedata.signature_date|date:'d M, Y'|default_if_none:''}}" readonly required>-->
+<!--                                            </div &ndash;&gt;-->
+
+<!--                                        </div>-->
+<!--                                        &lt;!&ndash; <div class="row">-->
+<!--                                            <div class="col-md-6">-->
+<!--                                                <div class="justify-content-start d-flex">-->
+<!--                                                    <a herf="javascript:void(0);" class="btn btn-primary signature_save w-25"><i class="mdi mdi-content-save-move"></i>  Save </a>-->
+<!--                                                </div>-->
+<!--                                            </div>-->
+<!--                                        </div> &ndash;&gt;-->
+<!--                                    </form>-->
+<!--                                </div>-->
+
+<!--                            </div>-->
+                        </div>
+                        <div class="tab-pane p-3" id="qitems" role="tabpanel">
+                            <div class="row">
+                                <div class="mt-1 col-md-3">
+                                    {% if quotation.flag %}
+                                    {% if quotation.qtt_status == "Open" %}
+                                    <button type="button" id="psubjectadd" class="btn btn-primary btn-sm"><i class="mdi mdi-content-save-move"></i> Add Subject</button>
+                                    {% endif %}
+                                    {% endif %}
+                                    <button type="button" id="pdiscountadd" class="btn btn-primary btn-sm"><i class="mdi mdi-content-save-move"></i> Add Discount</button>
+                                </div>
+                                <div class="mt-1 col-md-9">
+                                    <div class="justify-content-end d-flex">
+                                        <div id="newSearchPlace"></div>
+                                    </div>
+
+                                </div>
+                            </div>
+                            <div id="items-content">
+
+                            </div>
+
+                            <div class="table-responsive">
+                                <table id="scopedatatable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+<!--                                    <thead>-->
+<!--                                        <tr>-->
+<!--                                            <th width="5%">SN</th>-->
+<!--                                            <th width="48%">Description</th>-->
+<!--                                            <th width="8%">QTY</th>-->
+<!--                                            <th width="8%">UOM</th>-->
+<!--                                            <th width="8%">UNIT PRICE(S$)</th>-->
+<!--                                            <th width="8%">AMT(S$)</th>-->
+<!--                                            <th width="15%">Action</th>-->
+<!--                                        </tr>-->
+<!--                                    </thead>-->
+                                    <tbody>
+<!--                                        {% for scope in scope_list %}-->
+<!--                                        <tr>-->
+<!--                                            <td class="align-middle">{{scope.sn|default_if_none:""}}</td>-->
+<!--                                            <td class="align-middle">{{scope.description|wordwrap:80|linebreaksbr|default_if_none:""}}</td>-->
+<!--                                            &lt;!&ndash; {% if scope.qty == "0" %} &ndash;&gt;-->
+<!--                                            &lt;!&ndash; {% else %}-->
+<!--                                            <td class="align-middle"></td>-->
+<!--                                            {% endif %} &ndash;&gt;-->
+<!--                                            <td class="align-middle">{{scope.qty|default_if_none:""}}</td>-->
+<!--                                            <td class="align-middle">{{scope.uom|default_if_none:""}}</td>-->
+<!--                                            <td class="align-middle">{{scope.unitprice|default_if_none:""}}</td>-->
+<!--                                            <td class="align-middle">{{scope.amount|default_if_none:"&#45;&#45;"}}</td>-->
+<!--&lt;!&ndash;                                            <td class="align-middle">{{scope.allocation_perc|floatformat:2|default_if_none:"&#45;&#45;"}} %</td>&ndash;&gt;-->
+<!--                                            <td class="align-middle">-->
+<!--                                                {% if quotation.flag %}-->
+<!--                                                {% if quotation.qtt_status == "Open" %}-->
+
+<!--                                                <a href="javascript:void(0);" onclick="updatescope('{{scope.id}}')" class="btn btn-outline-primary btn-sm edit" title="Edit">-->
+<!--                                                    <i class="fas fa-pencil-alt"></i>-->
+<!--                                                </a>-->
+<!--                                                <a href="javascript:void(0);" onclick="deletescope('{{scope.id}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">-->
+<!--                                                    <i class="far fa-trash-alt"></i>-->
+<!--                                                </a>-->
+<!--                                                {% endif %}-->
+<!--                                                {% endif %}-->
+<!--                                            </td>-->
+<!--                                        </tr>-->
+<!--                                    {% endfor %}-->
+                                    {% if scope_list %}
+                                    <tr>
+                                        <td width="5%"></td>
+                                        <td width="48%"></td>
+                                        <td width="8%"></td>
+                                        <td width="8%"></td>
+                                        <td width="8%" class="align-middle">Total</td>
+                                        <td width="8%" class="align-middle">$ {{subtotal|floatformat:2}}</td>
+                                        <td width="15%" class="align-middle"></td>
+
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                            <td class="align-middle">Discount</td>
+                                        <td class="align-middle">$ {{quotation.discount|floatformat:2}}</td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td class="align-middle">GST 8%</td>
+                                        <td class="align-middle">$ {{gst|floatformat:2}}</td>
+                                        <td></td>
+
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td class="align-middle">Final Total</td>
+                                        <td class="align-middle">$ {{final_total|floatformat:2}}</td>
+                                        <td></td>
+
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td class="align-middle">Margin</td>
+                                        <td class="align-middle">{{quotation.margin|floatformat:2}} %</td>
+                                        <td></td>
+
+                                    </tr>
+                                    {% endif %}
+
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="tab-pane p-3" id="qfiles" role="tabpanel">
+                            <div class="row">
+                                <div class="mt-1 col-md-3">
+                                    {% if quotation.flag %}
+                                    {% if quotation.qtt_status == "Open" %}
+                                    <button type="button" id="fileadd" class="btn btn-primary btn-sm">
+                                        <i class="mdi mdi-content-save-move"></i> Add
+                                    </button>
+                                    {% endif %}
+                                    {% endif %}
+                                </div>
+                                <div class="mt-1 col-md-9">
+                                    <div class="justify-content-end d-flex">
+                                        <div id="newfilePlace"></div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table id="filedatatable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                                    <thead>
+                                        <tr>
+                                            <th>SN</th>
+                                            <th>Name</th>
+                                            <th>Document</th>
+                                            <th>Uploaded By</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for file_l in file_list %}
+                                            <tr>
+                                                <td class="align-middle">{{forloop.counter}}</td>
+                                                <td class="align-middle">{{file_l.name|default_if_none:""}}</td>
+                                                <td class="align-middle">
+                                                    {{file_l.filename|cut:'files/'|default_if_none:""}}
+                                                </td>
+                                                <td class="align-middle">{{file_l.user.username|default_if_none:""}}</td>
+                                                <td class="align-middle">
+                                                    {% if quotation.flag %}
+                                                    {% if quotation.qtt_status == "Open" %}
+                                                    <a href="javascript:void(0);" onclick="updatefile('{{file_l.id}}')" class="btn btn-outline-primary btn-sm edit" title="Edit">
+                                                        <i class="fas fa-pencil-alt"></i>
+                                                    </a>
+                                                    {% endif %}
+                                                    {% endif %}
+                                                    {% if file_l.document %}
+                                                    <a href="{{file_l.document.url}}" class="btn btn-outline-primary btn-sm download" download title="Download">
+                                                        <i class="mdi mdi-arrow-down-bold"></i>
+                                                    </a>
+                                                    {% endif %}
+                                                    {% if quotation.flag %}
+                                                    {% if quotation.qtt_status == "Open" %}
+                                                    <a href="javascript:void(0);" onclick="deletefile('{{file_l.id}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
+                                                        <i class="far fa-trash-alt"></i>
+                                                    </a>
+                                                    {% endif %}
+                                                    {% endif %}
+                                                </td>
+
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Subject modal content -->
+<div id="subjectmodal" class="modal fade" role="dialog" aria-labelledby="scopeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_subject">Add Subject</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="subject_info">
+                <form class="needs-validation p-3" id="SubjectForm">
+                    {% csrf_token %}
+
+                    <div class="mb-3 row">
+                        <label for="subjecttitle" class="col-md-4 col-form-label">Title:</label>
+                        <div class="col-md-8">
+                            <textarea class="form-control" rows="4" type="text" id="subjecttitle"></textarea>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <div class="float-end">
+                    <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_subjectadd">Add</button>
+                </div>
+                <input type="hidden" id="subject_add_id" value="-1" />
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!--Discount modal content -->
+<div id="discountmodal" class="modal fade" role="dialog" aria-labelledby="discountModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_discount">Add Discount</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="discount_info">
+                <form class="needs-validation p-3" id="DiscountForm">
+                    {% csrf_token %}
+
+                    <div class="mb-3 row">
+                        <label for="discount" class="col-md-4 col-form-label">Discount:</label>
+                        <div class="col-md-8">
+                            <input class="form-control js-number" type="text" id="discount" >
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <div class="float-end">
+                    <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_discountadd">Add</button>
+                </div>
+                <input type="hidden" id="discount_add_id" value="-1" />
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!--Scope modal content -->
+<div id="scopemodal" class="modal fade" role="dialog" aria-labelledby="scopeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_item">Add Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_info">
+                <form class="needs-validation p-3" id="ScopeForm">
+                    {% csrf_token %}
+                    <div id="scopeFormContent">
+                    </div>
+                </form>
+                <input type="hidden" id="scopeid" value="-1" />
+                <input type="hidden" id="subject_id" value="-1" />
+
+            </div>
+            <div class="modal-footer">
+                <div class="float-start col-md-12">
+                    <p class="fst-italic text-primary" id="multicnt_container">
+                        <span class="col-md-5">Continue insertion with </span>
+                        <input class="col-md-2" type="number" id="multicnt" value="1" style="margin-left:5px; margin-right:5px; border-color: #cccccc;height: 18px; padding: 10px;">
+                        <span class="col-md-2"> rows</span>
+                    </p>
+                </div>
+                <div class="float-end">
+                    <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_scopeadd">Add</button>
+                </div>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!--file modal content -->
+<div id="filemodal" class="modal fade" role="dialog" aria-labelledby="fileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_file">Add File</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_file">
+                <form class="needs-validation p-3" id="FileForm">
+                    {% csrf_token %}
+
+                    <div id="text_error_file" style="display: none;" class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+                    </div>
+
+                    <div class="mb-3 mt-3 row">
+                        <label for="fname" class="col-md-4 col-form-label">Name:</label>
+                        <div class="col-md-8">
+                            <input type="text" class="form-control" id="fname"  name="fname" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="fdocument" class="col-md-4 col-form-label">Document:</label>
+                        <div class="col-md-8">
+                            <input class="filestyle" data-buttonname="btn-primary" type="file" id="fdocument">
+                        </div>
+                    </div>
+                </form>
+                <input type="hidden" id="fileid" value="-1" />
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_fileadd">Add</button>
+
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- Delete quotation detail modal -->
+<div id="deleteQuotModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="delModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="delQuotModalLabel">Delete Quotation Detail</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5>Are you sure you want to delete this Quotation detail?</h5>
+                <input type="hidden" id="del_quot_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button id="del_quot_confirm" type="button" class="btn btn-primary waves-effect btn-sm waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- Delete quotation modal content -->
+<div id="deleteModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="delModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="delModalLabel">Delete Scope</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5>Are you sure you want to delete this record?</h5>
+                <input type="hidden" id="del_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button id="del_confirm" type="button" class="btn btn-primary waves-effect btn-sm waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- Delete quotation modal content -->
+<div id="deleteSubModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="delModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="delSubModalLabel">Delete Subject</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5>Are you sure you want to delete this Subject?</h5>
+                <input type="hidden" id="del_sub_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button id="del_sub_confirm" type="button" class="btn btn-primary waves-effect btn-sm waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- Delete quotation file modal content -->
+<div id="deletefModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="delfModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="delfModalLabel">Delete File</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5>Are you sure you want to delete this record?</h5>
+                <input type="hidden" id="delf_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button id="del_fconfirm" type="button" class="btn btn-primary waves-effect btn-sm waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'assets/libs/select2/js/select2.full.min.js' %}"></script>
+<script src="{% static 'assets/libs/bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+<!-- Responsive examples -->
+<script src="{% static 'assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+<script src="{% static 'assets/libs/admin-resources/bootstrap-filestyle/bootstrap-filestyle.min.js' %}"></script>
+<!-- plugin js -->
+<!-- <script src="{% static 'assets/libs/moment/min/moment.min.js' %}"></script> -->
+<script>
+    $('#loading').hide();
+    ajax_get_subjects();
+    checkScopes();
+    var curdate = moment(new Date()).format("D MMM, YYYY");
+    $("#sdate").val(curdate);
+    $("#text_error").hide();
+<!--    $("#scopedatatable").DataTable({-->
+<!--        "aaSorting": [[ 0, "desc" ]],-->
+<!--        searching: true, -->
+<!--        ordering: false,-->
+<!--        paging: false, -->
+<!--        info: false,-->
+<!--        //dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +-->
+<!--            //"<'row'<'col-sm-12'tr>>" +-->
+<!--            //"<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",-->
+<!--        });-->
+    $("#newSearchPlace").html($("#scopedatatable_filter"));
+    $("#filedatatable").DataTable({
+        "aaSorting": [[ 0, "desc" ]],
+        searching: false,
+        ordering: false,
+        paging: false,
+        info: false,
+        // dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+        //     "<'row'<'col-sm-12'tr>>" +
+        //     "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+
+    });
+    $("#newfilePlace").html($("#filedatatable_filter"));
+    $('#quotcancel').hide();
+    $("#QuotationDetailForm input").prop("disabled", true);
+    $("#QuotationDetailForm textarea").prop("disabled", true);
+    $('.select2').prop('disabled', true);
+    $('#quotsave').prop('disabled', true);
+    $('#quotsaveandoverwrite').prop('disabled', true);
+    if($("#po_no").val() == "") {
+        $("#qtt_status").prop('disabled', true);
+    }
+    // $("#po_no").on("keyup", function(event) {
+    //     if($("#po_no").val() == "") {
+    //         $("#po_no_valid").css("display", "block");
+    //         $("#qtt_status").prop('disabled', true);
+    //     } else {
+    //         $("#po_no_valid").css("display", "none");
+    //         $("#qtt_status").prop('disabled', false);
+    //     }
+    // });
+    $("#po_no").on("click", function(event) {
+        if($("#po_no").val() == "") {
+            $("#po_no_valid").css("display", "none");
+            $("#qtt_status").prop('disabled', true);
+        } else {
+            $("#po_no_valid").css("display", "none");
+            $("#qtt_status").prop('disabled', false);
+        }
+    });
+    $(".custom-select").prop('disabled', false);
+    $(".select2").select2({width: '100%'});
+    $(".uom-select").select2({width: '100%', dropdownParent: $("#manage_info")});
+    $(".js-number").keydown(function (event) {
+        if (event.shiftKey == true) {
+            event.preventDefault();
+        }
+
+        if ((event.keyCode >= 48 && event.keyCode <= 57) ||
+            (event.keyCode >= 96 && event.keyCode <= 105) ||
+            event.keyCode == 8 || event.keyCode == 9 || event.keyCode == 37 ||
+            event.keyCode == 39 || event.keyCode == 46 || event.keyCode == 190) {
+
+        } else {
+            event.preventDefault();
+        }
+        $(this).val($(this).val().replace(/\.+/g, '.'));
+<!--        if($(this).val().indexOf('.') !== -2 && event.keyCode == 190)-->
+<!--            event.preventDefault();-->
+    });
+    $("#company_nameid").on('change', function(e){
+        var company = $("#company_nameid").val();
+        if(company != ""){
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_check_quotation_company" %}',
+                data: {
+                    company: $("#company_nameid").val()
+                },
+                type: 'POST',
+                success: function (data) {
+                    $("#address").val(data['address'] + " " + data['unit'] + " " + data['country'] + " " + data['postalcode']);
+
+                    let contacts=JSON.parse(JSON.parse(data.contacts));
+                    var $el = $("#contact_person");
+                    $el.empty();
+                    $.each(contacts, function(key, contact) {
+                      $el.append($("<option></option>")
+                         .attr("value", contact.pk).text(contact.fields.contact_person));
+                    });
+                    if (contacts.length>0){
+                        $("#contact_person").val(contacts[0].pk).change();
+                        $("#email").val(contacts[0].fields.email);
+                        $("#tel").val(contacts[0].fields.tel);
+                        $("#fax").val(contacts[0].fields.fax);
+                    }
+                }
+            });
+        }
+    });
+    $("#contact_person").on('change', function(e){
+        var contact_person = $("#contact_person").val();
+        if(contact_person != ""){
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_get_contact_person" %}',
+                data: {
+                    contact_id: contact_person
+                },
+                type: 'POST',
+                success: function (data) {
+                    $("#email").val(data['email']);
+                    $("#tel").val(data['tel']);
+                    $("#fax").val(data['fax']);
+                }
+            });
+        }
+    });
+    $(".integer").keypress(function (e){
+        var charCode = (e.which) ? e.which : e.keyCode;
+        if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+            return false;
+        }
+    });
+    $("#quotupdate").on('click', function(e){
+
+        $("#QuotationDetailForm input").prop("disabled", false);
+        $("#QuotationDetailForm textarea").prop("disabled", false);
+        $('.select2').prop('disabled', false);
+        $('#quotsave').prop('disabled', false);
+        $( "#qtt_id" ).prop( "disabled", true );
+        $('#quotsaveandoverwrite').prop('disabled', false);
+        if ($("#qtt_status").val() == "Awarded") {
+            $('#sale_type').prop('disabled', true);
+            $('#po_no').prop('required', true);
+        } else {
+            $('#sale_type').prop('disabled', false);
+            $('#po_no').prop('required', false);
+        }
+        // if($("#po_no").val() == "") {
+        //     $("#qtt_status").prop('disabled', true);
+        // } else {
+        //     $("#qtt_status").prop('disabled', false);
+        // }
+
+        $('#quotcancel').show();
+        $('#quotupdate').hide();
+    });
+<!--    $("#quotdelete").on('click', function(e){-->
+<!--        $("#del_quot_id").val($( "#qtt_id" ).val());-->
+<!--        $("#deleteQuotModal").modal('show');-->
+<!--    });-->
+
+    $("#del_quot_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_quotation" %}',
+            data: {
+                'quot_id': $("#del_quot_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.replace('{% url "all_quotation" %}');
+                }
+            }
+        });
+        $('#deleteQuotModal').modal('hide');
+    });
+    if($('#sale_type').val() === 'Sales'){
+        $('#estimated_mandays_container').hide();
+    }else{
+        $('#estimated_mandays_container').show();
+    }
+    $('#sale_type').change(function() {
+        if ($(this).val() === 'Sales') {
+            $('#estimated_mandays_container').hide();
+        }else{
+            $('#estimated_mandays_container').show();
+        }
+    });
+    $("#quotcancel").on('click', function(e){
+        $("#company_name").val('{{quotation.company_name.id}}').change();
+        $("#contact_person").val('{{quotation.contact_person.id}}').change();
+        $("#email").val('{{quotation.email}}');
+        $("#tel").val('{{quotation.tel}}');
+        $("#fax").val('{{quotation.fax}}');
+        $("#po_no").val('{{quotation.po_no}}');
+        $("#date").val('{{quotation.date}}');
+        $("#estimated_mandays").val('{{quotation.estimated_mandays}}');
+        $("#material_lead_time").val('{{quotation.material_leadtime}}').change();
+        $("#qtt_status").val('{{quotation.qtt_status}}').change();
+
+
+        $("#QuotationDetailForm input").prop("disabled", true);
+        $("#QuotationDetailForm textarea").prop("disabled", true);
+        $('select').prop('disabled', true);
+        $('#quotsave').prop('disabled', true);
+        $( "#qtt_id" ).prop( "disabled", true );
+        $('#quotsaveandoverwrite').prop('disabled', true);
+        if ($("#qtt_status").val() == "Awarded") {
+            $('#sale_type').prop('disabled', true);
+            $('#po_no').prop('required', true);
+        } else {
+            $('#sale_type').prop('disabled', false);
+            $('#po_no').prop('required', false);
+        }
+
+        $("#qtt_status").val(`{{quotation.qtt_status}}`);
+        $("#qtt_status").trigger('change');
+        $("#po_no_valid").css("display", "none");
+        $('#quotcancel').hide();
+        $('#quotupdate').show();
+    });
+
+    $("#qtt_status").on('change',function(e){
+
+        if ($("#qtt_status").val() == "Awarded") {
+            $('#sale_type').prop('disabled', true);
+            $('#po_no').prop('required', true);
+            $("#po_no_valid").css("display", "block");
+            $('#quotsaveandoverwrite').hide();
+        } else {
+            $('#sale_type').prop('disabled', false);
+            $('#po_no').prop('required', false);
+            $('#quotsaveandoverwrite').show();
+        }
+        if($("#po_no").val() == "") {
+            $('#qtt_status').prop('disabled', true);
+        } else {
+            $('#qtt_status').prop('disabled', false);
+            $("#po_no_valid").css("display", "none");
+        }
+    });
+    $("#quotsave").on('click', function(e){
+        $('#QuotationDetailForm').parsley().validate();
+        if ($('#QuotationDetailForm').parsley().validate() === false) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+
+            $('#loading').show();
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_update_quotation" %}',
+                data: {
+                    company_nameid: $("#company_nameid").val(),
+                    address: $("#address").val(),
+                    contact_person: $("#contact_person").val(),
+                    email: $("#email").val(),
+                    tel: $("#tel").val(),
+                    fax: $("#fax").val(),
+                    re: $("#qre").val(),
+                    note: $("#note").val(),
+                    qtt_id: $("#qtt_id").val(),
+                    sale_type: $("#sale_type").val(),
+                    date: formatDate($("#date").val()),
+                    qtt_status: $("#qtt_status").val(),
+                    estimated_mandays: $("#estimated_mandays").val(),
+                    sale_person: $("#sale_person").val(),
+                    po_no: $("#po_no").val(),
+                    validity: $("#quo_validity").val(),
+                    material_lead_time: $("#material_lead_time").val(),
+                    terms: $("#quo_terms").val(),
+                    quotid: `{{quote}}`,
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error").html(data.messages);
+                        $("#text_error").show();
+                    }
+                },
+                complete: function(){
+                    $('#loading').hide();
+                    if($("#qtt_status").val()=="Awarded"){
+                        changeStateToAward();
+                    }
+                }
+            });
+        }
+    });
+
+    if($("#qtt_status").val()=="Awarded"){
+        changeStateToAward();
+    }
+
+    $("#pdiscountadd").hide();
+    function changeStateToAward(){
+
+        console.log("-------", $("#qtt_status").val());
+        $("#pdiscountadd").hide();
+        $(".plussign").hide();
+        $(".edit").hide();
+        $(".delete").hide();
+    }
+
+    function checkScopes() {
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_check_scopes" %}',
+            data: {
+                'quotation_id': '{{quote}}',
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data)
+                if($("#qtt_status").val()=="Awarded"){
+                    changeStateToAward();
+                }else{
+                    if (up_data.scope_cnt == 1) {
+                        $("#pdiscountadd").show();
+                    }else{
+                        $("#pdiscountadd").hide();
+                    }
+                }
+
+            }
+        });
+    }
+    $("#quotsaveandoverwrite").on('click', function(e){
+        $('#QuotationDetailForm').parsley().validate();
+        if ($('#QuotationDetailForm').parsley().validate() === false) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_update_quotation_override" %}',
+                data: {
+                    company_nameid: $("#company_nameid").val(),
+                    address: $("#address").val(),
+                    contact_person: $("#contact_person").val(),
+                    email: $("#email").val(),
+                    tel: $("#tel").val(),
+                    fax: $("#fax").val(),
+                    re: $("#qre").val(),
+                    note: $("#note").val(),
+                    qtt_id: $("#qtt_id").val(),
+                    sale_type: $("#sale_type").val(),
+                    date: formatDate($("#date").val()),
+                    qtt_status: $("#qtt_status").val(),
+                    estimated_mandays: $("#estimated_mandays").val(),
+                    sale_person: $("#sale_person").val(),
+                    validity: $("#quo_validity").val(),
+                    po_no: $("#po_no").val(),
+                    terms: $("#quo_terms").val(),
+                    quotid: `{{quote}}`,
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error").html(data.messages);
+                        $("#text_error").show();
+                    }
+                }
+            });
+        }
+    });
+
+    function formatDate(date) {
+        var d = new Date(date),
+            month = '' + (d.getMonth() + 1),
+            day = '' + d.getDate(),
+            year = d.getFullYear();
+
+        if (month.length < 2)
+            month = '0' + month;
+        if (day.length < 2)
+            day = '0' + day;
+
+        return [year, month, day].join('-');
+    }
+
+
+    $("#psubjectadd").on('click', function(e) {
+        $("#subjecttitle").val("");
+        $("#subject_add_id").val("-1");
+        $("#head_title_subject").html('Add Subject');
+        $(".btn_subjectadd").html('Add');
+        $("#subjectmodal").modal('show')
+    });
+    $("#pdiscountadd").on('click', function(e) {
+        $("#discounttitle").val("");
+        $("#discount_add_id").val("-1");
+        $("#head_title_discount").html('Add Discount');
+        $(".btn_discountadd").html('Add');
+        $("#discountmodal").modal('show')
+    });
+
+    $(".btn_subjectadd").on('click', function(e){
+        $('#SubjectForm').parsley().validate();
+        if ($('#SubjectForm').parsley().validate() === false) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_subject" %}',
+                data: {
+                    title: $("#subjecttitle").val(),
+                    quotationid: `{{quote}}`,
+                    sub_id: $("#subject_add_id").val(),
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        ajax_get_subjects();
+                        $("#subjectmodal").modal('hide')
+                    } else {
+                        $("#text_error_detail").html(data.messages);
+                        $("#text_error_detail").show();
+                    }
+                }
+            });
+        }
+    });
+    $(".btn_discountadd").on('click', function(e){
+        $('#DiscountForm').parsley().validate();
+        if ($('#DiscountForm').parsley().validate() === false) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_discount" %}',
+                data: {
+                    discount: $("#discount").val(),
+                    quotationid: `{{quote}}`,
+                    discount_id: $("#discount_add_id").val(),
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#discountmodal").modal('hide')
+                        location.reload();
+                    } else {
+                        $("#text_error_detail").html(data.messages);
+                        $("#text_error_detail").show();
+                    }
+                }
+            });
+        }
+    });
+
+    function ajax_get_subjects() {
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_subjects" %}',
+            data: {
+                    quotationid: `{{quote}}`,
+            },
+            type: 'POST',
+            success: function (data) {
+                    $("#items-content").empty();
+                    let subjects=JSON.parse(JSON.parse(data));
+                    for (var i = 0; i < subjects.length; i++){
+                        ajax_add_subject_items(subjects[i].pk, subjects[i].fields.subject);
+                    }
+
+<!--                $("#items-content").append(data);-->
+            }
+        });
+    };
+
+
+    function ajax_add_subject_items(subject_id, subject_title) {
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_subject_items" %}',
+            data: {
+                sub_id: subject_id,
+                sub_title: subject_title,
+                quot_id: `{{quote}}`,
+            },
+            type: 'POST',
+            success: function (data) {
+                $("#items-content").append(data);
+                if($("#qtt_status").val()=="Awarded"){
+                    changeStateToAward();
+                }
+            }
+        });
+    };
+
+
+
+
+    $('#multicnt').on('input', function(){
+        $("#scopeFormContent").empty();
+        for(index=1;index<=$(this).val();index++){
+            ajax_add_qtt_items(index);
+        }
+    });
+
+    function ajax_add_qtt_items(item_cnt) {
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_qtt_items" %}',
+            data: {item_cnt: item_cnt},
+            type: 'POST',
+            success: function (data) {
+                $("#scopeFormContent").append(data);
+            }
+        });
+    };
+
+
+
+
+    $(".btn_scopeadd").on('click', function(e){
+        $('#ScopeForm').parsley().validate();
+        item_cnt=$('#multicnt').val();
+        if ($('#ScopeForm').parsley().validate() === false) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            item_data=[];
+            for(index=1; index<=item_cnt; index++){
+                let item={
+                    qty: $("#qty"+index).val(),
+                    uom: $("#uom"+index).val(),
+                    sn: $("#sn"+index).val(),
+                    description: $("#description"+index).val(),
+                    unitprice: $("#unitprice"+index).val(),
+                    unitcost: $("#unitcost"+index).val(),
+                    scopeid: $("#scopeid").val(),
+                    quotationid: `{{quote}}`,
+                    qtt_id: $("#qtt_id").val(),
+                }
+                item_data.push(item)
+            }
+
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_scope_detail" %}',
+                data: {
+                    items: JSON.stringify(item_data),
+                    sub_id: $("#subject_id").val(),
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_detail").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_detail").html(data.messages);
+                        $("#text_error_detail").show();
+                    }
+                }
+            });
+        }
+    });
+    function updatescope(id){
+        $("#scopeFormContent").empty();
+        $('#multicnt_container').hide();
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_qtt_items" %}',
+            data: {item_cnt: 1},
+            type: 'POST',
+            success: function (data) {
+                $("#scopeFormContent").append(data);
+                $("#scopeid").val(id);
+                $("#head_title_item").html('Update Item');
+                $(".btn_scopeadd").html('Update');
+                $.ajax({
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                    url: '{% url "ajax_get_scope" %}',
+                    data: {
+                        scopeid: $("#scopeid").val(),
+                    },
+                    type: 'POST',
+                    success: function (data) {
+                        up_data = JSON.parse(data);
+                        $("#sn1").val(up_data.sn);
+                        $("#qty1").val(up_data.qty);
+                        $("#uom1").val(up_data.uom);
+                        $("#uom1").trigger("change");
+                        $("#unitprice1").val(up_data.unitprice);
+                        $("#unitcost1").val(up_data.unitcost);
+                        $("#description1").val(up_data.description);
+                    },
+                    complete: function(){
+                        $("#scopemodal").modal('show');
+                    }
+                });
+            }
+        });
+
+    };
+    function deletescope(id) {
+        $("#del_id").val(id);
+        $("#deleteModal").modal('show');
+    }
+
+    $("#del_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_scope" %}',
+            data: {
+                'scopeid': $("#del_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload();
+                }
+            }
+        });
+        $('#deletModal').modal('hide');
+    });
+    // function readFile(input) {
+    //     if (input.files && input.files[0]) {
+    //         var reader = new FileReader();
+
+    //         reader.onload = function (e) {
+    //             $(input).parents('.avatar-input').find('.signature-img').attr('src', e.target.result);
+    //         };
+
+    //         reader.readAsDataURL(input.files[0]);
+    //     }
+    // }
+    // $('.avatar-file-picker').on('change', function () {
+    //      readFile(this);
+    // });
+
+    function updatesubject(id){
+        $("#head_title_subject").html('Update Subject');
+        $(".btn_subjectadd").html('Update');
+        $("#subject_add_id").val(id);
+
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_subject" %}',
+            data: {
+                subjectid: id,
+            },
+            type: 'POST',
+            success: function (data) {
+                subject=JSON.parse(data).subject;
+                $("#subjecttitle").val(subject);
+            }
+        });
+        $("#subjectmodal").modal('show');
+    };
+    function deletesubject(id) {
+        $("#del_sub_id").val(id);
+        $("#deleteSubModal").modal('show');
+    }
+    $("#del_sub_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_subject" %}',
+            data: {
+                'subjectid': $("#del_sub_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload();
+                }
+            }
+        });
+        $('#deletModal').modal('hide');
+    });
+    // function readFile(input) {
+    //     if (input.files && input.files[0]) {
+    //         var reader = new FileReader();
+
+    //         reader.onload = function (e) {
+    //             $(input).parents('.avatar-input').find('.signature-img').attr('src', e.target.result);
+    //         };
+
+    //         reader.readAsDataURL(input.files[0]);
+    //     }
+    // }
+    // $('.avatar-file-picker').on('change', function () {
+    //      readFile(this);
+    // });
+    $(".signature_save").on('click', function(e){
+        var form = $("#SignatureForm");
+        if (form[0].checkValidity() === false) {
+            event.preventDefault()
+            event.stopPropagation()
+            form.addClass('was-validated');
+            return;
+        }
+        var sign_data = $("#signature").prop('files')[0];
+        var comsign_data = $("#companystamp").prop('files')[0];
+        var form_data = new FormData();
+        form_data.append('signature', sign_data);
+        form_data.append('companycamp', comsign_data);
+        form_data.append('sname', $("#sname").val());
+        form_data.append('sdate', formatDate($("#sdate").val()));
+        form_data.append('quotationid', `{{quote}}`);
+        $.ajax({
+            headers:{ 'X-CSRFToken': "{{csrf_token}}" },
+            url: "{% url 'ajax_save_signature' %}",
+            type: 'POST',
+            data: form_data,
+            cache: false,
+            contentType: false,
+            processData: false,
+            success: function (data) {
+                if(data.status=="Success"){
+                    location.reload();
+                } else {
+
+                }
+
+
+            }
+        });
+    });
+    function updatefile(id){
+        $("#fileid").val(id);
+        $("#head_title_file").html('Update File');
+        $(".btn_fileadd").html('Update');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_file" %}',
+            data: {
+                fileid: $("#fileid").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data)
+                $("#fname").val(up_data.name);
+                $('.bootstrap-filestyle').find('input.form-control').val(up_data.document);
+            }
+        });
+        $("#filemodal").modal('show')
+    }
+    $("#fileadd").on('click', function(e){
+        $("#head_title_file").html("Add File");
+        $("#fname").val('');
+        $("#fileid").val('-1');
+        $("#filemodal").modal('show');
+    });
+    $(".btn_fileadd").on('click', function(e){
+        $('#FileForm').parsley().validate();
+        if ($('#FileForm').parsley().validate() === false) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            var document_data = $("#fdocument").prop('files')[0];
+            var form_data = new FormData();
+            form_data.append('document', document_data);
+            form_data.append('fname', $("#fname").val());
+            form_data.append('fileid', $("#fileid").val());
+            form_data.append('quotationid', `{{quote}}`);
+            $.ajax({
+                headers:{ 'X-CSRFToken': "{{csrf_token}}" },
+                url: "{% url 'ajax_add_qfile' %}",
+                type: 'POST',
+                data: form_data,
+                cache: false,
+                contentType: false,
+                processData: false,
+                success: function (data) {
+                    if(data.status=="Success"){
+                        location.reload();
+                    }
+                }
+            });
+        }
+
+    });
+    function deletefile(id) {
+        $("#delf_id").val(id);
+        $("#deletefModal").modal('show');
+    }
+    $("#del_fconfirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_qfile" %}',
+            data: {
+                'fileid': $("#delf_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload();
+                }
+            }
+        });
+        $('#deletefModal').modal('hide');
+    });
+
+
+    $('a[role=tab]').click(function(){
+        if (this.id == "qdetailtab") {
+            localStorage.setItem("quotationitem", '1');
+        } else if (this.id == "qitemtab") {
+            localStorage.setItem("quotationitem", '2');
+            checkScopes();
+        } else if (this.id == "qfiletab") {
+            localStorage.setItem("quotationitem", '3');
+        }
+    });
+
+    var tabactive = localStorage.getItem("quotationitem");
+    if (tabactive == null || tabactive == '1') {
+        $("#qdetailtab").addClass('active');
+        $("#qitemtab").removeClass('active');
+        $("#qfiletab").removeClass('active');
+
+        $("#qdetails").addClass('active');
+        $("#qitems").removeClass('active');
+        $("#qfiles").removeClass('active');
+
+    } else if (tabactive == '2') {
+        $("#qdetailtab").removeClass('active');
+        $("#qitemtab").addClass('active');
+        $("#qfiletab").removeClass('active');
+
+        $("#qdetails").removeClass('active');
+        $("#qitems").addClass('active');
+        $("#qfiles").removeClass('active');
+    } else if (tabactive == '3'){
+        $("#qdetailtab").removeClass('active');
+        $("#qitemtab").removeClass('active');
+        $("#qfiletab").addClass('active');
+
+        $("#qdetails").removeClass('active');
+        $("#qitems").removeClass('active');
+        $("#qfiles").addClass('active');
+    }
+</script>
+{% endblock %}

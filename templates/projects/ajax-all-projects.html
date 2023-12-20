@@ -1,0 +1,79 @@
+{% load static %}
+<div class="table-responsive pt-1">
+    <table id="datatable-buttons" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+        <thead>
+            <tr>
+                <th width="5%">Project No</th>
+                <th width="35%">Customer</th>
+                <th width="37%">Subject</th>
+                <th width="5%">Sales Type</th>
+                <th width="8%">Status</th>
+                <th width="5%">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+         {% for project in projects %}
+            <tr>
+                <td width="5%" class="align-middle">{{project.proj_no|default_if_none:""}}</td>
+                <td width="35%" class="align-middle">{{project.customer|wordwrap:70|linebreaksbr|default_if_none:""}}</td>
+                <td width="45%" class="align-middle">{{project.subject|wordwrap:50|linebreaksbr|default_if_none:""}}</td>
+                <td width="5%" class="align-middle">{{project.sales_type|default_if_none:""}}</td>
+                <td width="5%" class="align-middle">{{project.status|default_if_none:""}}</td>
+                <td width="5%" class="align-middle"><a href="{% url project.url project.proj_id%} " class="btn btn-outline-secondary btn-sm salesdetail" title="View"><i class="ion ion-md-eye"></i></a></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script>
+    var dtTable = $("#datatable-buttons").DataTable({
+        "aaSorting": [[ 0, "desc" ]],
+        "aoColumns": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+        ],
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+        buttons: [
+            {
+                extend: 'colvis',
+                text: "Filter Column",
+                postfixButtons: [ 'colvisRestore' ]
+            },
+            {
+                extend: 'collection',
+                text: "Export",
+                buttons : [
+                    {
+                        extend: 'excelHtml5',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                    {
+                        extend: 'csvHtml5',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                    {
+                        extend: 'pdfHtml5',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                ]
+            },
+
+
+        ],
+    }).buttons().container().appendTo(".export_button");
+    $(".dataTables_length select").addClass("form-select form-select-sm");
+    $("#newSearchPlace").html($(".dataTables_filter"));
+
+</script>

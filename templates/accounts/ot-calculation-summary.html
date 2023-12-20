@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block page-title %}OT Calculation Summary{% endblock%}
+{% block css %}
+    <!-- DataTables -->
+    <link href="{% static 'assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'assets/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" /> 
+    <link href="{% static 'assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- Sweet Alert-->
+    <link href="{% static 'assets/libs/sweetalert2/sweetalert2.min.css' %}" rel="stylesheet" type="text/css" />
+{% endblock %}
+{% block content %}
+<style>
+    #newSearchPlace div.dataTables_filter {
+        text-align: right;
+        padding-top: 5px;
+    }
+    #newSearchPlace div.dataTables_filter label {
+        font-weight: normal;
+        white-space: nowrap;
+        text-align: left;
+    }
+    #newSearchPlace div.dataTables_filter input {
+        margin-left: 0.5em;
+        margin-right: 0;
+        display: inline-block;
+        width: auto;
+    }
+    .dt-button-collection .dropdown-menu {
+        position:relative !important
+    }
+    .dt-button-collection {
+        left: 0 !important;
+    }
+    .dropdown-item.active, .dropdown-item:active {
+        color: #f4f5f7;
+        text-decoration: none;
+        background-color: #7a6fbe;
+    }
+</style>
+<div class="container-fluid">
+    <div id="loading" style="z-index:1151 !important;font-size: 30px; position: absolute; top: 40%; left: 50%;">
+        <img src="{% static 'assets/images/spinning-circles.svg' %}" width="80" alt="" style="background: transparent;">
+    </div>
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="page-title-box">
+                <h4>OT Calculation Summary
+                </h4>
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'all_otcalculation' %}"><b>OT Calculation</b></a></li>
+                        <li class="breadcrumb-item active">OT Calculation Summary</li>
+                    </ol>
+                    
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="row">
+                                <div class="mt-1 col-md-9 space-custom">
+                                    <div class="export_button justify-content-start d-flex"></div>
+                                </div>
+                            </div> 
+                        </div>
+                        <div class="col-md-8">
+                            <div class="row justify-content-end d-flex">
+                                <div class="mt-1 col-md-3">
+                                    <div id="newSearchPlace"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                    <div id="otcalculate_summary_data"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'assets/libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+<!-- Buttons examples -->
+<script src="{% static 'assets/libs/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js' %}"></script>
+<script src="{% static 'assets/libs/jszip/jszip.min.js' %}"></script>
+<script src="{% static 'assets/libs/pdfmake/build/pdfmake.min.js' %}"></script>
+<script src="{% static 'assets/libs/pdfmake/build/vfs_fonts.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.html5.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.print.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.colVis.min.js' %}"></script>
+<script>
+    ajax_all_otcalculate_summary();
+    
+    function ajax_all_otcalculate_summary() {
+        $.ajax({
+			headers: { "X-CSRFToken": '{{csrf_token}}' },
+			url: '{% url "ajax_summary_otcalculate" %}',
+			data: {},
+			type: 'POST',
+			success: function (data) {
+				$("#otcalculate_summary_data").html(data)
+			},
+            complete: function(){
+                $('#loading').hide();
+            }
+		});
+    };
+</script>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% load static %}
+<div>
+    <div class="alert alert-danger alert-dismissible fade show mb-2 item_text_error" role="alert">
+    </div>
+    <div class="mb-3 row">
+        <label for="hardware_desc{{id}}" class="col-md-4 col-form-label">Name:</label>
+        <div class="col-md-8">
+            <input class="form-control name_input" type="text"  id="hardware_desc{{id}}" required>
+        </div>
+    </div>
+    <div class="mb-3 row">
+        <label for="serial_number{{id}}" class="col-md-4 col-form-label">Serial Number:</label>
+        <div class="col-md-8">
+            <input class="form-control" type="text"  id="serial_number{{id}}">
+        </div>
+    </div>
+
+    <div class="mb-3 mt-3 row">
+        <label for="brand{{id}}" class="col-md-4 col-form-label">Brand:</label>
+        <div class="col-md-8">
+            <input class="form-control" type="text"  id="brand{{id}}">
+        </div>
+    </div>
+    <div class="mb-3 mt-3 row">
+        <label for="customer{{id}}" class="col-md-4 col-form-label">Customer:</label>
+        <div class="col-md-8">
+            <select class="form-control select2 uom-select" id="customer{{id}}">
+                <option value="">Select Customer...</option>
+                {% for customer in customers %}
+                    <option value="{{customer.id}}">{{customer.name}}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <div class="mb-3 mt-3 row">
+        <label for="project{{id}}" class="col-md-4 col-form-label">Project Name:</label>
+        <div class="col-md-8">
+            <select class="form-control select2 uom-select" id="project{{id}}" required>
+                <option value="">Select Project...</option>
+                {% for project in projects %}
+                    <option value="{{project.id}}">{{project.proj_name}}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="mb-3 row">
+        <label for="uom{{id}}" class="col-md-4 col-form-label">UOM:</label>
+        <div class="col-md-8">
+            <select class="form-control select2 uom-select" id="uom{{id}}" name="uom" required>
+                <option value="">Select UOM</option>
+                {% for uom in uoms %}
+                    <option value="{{uom.id}}">{{uom.name}}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <div class="mb-3 row">
+        <label for="expiry_date{{id}}" class="col-md-4 col-form-label">Expiry Date</label>
+        <div class="col-md-8">
+            <input class="form-control" type="text" id="expiry_date{{id}}" data-date-format="dd M yyyy" autocomplete="off" data-provide="datepicker" data-date-autoclose="true">
+        </div>
+    </div>
+    <div class="mb-3 row">
+        <label for="licensing_date{{id}}" class="col-md-4 col-form-label">Licensing Renewal Date</label>
+        <div class="col-md-8">
+            <input class="form-control" type="text" id="licensing_date{{id}}" data-date-format="dd M yyyy" autocomplete="off" data-provide="datepicker" data-date-autoclose="true">
+        </div>
+    </div>
+    <div class="mb-3 row">
+        <label for="remark{{id}}" class="col-md-4 col-form-label">Remark:</label>
+        <div class="col-md-8">
+            <textarea class="form-control" rows="3" id="remark{{id}}"></textarea>
+        </div>
+
+    </div>
+    <div class="mb-3 row">
+        <label for="stock_qty{{id}}" class="col-md-4 col-form-label">Stock Qty:</label>
+        <div class="col-md-8">
+            <input class="form-control" onblur="valor()" onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : event.charCode >= 48 && event.charCode <= 57" type="number" rows="4" id="stock_qty{{id}}" required>
+            <ul id="stock_valid{{id}}" style="display: none;" class="parsley-errors-list filled">
+                <li class="parsley-required">
+                    Stock qty is equal or lower than restock qty!
+                </li>
+            </ul>
+        </div>
+
+    </div>
+
+    <div class="mb-3 row">
+        <label for="status{{id}}" class="col-md-4 col-form-label">Status:</label>
+        <div class="col-md-8">
+            <select class="form-control select2 uom-select" id="status{{id}}" name="status" required>
+                <option value="">Select Status</option>
+                    <option value="Open">Open</option>
+                    <option value="Delivered">Delivered</option>
+            </select>
+        </div>
+    </div>
+    <input type="hidden" id="hardwareid{{id}}" value="-1" />
+
+</div>
+<script>
+    var regex = /-/;
+    $(".name_input").keypress(function (e) {
+        var key = String.fromCharCode(!e.charCode ? e.which : e.charCode);
+        if (key=="-") {
+            e.preventDefault ? e.preventDefault() : e.returnValue = false;
+        }
+    });
+</script>

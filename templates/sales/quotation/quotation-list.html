@@ -1,0 +1,987 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block page-title %}Quotation{% endblock%}
+{% block css %}
+    {% comment %} <link href="{% static 'assets/yearpicker/yearpicker.css' %}" rel="stylesheet">  {% endcomment %}
+    <link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'assets/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" /> 
+    <link href="{% static 'assets/css/daterangepicker-bs3.css' %}" rel="stylesheet"> 
+
+{% endblock %}
+{% block content %}
+<style type="text/css">
+    .daterangepicker {
+        padding: 15px!important;
+    }
+    #newSearchPlace div.dataTables_filter {
+        text-align: right;
+        padding-top: 5px;
+    }
+    #newSearchPlace div.dataTables_filter label {
+        font-weight: normal;
+        white-space: nowrap;
+        text-align: left;
+    }
+    #newSearchPlace div.dataTables_filter input {
+        margin-left: 0.5em;
+        margin-right: 0;
+        display: inline-block;
+        width: auto;
+    }
+    .dt-button-collection .dropdown-menu {
+        position:relative !important
+    }
+    .dt-button-collection {
+        left: unset !important;
+        right: 10px ;
+    }
+    .dropdown-item.active, .dropdown-item:active {
+        color: #f4f5f7;
+        text-decoration: none;
+        background-color: #7a6fbe;
+    }
+    @media (max-width: 576px) {
+        .col-xs-3 {
+            -webkit-box-flex: 0;
+            -ms-flex: 0 0 auto;
+            flex: 0 0 auto;
+            width: 25%;
+        }
+        .col-xs-9 {
+            -webkit-box-flex: 0;
+            -ms-flex: 0 0 auto;
+            flex: 0 0 auto;
+            width: 75%;
+        }
+    }
+    .new-button {
+        width: 120px;
+    }
+    @media (max-width: 576px) {
+        .new-button {
+            width: 100px;
+        }
+    }
+    @media (min-width: 1200px) {
+        .new-button {
+            width: 100px;
+        }
+    }
+    
+</style>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="page-title-box">
+                <h4>Quotation 
+                </h4>
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'all_quotation' %}"><b>Quotation</b></a></li>
+                        <li class="breadcrumb-item active">All Quotation</li>
+                    </ol>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">   
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-12 col-lg-12 col-xl-5 col-sm-12 pb-1">
+                            <div class="row">
+                                <div class="mt-1 col-md-2 col-lg-2 col-sm-3 col-xs-3 space-custom">
+                                    <button type="button" id="quotationadd" class="btn btn-primary new-button" style="height: 38px;"><i class="mdi mdi-calendar-plus"></i> New</button>
+                                </div>
+                                <div class="mt-1 col-md-10 col-lg-10 col-sm-9 col-xs-9 space-custom">
+                                    <div class="export_button justify-content-start d-flex"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12 col-lg-12 col-xl-7 col-sm-12 pt-1">
+                            <div class="row justify-content-start">
+                                <div class="mt-1 col-md-2 space-custom">
+                                    <select class="form-control search_filter" id="search_quotation" required>
+                                        <option value="">Quotation No</option>
+                                        {% for qqtt_id in qqtt_ids %}
+                                            <option value="{{qqtt_id.qtt_id}}">{{qqtt_id.qtt_id}}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mt-1 col-md-2 space-custom">
+                                    <input class="form-control input-daterange-datepicker" style="height: 38px;" type="text" placeholder="Date"  id="daterange" autocomplete="off" required>
+                                </div>
+                                <div class="mt-1 col-md-2 space-custom">
+                                    <select class="form-control search_filter" id="search_customer" required>
+                                        <option value="">Customer</option>
+                                        {% for cust in customers %}
+                                            <option value="{{cust.id}}">{{cust.name}}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mt-1 col-md-2 space-custom">
+                                    <select class="form-control search_filter" id="year" required>
+                                        <option value="">Year</option>
+                                        {% for date_year in date_years %}
+                                            <option value="{{date_year}}">{{date_year}}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mt-1 col-md-3">
+                                    <div id="newSearchPlace"></div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                        
+                    </div>
+                    <div id="quotation_data"></div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--quotation modal content -->
+<div id="quotationmodal" class="modal fade" role="dialog" aria-labelledby="quotModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title">Add New Quotation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_info">
+                <form class="needs-validation p-3" id="QuotationForm">
+                    {% csrf_token %}
+
+                    <div id="text_error" class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+                    </div>
+                    
+                    <div class="mb-3 mt-3 row">
+                        <label for="quotationno" class="col-md-4 col-form-label">Quotation No.:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text"  id="quotationno" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="company" class="col-md-4 col-form-label">Company:</label>
+                        <div class="col-md-8">
+                            <select class="form-control select2" id="company" required>
+                                <option value="">Select the Company</option>
+                                {% for company in companys %}
+                                    <option value="{{company.id}}">{{company.name}}</option>
+                                {% endfor %}
+                                
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="address" class="col-md-4 col-form-label">Address</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="address" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="contactperson" class="col-md-4 col-form-label">Contact Person:</label>
+                        <div class="col-md-8">
+                            <select class="form-control select2" id="contactperson" required>
+                                <option value="">Select the Person</option>
+                                {% for contact in contacts %}
+                                    <option value="{{contact.id}}">{{contact.contact_person}}</option>
+                                {% endfor %}
+                                
+                            </select>
+                        </div>
+                        
+                    </div>
+                    
+                    <div class="mb-3 row">
+                        <label for="tel" class="col-md-4 col-form-label">Tel:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="tel" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="fax" class="col-md-4 col-form-label">Fax:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="fax">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="email" class="col-md-4 col-form-label">Email:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="email" id="email" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="subject" class="col-md-4 col-form-label">Subject:</label>
+                        <div class="col-md-8">
+                            <textarea id="subject" rows="5" class="form-control" name="subject" required></textarea>
+                        </div>
+                    </div>
+                </form>
+                <input type="hidden" id="quotid" value="-1" />
+            
+            </div>
+            <div class="modal-footer">
+                <fieldset class="w-100">
+                    <div class="float-start">
+                        <p class="fst-italic text-primary"><a href="javascript:void(0);" id="btn_create_contact" style="text-decoration: underline!important;"><b>New Contact? Click Here</b></a></p>                       
+                    </div>
+                    <div class="float-end">
+                        <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_quotadd">Add</button>
+                    </div>
+                </fieldset>
+                
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!--company modal content -->
+<div id="companymodal" class="modal fade" role="dialog" aria-labelledby="compModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="chead_title">Add New Company</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_info_com">
+                <form class="needs-validation" id="CompanyForm">
+                    {% csrf_token %}
+
+                    <div id="text_error_com" class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+                    </div>
+                    
+                    <div class="mb-3 mt-3 row">
+                        <label for="cname" class="col-md-4 col-form-label">Name:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text"  id="cname" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="caddress" class="col-md-4 col-form-label">Address:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="caddress" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="cunit" class="col-md-4 col-form-label">Unit</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="cunit" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="cpostalcode" class="col-md-4 col-form-label">Postal Code:</label>
+                        <div class="col-md-8">
+                            <input type="text" onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : event.charCode >= 48 && event.charCode <= 57" class="form-control" type="text" id="cpostalcode" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="ccountry" class="col-md-4 col-form-label">Country:</label>
+                        <div class="col-md-8">
+                            <select class="form-control" id="ccountry" required>
+                                <option value="">Select the Country</option>
+                                {% for country in countrys %}
+                                    <option value="{{country.id}}">{{country.name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="cassociate" class="col-md-4 col-form-label">Associate:</label>
+                        <div class="col-md-8">
+                            <select class="form-control select2" id="cassociate" required>
+                                <option value="">Please select Associate</option>
+                                <option value="Customer">Customer</option>
+                                <option value="Supplier">Supplier</option>
+                                <option value="Partner">Partner</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+                <input type="hidden" id="ccomid" value="-1" />
+            
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm btn_comcancel" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_comadd">Add</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- Delete quotation modal content -->
+<div id="deleteModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="delModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="delModalLabel">Delete Quotation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5 id="del_description"></h5>
+                <input type="hidden" id="del_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button id="del_confirm" type="button" class="btn btn-primary waves-effect btn-sm waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
+<!--contact modal content -->
+<div id="contactmodal" class="modal fade" role="dialog" aria-labelledby="conpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_contact">Add New Contact</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_info_contact">
+                <form class="needs-validation" id="ContactForm">
+                    {% csrf_token %}
+
+                    <div id="text_contact_error" class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+                    </div>
+                    
+                    <div class="mb-3 row">
+                        <label for="ccontactperson" class="col-md-4 col-form-label">Contact Person:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="ccontactperson" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 row">
+                        <label for="csalutation" class="col-md-4 col-form-label">Salutation:</label>
+                        <div class="col-md-8">
+                            <select class="form-control salutation" id="csalutation" required>
+                                <option value="">Salutation</option>
+                                <option value="Mr">Mr</option>
+                                <option value="Mrs">Mrs</option>
+                                <option value="Ms">Ms</option>
+                                <option value="Mdm">Mdm</option>
+                                <option value="Dr">Dr</option>
+                            </select>
+                        </div>
+                    </div>
+                
+                    <div class="mb-3 row">
+                        <label for="ctel" class="col-md-4 col-form-label">Tel:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="ctel" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 row">
+                        <label for="did" class="col-md-4 col-form-label">DID:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" maxlength="8" pattern="\d{8}" id="did">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="mobile" class="col-md-4 col-form-label">Mobile:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" maxlength="8" pattern="\d{8}" id="mobile">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="cfax" class="col-md-4 col-form-label">Fax:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="cfax">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="cemail" class="col-md-4 col-form-label">Email:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="email" id="cemail">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="crole" class="col-md-4 col-form-label">Position:</label>
+                        <div class="col-md-8">
+                            <select class="form-control role" id="crole">
+                                <option value="">Position</option>
+                                <option value="Director">Director</option>
+                                <option value="Manager">Manager</option>
+                                <option value="Purchaser">Purchaser</option>
+                                <option value="Contract">Contract</option>
+                                <option value="Sales">Sales</option>
+                                <option value="Others">Others</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="ccompany" class="col-md-4 col-form-label">Company:</label>
+                        <div class="col-md-8">
+                            <select class="form-control ccompany" id="ccompany" required>
+                                <option value="">Select Company..</option>
+                                {% for company in companys %}
+                                <option value="{{company.id}}">{{company.name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </form>
+                <input type="hidden" id="cconid" value="-1" />
+            
+            </div>
+            <div class="modal-footer">
+                <fieldset class="w-100">
+                    <div class="float-start">
+                        <p class="fst-italic text-primary"><a href="javascript:void(0);" id="btn_create_com" style="text-decoration: underline!important;"><b>New Company? Click Here</b></a></p>   
+                    </div>
+                    <div class="float-end">
+                        <button type="button" class="btn btn-secondary waves-effect btn-sm btn_contactcancel" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_conadd">Add</button>
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'assets/libs/select2/js/select2.full.min.js' %}"></script>
+    <!-- Required datatable js -->
+<script src="{% static 'assets/libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+<!-- Buttons examples -->
+<script src="{% static 'assets/libs/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js' %}"></script>
+<script src="{% static 'assets/libs/jszip/jszip.min.js' %}"></script>
+<script src="{% static 'assets/libs/pdfmake/build/pdfmake.min.js' %}"></script>
+<script src="{% static 'assets/libs/pdfmake/build/vfs_fonts.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.html5.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.print.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.colVis.min.js' %}"></script>
+<!-- Responsive examples -->
+<script src="{% static 'assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+<!-- <script src="{% static 'assets/libs/moment/min/moment.min.js' %}"></script> -->
+<script src="{% static 'assets/js/daterangepicker.js' %}"></script>
+{% comment %} <script src="{% static 'assets/yearpicker/yearpicker.js' %}"></script> {% endcomment %}
+<script>
+    $(document).ready(function(){
+        
+        $("#text_error").hide();
+        $("#text_contact_error").hide();
+        $("#text_error_com").hide();
+        
+        // $('.dt-button-collection .buttons-columnVisibility').each(function(){
+        //     var $li = $(this),
+        //     $cb = $('<input>', {
+        //             type:'checkbox',
+        //             style:'margin:0 .25em 0 0; vertical-align:middle'}
+        //             ).prop('checked', $(this).hasClass('active') );
+        //     $li.find('a').prepend($cb);
+        // });
+    
+        // $('.dt-button-collection .buttons-columnVisibility').on('click', 'input:checkbox,li', function(){
+        //     var $li = $(this).closest('li'),
+        //         $cb = $li.find('input:checkbox');
+        //     $cb.prop('checked', $li.hasClass('active') );
+        // });
+    });
+
+    //yearpicker 
+    {% comment %} $('.yearpicker').yearpicker({
+        onChange : function(value){
+            if($("#search_quotation").val() == "" &&  $("#daterange").val() == "" && $("#search_customer").val() == "" && $("#year").val() == "") {
+                //location.reload();
+            } else {
+                $(".export_button").html('');
+                $("#newSearchPlace").html('');
+                $.ajax({
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                    url: '{% url "ajax_filter_quotation" %}',
+                    data: {
+                        search_quotation: $("#search_quotation").val(),
+                        daterange: $("#daterange").val(),
+                        search_customer: $("#search_customer").val(),
+                        search_year: $("#year").val(),
+                        user_name:'{{request.user.username}}',
+                        user_role: '{{request.user.role}}',
+                    },
+                    type: 'POST',
+                    success: function (data) {
+                        $("#quotation_data").html(data);
+                        
+                    }
+                });
+            }
+        }
+    }); {% endcomment %}
+    
+    $("#company").on('change', function(e){
+        var company = $("#company").val();
+        if(company != ""){
+            $("#contactperson").html('');
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_filter_person" %}',
+                data: {
+                    company: company,
+                },
+                type: 'POST',
+                success: function (data) {
+                    $("#contactperson").html(data);
+                    
+                }
+            });
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_check_quotation_company" %}',
+                data: {
+                    company: $("#company").val()
+                },
+                type: 'POST',
+                success: function (data) {
+                    $("#address").val(data['address'] + ", " + data['unit'] + ", " + data['country'] + ", " + data['postalcode']);
+                    $("#fax").val(data['fax']);
+                    $("#tel").val(data['tel']);
+                    $("#email").val(data['email']);
+                    // $("#contactperson").val(data['contact_person']);
+                    // $("#contactperson").trigger('change');
+                    
+                }
+            });
+        }
+    });
+<!--    function deletequot(id, quot_id) {-->
+<!--        $("#del_id").val(quot_id);-->
+<!--        $("#del_description").html("Are you sure you want to delete this record "+'"'+quot_id+'"'+"?");-->
+<!--        $("#deleteModal").modal('show');-->
+<!--    }-->
+    ajax_all_quotation();
+    
+    function ajax_all_quotation() {
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_all_quotation" %}',
+            data: {
+                user_name : '{{request.user.username}}',
+                user_role: '{{request.user.role}}',
+            },
+            type: 'POST',
+            success: function (data) {
+                $(".export_button").html('');
+                $("#newSearchPlace").html('');
+                $("#quotation_data").html('');
+                $("#quotation_data").html(data);
+            }
+        });
+    };
+    $(".btn_comcancel").on('click', function(e){
+        $("#contactmodal").modal('show');
+        $("#quotationmodal").modal('hide');
+    });
+    $(".btn_contactcancel").on('click', function(e){
+        $("#contactmodal").modal('hide');
+        $("#quotationmodal").modal('show');
+    });
+    $('select#search_quotation, select#search_customer, select#year').on('change', function(){
+        if($("#search_quotation").val() == "" &&  $("#daterange").val() == "" && $("#search_customer").val() == "" && $("#year").val() == "") {
+            location.reload();
+        } else {
+            $(".export_button").html('');
+            $("#newSearchPlace").html('');
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_filter_quotation" %}',
+                data: {
+                    search_quotation: $("#search_quotation").val(),
+                    daterange: $("#daterange").val(),
+                    search_customer: $("#search_customer").val(),
+                    search_year: $("#year").val(),
+                    user_name:'{{request.user.username}}',
+                    user_role: '{{request.user.role}}',
+                },
+                type: 'POST',
+                success: function (data) {
+                    $(".export_button").html('');
+                    $("#newSearchPlace").html('');
+                    $("#quotation_data").html(data);
+                    
+                }
+            });
+        }
+    });
+    function updatequot(id){
+        $("#quotid").val(id);
+        $("#head_title").html('Update Quotation');
+        $(".btn_quotadd").html('Update');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_quotation" %}',
+            data: {
+                quotid: $("#quotid").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data)
+                $("#quotationno").val(up_data.qtt_id);
+                $("#address").val(up_data.address);
+                $("#contactperson").val(up_data.contactperson);
+                $('#contactperson').trigger('change');
+                $("#tel").val(up_data.tel);
+                $("#fax").val(up_data.fax);
+                $("#email").val(up_data.email);   
+                $("#company").val(up_data.company_nameid);
+                $('#company').trigger('change');
+                $("#subject").val(up_data.subject);     
+
+
+            }
+        });
+        $("#quotationmodal").modal('show');
+    };
+    
+    $("#contactperson").on('change', function(e){
+        if($("#contactperson").val() != "") {
+            $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_check_quotation_contactperson" %}',
+            data: {
+                contact: $("#contactperson").val()
+            },
+            type: 'POST',
+            success: function (data) {
+                $("#fax").val(data['fax']);
+                $("#tel").val(data['tel']);
+                $("#email").val(data['email']);
+                
+            }
+        });
+        }
+        
+    });
+    function filterGroup() {
+        if($("#search_quotation").val() == "" &&  $("#daterange").val() == "" && $("#search_customer").val() == "" && $("#year").val() == "") {
+            location.reload();
+        } else {
+            $(".export_button").html('');
+            $("#newSearchPlace").html('');
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_filter_quotation" %}',
+                data: {
+                    search_quotation: $("#search_quotation").val(),
+                    daterange: $("#daterange").val(),
+                    search_customer: $("#search_customer").val(),
+                    search_year: $("#year").val(),
+                    user_name:'{{request.user.username}}',
+                    user_role: '{{request.user.role}}',
+                },
+                type: 'POST',
+                success: function (data) {
+                    $("#quotation_data").html(data);
+                    
+                }
+            });
+        }
+    }
+    $('#daterange').on('apply.daterangepicker', function (ev, picker) {
+        filterGroup();
+    });
+    $('#daterange').on('cancel.daterangepicker', function (ev, picker) {
+        $("#daterange").val("");
+        filterGroup();
+    });
+    $("#btn_create_com").on('click', function(e){
+        $("#ccomid").val("-1");
+        $("#cname").val("");
+        $("#caddress").val("");
+        $("#cunit").val("");
+        $("#cpostalcode").val("");
+        $("#ccountry").val("");
+        $('#ccountry').trigger('change');
+        $("#contactmodal").modal('hide');
+        $("#quotationmodal").modal('hide');
+        $("#companymodal").modal('show');
+    })
+
+    $("#btn_create_contact").on('click', function(e){
+        $("#head_title_contact").html('Add New Contact');
+        $(".btn_conadd").html('Add');
+        $("#cconid").val("-1");
+        $("#ccontactperson").val("");
+        $("#ctel").val("");
+        $("#did").val("");
+        $("#mobile").val("");
+        $("#cfax").val("");
+        $("#cemail").val("");
+        $("#crole").val("");
+        $("#ccompany").val("");
+        $('#ccompany').trigger('change');
+        $("#quotationmodal").modal('hide');
+        $(".parsley-required").hide();
+        $(".parsley-errors-list").hide();
+        $(".parsley-error").removeClass("parsley-error");
+        $("#contactmodal").modal('show');
+    });
+    $(".btn_conadd").on('click', function(e){
+        $('#ContactForm').parsley().validate();
+        if ($('#ContactForm').parsley().validate() === false) {         
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
+        else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_contact" %}',
+                data: {
+                    contactperson: $("#ccontactperson").val(),
+                    salutation: $("#csalutation").val(),
+                    tel: $("#ctel").val(),
+                    did: $("#did").val(),
+                    mobile: $("#mobile").val(),
+                    fax: $("#cfax").val(),
+                    email: $("#cemail").val(),
+                    role: $("#crole").val(),
+                    company: $("#ccompany").val(),
+                    conid: $("#cconid").val(),
+                    created_by: '{{request.user.username}}'
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_contact_error").hide();
+                        $("#quotationmodal").modal('show');
+                        $("#contactmodal").modal('hide');
+                    } else {
+                        $("#text_contact_error").html(data.messages);
+                        $("#text_contact_error").show();
+                    }
+                }
+            });
+        }
+        
+    });
+
+    $("#quotationadd").on('click', function(e){
+        $("#head_title").html('Add New Quotation');
+        $(".btn_quotadd").html('Add');
+        $("#quotid").val("-1");
+        $("#address").val("");
+        $("#subject").val("");
+        $("#contactperson").val("");
+        $('#contactperson').trigger('change');
+        $("#tel").val("");
+        $("#fax").val("");
+        $("#email").val("");
+        $("#company").val("");
+        $('#company').trigger('change');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_check_quotation" %}',
+            data: {},
+            type: 'POST',
+            success: function (data) {
+                if (data['status'] == "exist") {
+                    var q_value = data.quotation;
+                    var strDate = new Date(); 
+                    var shortYear = strDate.getFullYear(); 
+                    var twoDigitYear = shortYear.toString().substr(-2);
+                    if (q_value.substring(0,2) == twoDigitYear) {
+                        suffix_val = (parseInt(q_value.substring(2,6)) + 1).toString();
+                        $("#quotationno").val(twoDigitYear+suffix_val);
+                    } else {
+
+                        $("#quotationno").val(twoDigitYear+"1001");
+                    }
+                } else {
+                    var strDate = new Date(); 
+                    var shortYear = strDate.getFullYear(); 
+                    var twoDigitYear = shortYear.toString().substr(-2);
+                
+                    $("#quotationno").val(twoDigitYear+"1001");
+                }
+            }
+        });
+        
+        $("#quotationmodal").modal('show');
+    });
+    $(".select2").select2({width: '100%', dropdownParent: $("#manage_info")});
+    $("#ccountry").select2({width: '100%', dropdownParent: $("#manage_info_com")});
+    $("#cassociate").select2({width: '100%', dropdownParent: $("#manage_info_com")});
+    $("#csalutation").select2({width: '100%', dropdownParent: $("#manage_info_contact")});
+    $("#crole").select2({width: '100%', dropdownParent: $("#manage_info_contact")});
+    $("#ccompany").select2({width: '100%', dropdownParent: $("#manage_info_contact")});
+    $(".search_filter").select2({width: '100%'});
+    $('.input-daterange-datepicker').daterangepicker({
+        format: 'YYYY.MM.DD',
+        howDropdowns: true,
+        showWeekNumbers: true,
+        timePicker: false,
+        timePickerIncrement: 1,
+        timePicker12Hour: true,
+        opens: 'center',
+        drops: 'down',
+        buttonClasses: ['btn', 'btn-sm'],
+        applyClass: 'btn-success',
+        cancelClass: 'btn-danger',
+    });
+
+    $("#del_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_quotation" %}',
+            data: {
+                'quot_id': $("#del_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload(); 
+                }
+            }
+        });
+        $('#deletModal').modal('hide');
+    });
+
+    $(".btn_quotadd").on('click', function(e){
+        var form = $("#QuotationForm");
+        $('#QuotationForm').parsley().validate();
+		if (form[0].checkValidity() === false) {
+			event.preventDefault();
+			event.stopPropagation();
+			form.addClass('was-validated');
+			return;
+		} 
+        
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_add_quotation" %}',
+            data: {
+                quotationno: $("#quotationno").val(),
+                address: $("#address").val(),
+                subject: $("#subject").val(),
+                contactperson: $("#contactperson").val(),
+                tel: $("#tel").val(),
+                fax: $("#fax").val(),
+                email: $("#email").val(),
+                company: $("#company").val(),
+                quotid: $("#quotid").val(),
+                sales_person: '{{request.user.username}}',
+
+            },
+            type: 'POST',
+            success: function (data) {
+                if(data.status=="Success"){
+                    $("#text_error").hide();
+                    if(data.method == "add") {
+                        var redirect_url = "{% url 'quotation_detail' 0 %}".replace(0,data.quotationid);
+                        location.href = redirect_url;
+                    } else if (data.method == "update") {
+                        location.reload();
+                    }
+                    
+                } else {
+                    $("#text_error").html(data.messages);
+                    $("#text_error").show();
+                }
+            }
+        });
+        
+
+    });
+    $(document).on('click','.quotationdetailview', function(e){
+        localStorage.removeItem("quotationitem");
+    });
+    $(".btn_comadd").on('click', function(e){
+        $('#CompanyForm').parsley().validate();
+        if ($('#CompanyForm').parsley().validate() === false) {         
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
+        else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_company" %}',
+                data: {
+                    name: $("#cname").val(),
+                    address: $("#caddress").val(),
+                    unit: $("#cunit").val(),
+                    postalcode: $("#cpostalcode").val(),
+                    country: $("#ccountry").val(),
+                    associate: $("#cassociate").val(),
+                    comid: $("#ccomid").val()
+
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_com").hide();
+                        $("#quotationmodal").modal('hide');
+                        $("#contactmodal").modal('show');
+                        options_company.push({id: data.companyId, text: $("#cname").val()})
+                        var newOption = new Option($("#cname").val(),data.companyId, false, false);
+                        $('#company').append(newOption).trigger('change');
+
+                        options_concompany.push({id: data.companyId, text: $("#cname").val()})
+                        var newOption = new Option($("#cname").val(),data.companyId,  false, false);
+                        $('#ccompany').append(newOption).trigger('change');
+
+                        $("#companymodal").modal('hide');
+                    } else {
+                        $("#text_error_com").html(data.messages);
+                        $("#text_error_com").show();
+                    }
+                }
+            });
+        }
+        
+    });
+    options_company = [];
+    $('#company option').each(function(idx) {
+        options_company.push({id: $(this).val(), text: $(this).text()});
+    });
+
+    options_concompany = [];
+    $('#ccompany option').each(function(idx) {
+        options_concompany.push({id: $(this).val(), text: $(this).text()});
+    });
+
+    //year Part 
+    var current = new Date();
+    var currentyear = current.getFullYear(); 
+    var yearvalue = `{{exist_current_year}}`;
+    options_year = [];
+    if(yearvalue) {
+        var option_lenth = ($('#year option').length);
+        if (option_lenth == 0) {
+            options_year.push({value: currentyear, text: currentyear})
+            var newOption = new Option(currentyear, currentyear, true, true);
+            $('#year').append(newOption).trigger('change');
+        } else if(option_lenth > 0) {
+            $('#year').val(currentyear);
+            $("#year").trigger('change');
+        }
+        
+    } else {
+        
+        
+        $('#year option').each(function(idx) {
+            options_year.push({value: $(this).val(), text: $(this).text()});
+        });
+        
+        options_year.push({value: currentyear, text: currentyear})
+        var newOption = new Option(currentyear, currentyear, true, true);
+        $('#year').append(newOption).trigger('change');
+    }
+</script>
+{% endblock %}

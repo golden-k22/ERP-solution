@@ -1,0 +1,2303 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block page-title %}Sales Summary Detail{% endblock%}
+{% block css %}
+    <link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" rel="stylesheet">
+    <!-- DataTables -->
+    <link href="{% static 'assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'assets/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/css/daterangepicker-bs3.css' %}" rel="stylesheet">
+    <style>
+        body[data-sidebar=dark].vertical-collpsed {
+                min-height: auto!important;
+            }
+
+    </style>
+{% endblock %}
+{% block content %}
+<style type="text/css">
+    .datepicker {
+        z-index:1151 !important;
+    }
+    #searchFilePlace div.dataTables_filter {
+        text-align: right;
+        padding-top: 5px;
+    }
+    #searchFilePlace div.dataTables_filter label {
+        font-weight: normal;
+        white-space: nowrap;
+        text-align: left;
+    }
+
+    #searchFilePlace div.dataTables_filter input {
+        margin-left: 0.5em;
+        margin-right: 0;
+        display: inline-block;
+        width: auto;
+    }
+    #progresslogsearch div.dataTables_filter {
+        text-align: right;
+        padding-top: 5px;
+    }
+    #progresslogsearch div.dataTables_filter label {
+        font-weight: normal;
+        white-space: nowrap;
+        text-align: left;
+    }
+    #progresslogsearch div.dataTables_filter input {
+        margin-left: 0.5em;
+        margin-right: 0;
+        display: inline-block;
+        width: auto;
+    }
+    #searchServicePlace div.dataTables_filter {
+        text-align: right;
+        padding-top: 5px;
+    }
+    #searchServicePlace div.dataTables_filter label {
+        font-weight: normal;
+        white-space: nowrap;
+        text-align: left;
+    }
+    #searchServicePlace div.dataTables_filter input {
+        margin-left: 0.5em;
+        margin-right: 0;
+        display: inline-block;
+        width: auto;
+    }
+    #searchProgressPlace div.dataTables_filter {
+        text-align: right;
+        padding-top: 5px;
+    }
+    #searchProgressPlace div.dataTables_filter label {
+        font-weight: normal;
+        white-space: nowrap;
+        text-align: left;
+    }
+    #searchProgressPlace div.dataTables_filter input {
+        margin-left: 0.5em;
+        margin-right: 0;
+        display: inline-block;
+        width: auto;
+    }
+    .select2-selection--single {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+</style>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="page-title-box">
+                <h4>Product Sales Details
+                </h4>
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'sales_summary' %}"><b>Sales Summary</b></a></li>
+                        <li class="breadcrumb-item active">Sales Details</li>
+                    </ol>
+
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link" style="padding-left: 30px;padding-right: 30px;" data-bs-toggle="tab" href="#pdetails" id="pdetailtab" role="tab">
+                                <span class="d-block d-sm-none">DT</span>
+                                <span class="d-none d-sm-block">Details</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" style="padding-left: 30px;padding-right: 30px;" data-bs-toggle="tab" href="#proj_item" id="proj_itemtab" role="tab">
+                                <span class="d-block d-sm-none">IT</span>
+                                <span class="d-none d-sm-block">Items</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" style="padding-left: 30px;padding-right: 30px;" data-bs-toggle="tab" href="#do" id="dotab" role="tab">
+                                <span class="d-block d-sm-none">DO</span>
+                                <span class="d-none d-sm-block">DO</span>
+                            </a>
+                        </li>
+                    </ul>
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        <div class="tab-pane p-3" id="pdetails" role="tabpanel">
+                            <form data-parsley-validate id="SummaryDetailForm">
+                                <div class="button-items mb-3">
+                                    <a href="javascript:void(0);" id="summaryupdate" class="align-middle btn-lg btn-outline-primary"><i class="fas fa-pencil-alt mr-2"></i></a>
+                                    <a href="javascript:void(0);" id="summarycancel" class="align-middle btn-lg btn-outline-danger"><i class="ion ion-ios-close-circle mr-2"></i></a>
+                                    <button type="button" id="summarysave" class="btn btn-primary btn-sm" style="margin-bottom: 0px!important;"><i class="mdi mdi-content-save-move"></i> Save</button>
+                                </div>
+                                <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;">
+                                <div class="row p-3" >
+                                    <div class="col-md-7">
+                                        <div class="row pt-2">
+                                            <div class="mb-3">
+                                                <label class="form-label" for="company_nameid">Company</label>
+                                                <select class="form-control select2" id="company_nameid" name="company_nameid" required>
+                                                    <option value="">Select the Company</option>
+                                                    {% for company in companies %}
+                                                        <option value="{{company.id}}" {% if company.id == summary.company_nameid.id %}selected{% endif %}>{{company.name}}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+<!--                                        <div class="row">-->
+<!--                                            <div class="col-md-6">-->
+<!--                                                <div class="mb-3">-->
+<!--                                                    <label class="form-label" for="worksite_address">Worksite</label>-->
+<!--                                                    <input type="text" class="form-control" style="height:38px;" id="worksite_address" name="worksite_address" value="{{summary.worksite_address|default_if_none:''}}" required>-->
+<!--                                                </div>-->
+<!--                                            </div>-->
+<!--                                        </div>-->
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="contact_person">Contact</label>
+                                                    <select class="form-control select2" id="contact_person" name="contact_person" required>
+                                                        <option value="">Select the Contacts</option>
+                                                        {% for contact in contacts %}
+                                                            <option value="{{contact.id}}" {% if contact.id == summary.contact_person.id %}selected{% endif %}>{{contact.contact_person}}</option>
+                                                        {% endfor %}
+                                                    </select>
+
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="email">Email</label>
+                                                    <input type="email" class="form-control" style="height:38px;" id="email" name="email" value="{{summary.email|default_if_none:''}}" required>
+                                                </div>
+                                            </div>
+                                        </div>
+
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="tel">Tel</label>
+                                                    <input type="text" class="form-control" style="height:38px;" id="tel"  name="tel" value="{{summary.tel|default_if_none:''}}" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="fax">Fax</label>
+                                                    <input type="text" class="form-control" style="height:38px;" id="fax" name="fax" value="{{summary.fax|default_if_none:''}}">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row pt-2">
+                                            <div class="mb-3">
+                                                <label class="form-label" for="RE">Subject</label>
+                                                <textarea class="form-control" id="RE" name="RE" rows="5" required>{{summary.RE|default_if_none:''}}</textarea>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                    <div class="col-md-1"></div>
+                                    <div class="col-md-4">
+                                        <div class="row pt-2 me-3 ms-3">
+                                            <span class="badge bg-primary pt-3 pb-3 fst-italic" style="font-size: 18px!important;">Product Sales No.</span>
+                                        </div>
+                                        <div class="row m-3">
+                                            <div class="d-flex justify-content-center">
+                                                <input type="text" class="form-control" id="proj_id" name="sales_id" style="text-align: center;padding-top: 10px;padding-bottom: 10px;font-size: 20px; width: 50%;" value="{{summary.prod_sale_id|default_if_none:''}}" required>
+                                            </div>
+
+                                        </div>
+                                        <div class="mt-3 mb-3 me-2 ms-2 row">
+                                            <label for="qtt_id" class="col-md-4 col-form-label">Quotation No:</label>
+                                            <div class="col-md-8">
+                                                <input type="text" class="form-control" id="qtt_id" style="height:38px;" name="qtt_id" value="{{summary.quotation|default_if_none:''}}" required>
+                                            </div>
+                                        </div>
+<!--                                        <div class="mt-3 mb-3 me-2 ms-2 row">-->
+<!--                                            <label for="variation_order" class="col-md-4 col-form-label">Variation Order:</label>-->
+<!--                                            <div class="col-md-8">-->
+<!--                                                <input type="text" class="form-control" id="variation_order" style="height:38px;" name="variation_order" value="{{summary.variation_order|default_if_none:''}}" autocomplete="off">-->
+<!--                                            </div>-->
+<!--                                        </div>-->
+<!--                                        <div class="row mb-3 me-2 ms-2">-->
+
+<!--                                            <label for="proj_incharge" class="col-md-4 col-form-label">Project Incharge:</label>-->
+<!--                                            <div class="col-md-8">-->
+<!--                                                <select class="form-control select2" id="proj_incharge" name="proj_incharge" required>-->
+<!--                                                    <option value="">Project Incharge</option>-->
+<!--                                                    {% for contact in projects_incharge %}-->
+<!--                                                        <option value="{{contact.username}}"{% if contact.username == summary.proj_incharge %} selected{% endif %}>{{contact.username}}</option>-->
+<!--                                                    {% endfor %}-->
+<!--                                                </select>-->
+<!--                                            </div>-->
+<!--                                        </div>-->
+
+                                        <div class="mb-3 me-2 ms-2 row">
+                                            <label for="sales_status" class="col-md-4 col-form-label">Status:</label>
+                                            <div class="col-md-8">
+                                                <select class="form-control select2" id="sales_status" name="sales_status" required>
+                                                    <option value="">Select the Status</option>
+                                                    <option value="Open" {% if summary.sales_status == "Open" %}selected{% endif %}>Open</option>
+                                                    <option value="Completed" {% if summary.sales_status == "Completed" %}selected{% endif %}>Completed</option>
+                                                    <option value="Closed" {% if summary.sales_status == "Closed" %}selected{% endif %}>Closed</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+                                </div>
+                                <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;">
+
+                            </form>
+                        </div>
+                        <div class="tab-pane p-3" id="proj_item" role="tabpanel">
+                            <span class="p-1 fw-bold" style="font-size: 15px;">
+                                Work Details
+                            </span>
+                            <ul class="nav nav-tabs mt-3" role="tablist">
+                                <li class="nav-item">
+                                    <a class="nav-link active" style="padding-left: 30px;padding-right: 30px;" data-bs-toggle="tab" href="#pitemoverview" id="pitemoverviewtab" role="tab">
+                                        <span class="d-block d-sm-none">OV</span>
+                                        <span class="d-none d-sm-block">OverView</span>
+                                    </a>
+                                </li>
+<!--                                <li class="nav-item">-->
+<!--                                    <a class="nav-link" style="padding-left: 30px;padding-right: 30px;" data-bs-toggle="tab" href="#pitemactivity" id="pitemactivitytab" role="tab">-->
+<!--                                        <span class="d-block d-sm-none">AT</span>-->
+<!--                                        <span class="d-none d-sm-block">Activity</span>-->
+<!--                                    </a>-->
+<!--                                </li>-->
+                            </ul>
+                            <div class="tab-content">
+                                <div class="tab-pane active p-3" id="pitemoverview" role="tabpanel">
+                                    <div class="table-responsive mt-2">
+                                        <table id="workdt" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                                            <thead>
+                                                <tr>
+                                                    <th width="5%">SN</th>
+                                                    <th width="75%">Description</th>
+                                                    <th width="10%">UOM</th>
+                                                    <th width="10%">QTY</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for projectitem in projectitems %}
+                                                <tr>
+                                                    <td width="5%" class="align-middle">{{ forloop.counter }}</td>
+                                                    <td width="75%" class="align-middle">{{projectitem.description|wordwrap:150|linebreaks|default_if_none:""}}</td>
+                                                    <td width="10%" class="align-middle">{{projectitem.uom|default_if_none:""}}</td>
+                                                    <td width="10%" class="align-middle">{{projectitem.qty|default_if_none:""}}</td>
+                                                </tr>
+                                                {% endfor %}
+
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div class="row pt-2">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="note">Note</label>
+                                            <textarea class="form-control" id="note" name="note" rows="5">{{summary.note|default_if_none:''}}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+<!--                                <div class="tab-pane p-3" id="pitemactivity" role="tabpanel">-->
+<!--                                    <div class="table-responsive mt-2">-->
+<!--                                        <table id="workacitivedt" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">-->
+<!--                                            <thead>-->
+<!--                                                <tr>-->
+<!--                                                    <th>SN</th>-->
+<!--                                                    <th>Description</th>-->
+<!--                                                    <th>UOM</th>-->
+<!--                                                    <th>QTY</th>-->
+<!--                                                    <th>Allocation</th>-->
+<!--                                                    <th>Action</th>-->
+<!--                                                </tr>-->
+<!--                                            </thead>-->
+<!--                                            {% for projectitem in projectitems %}-->
+<!--                                                <tbody>-->
+
+<!--                                                    <tr>-->
+<!--                                                        <td class="align-middle">{{ forloop.counter }}</td>-->
+<!--                                                        <td class="align-middle">{{projectitem.description|default_if_none:""|wordwrap:150|linebreaks}}</td>-->
+<!--                                                        <td class="align-middle">{{projectitem.uom|default_if_none:""}}</td>-->
+<!--                                                        <td class="align-middle">{{projectitem.qty|default_if_none:""}}</td>-->
+<!--                                                        <td class="align-middle">-->
+<!--                                                            {% if projectitem.allocation_perc %}-->
+<!--                                                                {{projectitem.allocation_perc|floatformat:2|default_if_none:""}} %-->
+<!--                                                            {% endif %}-->
+<!--                                                        </td>-->
+<!--                                                        <td class="align-middle">-->
+<!--                                                            &lt;!&ndash; <a href="javascript:void(0);" onclick="updateitems('{{projectitem.id}}')" class="btn btn-outline-primary btn-sm edit com_update" title="Edit">-->
+<!--                                                                <i class="fas fa-pencil-alt"></i>-->
+<!--                                                            </a> &ndash;&gt;-->
+<!--                                                            <a href="javascript:void(0);" onclick="addsubitems('{{projectitem.id}}')" class="btn btn-outline-secondary btn-sm add" title="Add">-->
+<!--                                                                <i class="ion ion-md-add"></i>-->
+<!--                                                            </a>-->
+<!--                                                        </td>-->
+<!--                                                    </tr>-->
+<!--                                                </tbody>-->
+<!--                                                {% if projectitem.childs %}-->
+<!--                                                    <tbody>-->
+<!--                                                        {% for child in projectitem.childs %}-->
+<!--                                                        <tr>-->
+<!--                                                            <td class="align-middle"></td>-->
+<!--                                                            <td class="align-middle">{{child.description|default_if_none:""}}</td>-->
+<!--                                                            <td class="align-middle">{{child.uom|default_if_none:""}}</td>-->
+<!--                                                            <td class="align-middle">{{child.qty|default_if_none:""}}</td>-->
+<!--                                                            <td class="align-middle">-->
+<!--                                                                {% if child.allocation_perc %}-->
+<!--                                                                    {{child.allocation_perc|floatformat:2|default_if_none:""}} %-->
+<!--                                                                {% endif %}-->
+<!--                                                            </td>-->
+<!--                                                            <td class="align-middle">-->
+<!--                                                                <a href="javascript:void(0);" onclick="updateitems('{{child.id}}')" class="btn btn-outline-primary btn-sm edit com_update" title="Edit">-->
+<!--                                                                    <i class="fas fa-pencil-alt"></i>-->
+<!--                                                                </a>-->
+<!--                                                                <a href="javascript:void(0);" onclick="deleteitems('{{child.id}}','{{child.description}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">-->
+<!--                                                                    <i class="far fa-trash-alt"></i>-->
+<!--                                                                </a>-->
+<!--                                                            </td>-->
+<!--                                                        </tr>-->
+<!--                                                        {% endfor %}-->
+<!--                                                    </tbody>-->
+<!--                                                {% endif %}-->
+<!--                                            {% endfor %}-->
+<!--                                        </table>-->
+<!--                                    </div>-->
+<!--                                </div>-->
+                            </div>
+
+                        </div>
+                        <div class="tab-pane p-3" id="do" role="tabpanel">
+                            <span class="p-1 fw-bold" style="font-size: 15px;">
+                                Delivery Order
+                            </span>
+                            <div class="row mt-3">
+                                <div class="mt-1 col-md-3">
+                                    <button type="button" id="pdoadd" class="btn btn-outline-secondary waves-effect waves-light btn-sm"><i class="mdi mdi-content-save-move"></i> Add</button>
+                                </div>
+                            </div>
+                            <div class="table-responsive mt-2">
+                                <table id="dotable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                                    <thead>
+                                        <tr>
+                                            <th>SN</th>
+                                            <th>Do No</th>
+                                            <th>Date</th>
+                                            <th>Status</th>
+                                            <th>Customer Signed DO</th>
+                                            <th>Uploaded By</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for delivery in dolist %}
+                                        <tr>
+                                            <td class="align-middle">{{forloop.counter}}</td>
+                                            <td class="align-middle">{{delivery.do_no|default_if_none:""}}</td>
+                                            <td class="align-middle">{{delivery.date|date:"d M, Y"|default_if_none:""}}</td>
+                                            <td class="align-middle">{{delivery.status|default_if_none:""}}</td>
+                                            <td class="align-middle">{{delivery.filename|default_if_none:""}}</td>
+                                            <td class="align-middle">{{delivery.upload_by.empid|default_if_none:""}}</td>
+
+                                            <td class="align-middle">
+
+                                                <a href="{% url 'sales_do_detail' sale_pk delivery.id %}" class="btn btn-outline-primary btn-sm deliverydetail edit" title="Edit">
+                                                    <i class="ion ion-md-eye"></i>
+                                                </a>
+                                                <a href="javascript:void(0);" onclick="uploaddelivery('{{delivery.id}}')" class="btn btn-outline-info btn-sm edit" title="Upload">
+                                                    <i class="mdi mdi-cloud-upload-outline"></i>
+                                                </a>
+                                                {% if delivery.document %}
+                                                <a href="{{delivery.document.url}}" class="btn btn-outline-primary btn-sm edit" download title="Download">
+                                                    <i class="mdi mdi-arrow-down-bold"></i>
+                                                </a>
+                                                {% endif %}
+                                                <a href="javascript:void(0);" onclick="deletedelivery('{{delivery.id}}','{{delivery.do_no}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
+                                                    <i class="far fa-trash-alt"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Delivery Order modal content -->
+<div id="domodal" class="modal fade" role="dialog" aria-labelledby="doModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_do">Add New Delivery Order</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_delivery">
+                <form class="needs-validation p-3" id="DoForm">
+                    {% csrf_token %}
+                    <div id="text_error_do" style="display: none;" class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+                    </div>
+
+                    <div class="mb-3 mt-3 row">
+                        <label for="do_no" class="col-md-4 col-form-label">Do No:</label>
+                        <div class="col-md-8">
+                            <input type="text" class="form-control" id="do_no"  name="do_no" required readonly>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="dodate" class="col-md-4 col-form-label">Date:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="dodate" data-date-format="dd M, yyyy" data-provide="datepicker" data-date-autoclose="true" autocomplete="off" required>
+                        </div>
+                    </div>
+
+                </form>
+                <input type="hidden" id="doid" value="-1" />
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_doadd">Add</button>
+
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!--Delivery Order Document Upload modal content -->
+<div id="dodocmodal" class="modal fade" role="dialog" aria-labelledby="dodocModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_do_document">Upload Document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_do_doc">
+                <form class="needs-validation p-3" id="DoDocumentForm">
+                    {% csrf_token %}
+                    <div id="text_error_do_doc" style="display: none;" class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+                    </div>
+
+                    <div class="mb-3 row">
+                        <label for="dodocument" class="col-md-4 col-form-label">Document:</label>
+                        <div class="col-md-8">
+                            <input class="filestyle" data-buttonname="btn-secondary" type="file" id="dodocument">
+                        </div>
+                    </div>
+
+                </form>
+                <input type="hidden" id="dodocid" value="-1" />
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_dodocadd">Upload</button>
+
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- Delete Do modal content -->
+<div id="dodeleteModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="dodelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="DodelModalLabel">Delete Delivery Order</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5 id="del_do_description"></h5>
+                <input type="hidden" id="dodel_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect" data-bs-dismiss="modal">Cancel</button>
+                <button id="dodel_confirm" type="button" class="btn btn-primary waves-effect waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!--Item Sub modal content -->
+<div id="itemsubmodal" class="modal fade" role="dialog" aria-labelledby="itemsubModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title">Add New Sub Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_sub_item">
+                <form class="needs-validation p-3" id="SubItemForm">
+                    {% csrf_token %}
+
+                    <div id="text_error_sub_item" class="alert alert-danger alert-dismissible fade show mb-0" style="display: none;" role="alert">
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="item_description" class="col-md-4 col-form-label">Description:</label>
+                        <div class="col-md-8">
+                            <textarea class="form-control" rows="3" type="text"  id="item_description" required></textarea>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="item_uom" class="col-md-4 col-form-label">UOM:</label>
+                        <div class="col-md-8">
+                            <select class="form-control uom-select-item" id="item_uom" name="item_uom" required>
+                                <option value="">Select UOM</option>
+                                {% for uom in uoms %}
+                                    <option value="{{uom.id}}">{{uom.name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="item_qty" class="col-md-4 col-form-label">Qty:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="number"  id="item_qty" autocomplete="off" onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : event.charCode >= 48 && event.charCode <= 57" required>
+                        </div>
+                    </div>
+                    <!-- div class="mb-3 row">
+                        <label for="item_allocation" class="col-md-4 col-form-label">Allocation(%):</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="number"  id="item_allocation" onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : event.charCode >= 48 && event.charCode <= 57" autocomplete="off" required>
+                        </div>
+                    </div -->
+                </form>
+                <input type="hidden" id="itemid" value="-1" />
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_itemadd">Add</button>
+
+            </div>
+        </div>
+    </div>
+</div>
+<!--Item modal content -->
+<div id="itemmodal" class="modal fade" role="dialog" aria-labelledby="itemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_item">Update Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_item">
+                <form class="needs-validation p-3" id="ItemForm">
+                    {% csrf_token %}
+
+                    <div id="text_error_item" class="alert alert-danger alert-dismissible fade show mb-0" style="display: none;" role="alert">
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="i_description" class="col-md-4 col-form-label">Description:</label>
+                        <div class="col-md-8">
+                            <textarea class="form-control" rows="3" type="text"  id="i_description" required></textarea>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="i_uom" class="col-md-4 col-form-label">UOM:</label>
+                        <div class="col-md-8">
+                            <select class="form-control uom-select-up" id="i_uom" name="i_uom" required>
+                                <option value="">Select UOM</option>
+                                {% for uom in uoms %}
+                                    <option value="{{uom.id}}">{{uom.name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="i_qty" class="col-md-4 col-form-label">Qty:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="number"  id="i_qty" autocomplete="off" onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : event.charCode >= 48 && event.charCode <= 57" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="i_allocation" class="col-md-4 col-form-label">Allocation(%):</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="number"  id="i_allocation" onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : event.charCode >= 48 && event.charCode <= 57" autocomplete="off" disabled="true" required>
+                        </div>
+                    </div>
+                </form>
+                <input type="hidden" id="iid" value="-1" />
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_iadd">Add</button>
+
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Delete Item modal content -->
+<div id="itemdeleteModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="itemdelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="itemdelModalLabel">Delete Scope</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5 id="del_item_description"></h5>
+                <input type="hidden" id="itemdel_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect" data-bs-dismiss="modal">Cancel</button>
+                <button id="itemdel_confirm" type="button" class="btn btn-primary waves-effect waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'assets/libs/select2/js/select2.full.min.js' %}"></script>
+<script src="{% static 'assets/libs/bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+<!-- Responsive examples -->
+<script src="{% static 'assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+<!-- <script src="{% static 'assets/libs/moment/min/moment.min.js' %}"></script> -->
+<script src="{% static 'assets/js/daterangepicker.js' %}"></script>
+<script src="{% static 'assets/libs/admin-resources/bootstrap-filestyle/bootstrap-filestyle.min.js' %}"></script>
+
+<script>
+    function onPriority(event) {
+        event = (event) ? event : window.event;
+        var charCode = (event.which) ? event.which : event.keyCode;
+        if (charCode >= 49 && charCode <= 53 && $("#teampriority").val() == "") {
+            return true;
+        }
+        return false;
+    }
+    $("#start_date").datepicker({
+        format:"dd M, yyyy",
+    }).on("changeDate", function (e) {
+        var date2 = $('#start_date').datepicker('getDate');
+        $('#end_date').datepicker('option', 'minDate', date2);
+    });
+    $("#end_date").datepicker({
+        format:"dd M, yyyy",
+        startDate: $('#start_date').datepicker('getDate') + 1
+    }).on("changeDate", function(e){
+        $("#start_date").datepicker("option", "maxDate", $("#end_date").datepicker("getDate"));
+    });
+    $("#dotable").DataTable({
+        searching: false,
+        paging: false,
+        info: false,
+        ordering: false,
+        //dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            //"<'row'<'col-sm-12'tr>>" +
+            //"<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+    $("#siteoverviewdt").DataTable({
+        searching: false,
+        paging: false,
+        info: false,
+        ordering: false,
+        //dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            //"<'row'<'col-sm-12'tr>>" +
+            //"<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+    $("#toolboxdt").DataTable({
+        searching: false,
+        paging: false,
+        info: false,
+        ordering: false,
+        //dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            //"<'row'<'col-sm-12'tr>>" +
+            //"<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+    $("#workacitivedt").DataTable({
+        searching: false,
+        paging: false,
+        info: false,
+        ordering: false,
+        //dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            //"<'row'<'col-sm-12'tr>>" +
+            //"<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+    $("#teamtable").DataTable({
+        searching: false,
+        paging: false,
+        info: false,
+        ordering: false,
+        //dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            //"<'row'<'col-sm-12'tr>>" +
+            //"<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+    $("#workdt").DataTable({
+        searching: false,
+        paging: false,
+        info: false,
+        ordering: false,
+        //dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            //"<'row'<'col-sm-12'tr>>" +
+            //"<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+
+    $("#filetable").DataTable({
+        searching: true,
+        paging: false,
+        info: false,
+        ordering: false,
+        //dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            //"<'row'<'col-sm-12'tr>>" +
+            //"<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+    $("#srtable").DataTable({
+        searching: true,
+        paging: true,
+        info: true,
+        ordering: false,
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+    $("#pctable").DataTable({
+        searching: true,
+        paging: true,
+        info: true,
+        ordering: false,
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+    $("#progresslogdt").DataTable({
+        searching: true,
+        paging: true,
+        info: true,
+        ordering: false,
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+    $("#bomtable").DataTable({
+        searching: false,
+        paging: false,
+        info: false,
+        ordering: false,
+        //dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            //"<'row'<'col-sm-12'tr>>" +
+            //"<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+    $("#mandaystable").DataTable({
+        searching: false,
+        paging: true,
+        info: true,
+        ordering: false,
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+    $(".select2").select2({width: '100%'});
+    $(".teamuser").select2({width: '100%', dropdownParent: $("#manage_team")});
+    $("#site_description").select2({width: '100%', dropdownParent: $("#manage_site")});
+    $("#toolbox_activity").select2({width: '100%', dropdownParent: $("#manage_toolbox")});
+    $("#toolbox_objective").select2({width: '100%', dropdownParent: $("#manage_toolbox")});
+    $("#toolbox_description").select2({width: '100%', dropdownParent: $("#manage_toolbox")});
+    $(".uom-select").select2({width: '100%', dropdownParent: $("#manage_bom")});
+    $(".uom-select-item").select2({width: '100%', dropdownParent: $("#manage_sub_item")});
+    $(".uom-select-up").select2({width: '100%', dropdownParent: $("#manage_item")});
+    $('#summarycancel').hide();
+    $("#SummaryDetailForm input").prop("disabled", true);
+    $("#SummaryDetailForm textarea").prop("disabled", true);
+    $('#summarysave').prop('disabled', true);
+    $('#SummaryDetailForm .select2').prop('disabled', true);
+    $("#SummaryDetailForm #company_name").prop("disabled", true);
+    $("#text_error").hide();
+    $("#searchFilePlace").html('');
+    $("#searchFilePlace").html($("#filetable_filter"));
+    $("#searchServicePlace").html('');
+    $("#searchServicePlace").html($("#srtable_filter"));
+    $("#searchProgressPlace").html('');
+    $("#searchProgressPlace").html($("#pctable_filter"));
+    $("#progresslogsearch").html('');
+    $("#progresslogsearch").html($("#progresslogdt_filter"));
+    $("#summaryupdate").on('click', function(e){
+        $("#SummaryDetailForm input").prop("disabled", false);
+        $("#SummaryDetailForm textarea").prop("disabled", false);
+        $("#note").prop("disabled", true);
+
+        $('select').prop('disabled', false);
+        $("#SummaryDetailForm #company_name").prop("disabled", true);
+        $('#summarysave').prop('disabled', false);
+        $( "#qtt_id" ).prop( "disabled", true );
+        $( "#proj_id" ).prop( "disabled", true );
+        $('#summarycancel').show();
+        $('#summaryupdate').hide();
+    });
+    $("#summarycancel").on('click', function(e){
+        $("#SummaryDetailForm input").prop("disabled", true);
+        $("#SummaryDetailForm textarea").prop("disabled", true);
+        $('.select2').prop('disabled', true);
+        $("#SummaryDetailForm #company_name").prop("disabled", true);
+        $('#summarysave').prop('disabled', true);
+        $("#qtt_id").prop( "disabled", true );
+        $("#proj_id").prop( "disabled", true );
+        $('#summarycancel').hide();
+        $('#summaryupdate').show();
+    });
+    $(".deliverydetail").on('click', function(e){
+        localStorage.removeItem("dodetailitem");
+    });
+    flag = true;
+    $(".toolbox_objective").on('change', function(e){
+        var toolbox_objective = $(this).find(':selected').data('id');
+
+        if(toolbox_objective != "" && flag == true){
+            $("#toolbox_description").html('');
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_filter_description" %}',
+                data: {
+                    toolbox_objective: toolbox_objective,
+                },
+                type: 'POST',
+                success: function (data) {
+                    $("#toolbox_description").html(data);
+
+                }
+            });
+        }
+    });
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+    $("#pdoadd").on('click', function(e){
+        var today = new Date();
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = monthNames[today.getMonth()];
+        var yyyy = today.getFullYear();
+        $("#dodate").val(dd + " " + mm + ", " + yyyy);
+        $('#dodate').datepicker('setDate', dd + " " + mm + ", " + yyyy);
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_check_donumber" %}',
+            data: {},
+            type: 'POST',
+            success: function (data) {
+                var prefix = "CDO";
+                var strDate = new Date();
+                var fullYear = strDate.getFullYear().toString().substr(-2);
+                if (data['status'] == "exist") {
+                    var do_no_value = String(data.do_no);
+                    if (do_no_value.substring(0,2) == fullYear) {
+                        suffix_val = (parseInt(do_no_value.substring(2,6)) + 1).toString();
+                        if(suffix_val.length == 3) {
+                            suffix_val = "0" + suffix_val;
+                        }
+                        $("#do_no").val(prefix+fullYear+suffix_val);
+                    } else {
+                        $("#do_no").val(prefix+fullYear+"1000");
+                    }
+                } else {
+
+                    $("#do_no").val(prefix+fullYear+"1000");
+                }
+            }
+        });
+        $("#text_error_do").hide();
+        $("#domodal").modal('show');
+    });
+    function uploaddelivery(id){
+        $("#dodocid").val(id);
+        $("#head_title_do_doc").html('Upload Do Document');
+        $(".btn_dodocadd").html('Upload');
+        $("#dodocmodal").modal('show');
+    }
+    $(".btn_dodocadd").on('click', function(e){
+        var doc_data = $("#dodocument").prop('files')[0];
+        var form_data = new FormData();
+        form_data.append('projectid', `{{sale_pk}}`);
+        form_data.append('document', doc_data);
+        form_data.append('dodocid', $("#dodocid").val());
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_add_sales_do_doc" %}',
+            data: form_data,
+            cache: false,
+            contentType: false,
+            processData: false,
+            type: 'POST',
+            success: function (data) {
+                if(data.status=="Success"){
+                    $("#text_error_do_doc").hide();
+                    location.reload();
+                } else {
+                    $("#text_error_do_doc").html(data.messages);
+                    $("#text_error_do_doc").show();
+                }
+            }
+        });
+    });
+    $(".btn_doadd").on('click', function(e){
+        $('#DoForm').parsley().validate();
+        if ($('#DoForm').parsley().validate() === false) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            // var doc_data = $("#dodocument").prop('files')[0];
+            var form_data = new FormData();
+            form_data.append('do_no', $("#do_no").val());
+            form_data.append('dodate', formatDate($("#dodate").val()));
+            form_data.append('projectid', `{{sale_pk}}`);
+            // form_data.append('document', doc_data);
+            form_data.append('doid', $("#doid").val());
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_sales_do" %}',
+                data: form_data,
+                cache: false,
+                contentType: false,
+                processData: false,
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_do").hide();
+                        if(data.method == "add") {
+                            var redirect_url = "{% url 'sales_do_detail' 0 999999 %}".replace(0,`{{sale_pk}}`).replace(999999,data.newDoId);
+                            location.href = redirect_url;
+                        } else if (data.method == "update") {
+                            location.reload();
+                        }
+                    } else {
+                        $("#text_error_do").html(data.messages);
+                        $("#text_error_do").show();
+                    }
+                }
+            });
+        }
+    });
+    $("#siteprogressadd").on('click', function(e){
+        $("#sitedate").val('');
+        $("#head_title_site").html('Add Site Progress Log');
+        $(".btn_siteadd").html('Add');
+        $("#siteid").val('-1');
+        $("#site_qty").val('');
+        $("#site_remark").val('');
+        $("#site_description").val('');
+        $("#site_description").trigger('change');
+        $("#siteprogressmodal").modal('show');
+    });
+    function uploadservice(id){
+        $("#srdocid").val(id);
+        $("#head_title_sr_doc").html('Upload SR Document');
+        $(".btn_srdocadd").html('Upload');
+        $("#srdocmodal").modal('show');
+    }
+    $(".btn_srdocadd").on('click', function(e){
+        var doc_data = $("#srdocument").prop('files')[0];
+        var form_data = new FormData();
+        form_data.append('projectid', `{{sale_pk}}`);
+        form_data.append('document', doc_data);
+        form_data.append('srdocid', $("#srdocid").val());
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_add_sr_doc" %}',
+            data: form_data,
+            cache: false,
+            contentType: false,
+            processData: false,
+            type: 'POST',
+            success: function (data) {
+                if(data.status=="Success"){
+                    $("#text_error_sr_doc").hide();
+                    location.reload();
+                } else {
+                    $("#text_error_sr_doc").html(data.messages);
+                    $("#text_error_sr_doc").show();
+                }
+            }
+        });
+    });
+    function uploadprogress(id){
+        $("#pcdocid").val(id);
+        $("#head_title_pc_doc").html('Upload PC Document');
+        $(".btn_pcdocadd").html('Upload');
+        $("#pcdocmodal").modal('show');
+    }
+    $(".btn_pcdocadd").on('click', function(e){
+        var doc_data = $("#pcdocument").prop('files')[0];
+        var form_data = new FormData();
+        form_data.append('projectid', `{{sale_pk}}`);
+        form_data.append('document', doc_data);
+        form_data.append('pcdocid', $("#pcdocid").val());
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_add_pc_doc" %}',
+            data: form_data,
+            cache: false,
+            contentType: false,
+            processData: false,
+            type: 'POST',
+            success: function (data) {
+                if(data.status=="Success"){
+                    $("#text_error_pc_doc").hide();
+                    location.reload();
+                } else {
+                    $("#text_error_pc_doc").html(data.messages);
+                    $("#text_error_pc_doc").show();
+                }
+            }
+        });
+    });
+    $(".btn_siteadd").on('click', function(e){
+        $("#SiteProgressForm").parsley().validate();
+        if ($('#SiteProgressForm').parsley().validate() === false) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_site_progress_log" %}',
+                data: {
+                    description: $("#site_description").val(),
+                    date: formatDate($("#sitedate").val()),
+                    remark: $("#site_remark").val(),
+                    qty: $("#site_qty").val(),
+                    siteid: $("#siteid").val(),
+                    projectid: `{{sale_pk}}`
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_site").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_site").html(data.messages);
+                        $("#text_error_site").show();
+                    }
+                }
+            });
+        }
+    });
+    function updatesite(id) {
+        $("#siteid").val(id);
+        $("#head_title_site").html('Update Site Progress Log');
+        $(".btn_siteadd").html('Update');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_site_progress" %}',
+            data: {
+                siteid: $("#siteid").val()
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data);
+                $("#site_description").val(up_data.description);
+                $('#site_description').trigger('change');
+                $("#sitedate").val(up_data.date);
+                $("#site_remark").val(up_data.remark);
+                $('#site_qty').val(up_data.qty);
+            }
+        });
+        $("#siteprogressmodal").modal('show');
+    }
+    $("#pfilesadd").on('click', function(e){
+        $("#filename").val('');
+        $("#filedocument").val('');
+        $("#fileid").val('-1');
+        $("#filemodal").modal('show');
+    });
+    $(".btn_fileadd").on('click', function(e){
+        $('#FileForm').parsley().validate();
+        if ($('#FileForm').parsley().validate() === false) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            var docum_data = $("#filedocument").prop('files')[0];
+            var form_data = new FormData();
+            form_data.append('filename', $("#filename").val());
+            form_data.append('projectid', `{{sale_pk}}`);
+            form_data.append('document', docum_data);
+            form_data.append('fileid', $("#fileid").val());
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_proj_file" %}',
+                data: form_data,
+                cache: false,
+                contentType: false,
+                processData: false,
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_file").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_file").html(data.messages);
+                        $("#text_error_file").show();
+                    }
+                }
+            });
+        }
+    });
+
+
+
+    $('#multicnt').on('input', function(){
+        $("#bomFormContent").empty();
+        for(index=1;index<=$(this).val();index++){
+            ajax_add_bom_items(index);
+        }
+    });
+
+    function ajax_add_bom_items(item_cnt) {
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_bom_modal" %}',
+            data: {item_cnt: item_cnt},
+            type: 'POST',
+            success: function (data) {
+                $("#bomFormContent").append(data);
+            }
+        });
+    };
+
+
+    $("#pbomadd").on('click', function(e){
+
+        $("#bomFormContent").empty();
+        $('#multicnt').val(1);
+        $('#multicnt_container').show();
+        ajax_add_bom_items(1);
+        $("#head_title_bom").html('Add New BOM');
+<!--        $("#bdescription").val("");-->
+<!--        $("#buom").val("");-->
+<!--        $("#bordered_qty").val("");-->
+<!--        $("#bbrand").val("");-->
+<!--        $("#bdelivery_qty").val("");-->
+<!--        $("#bomdate").val("");-->
+<!--        $("#bremark").val("");-->
+        $("#bomid").val("-1");
+        $("#bommodal").modal('show');
+    });
+
+    $('#mandaysdaterange').daterangepicker({
+        format: 'YYYY.MM.DD',
+        howDropdowns: true,
+        showWeekNumbers: true,
+        timePicker: false,
+        timePickerIncrement: 1,
+        timePicker12Hour: true,
+        opens: 'right',
+        drops: 'down',
+        buttonClasses: ['btn', 'btn-sm'],
+        applyClass: 'btn-success',
+        cancelClass: 'btn-danger',
+    });
+    $('#mandaysdaterange').on('apply.daterangepicker', function(ev, picker) {
+        $(this).val(picker.startDate.format("YYYY.MM.DD") + ' ~ ' + picker.endDate.format("YYYY.MM.DD"));
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_filter_mandays" %}',
+            data: {
+                proj_id: `{{summary.proj_id}}`,
+                startDate: picker.startDate.format("YYYY-MM-DD"),
+                endDate: picker.endDate.format("YYYY-MM-DD"),
+            },
+            type: 'POST',
+            success: function (data) {
+                $("#project_mandays_data").html(data);
+            }
+        });
+    });
+
+    $('#mandaysdaterange').on('cancel.daterangepicker', function(ev, picker) {
+        $(this).val('');
+        mandays_all_list();
+    });
+    mandays_all_list();
+    function mandays_all_list(){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_all_mandays" %}',
+            data: {
+                proj_id: `{{summary.proj_id}}`,
+            },
+            type: 'POST',
+            success: function (data) {
+                $("#project_mandays_data").html(data);
+            }
+        });
+    }
+    function updatebom(id) {
+        $("#bomFormContent").empty();
+        $('#multicnt_container').hide();
+        ajax_add_bom_items(1);
+
+        $("#bomid").val(id);
+        $("#head_title_bom").html('Update BOM');
+        $(".btn_bomadd").html('Update');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_bom" %}',
+            data: {
+                bomid: $("#bomid").val()
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data);
+                $("#bdescription1").val(up_data.description);
+                $("#buom1").val(up_data.uom);
+                $("#buom1").trigger("change");
+                $("#bordered_qty1").val(up_data.ordered_qty);
+                $("#bdelivery_qty1").val(up_data.delivered_qty);
+                $("#bbrand1").val(up_data.brand);
+                $("#bdelivered_po_no1").val(up_data.delivered_po_no);
+                $("#bomdate1").val(up_data.date);
+                $("#bremark1").val(up_data.remark);
+            }
+        });
+        $("#bommodal").modal('show');
+    }
+    $(".btn_bomadd").on('click', function(e){
+        $('#BomForm').parsley().validate();
+        if ($('#BomForm').parsley().validate() === false) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+
+            item_cnt=$('#multicnt').val();
+            item_data=[];
+            for(index=1; index<=item_cnt; index++){
+                let item={
+                    description: $("#bdescription"+index).val(),
+                    uom: $("#buom"+index).val(),
+                    ordered_qty: $("#bordered_qty"+index).val(),
+                    brand: $("#bbrand"+index).val(),
+                    delivery_qty: $("#bdelivery_qty"+index).val(),
+                    delivered_po_no: $("#bdelivered_po_no"+index).val(),
+                    date: $("#bomdate"+index).val() != "" ? formatDate($("#bomdate"+index).val()) : "",
+                    remark: $("#bremark"+index).val(),
+                    bomid: $("#bomid").val(),
+                    projectid: `{{sale_pk}}`,
+                }
+                item_data.push(item)
+            }
+
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_bom" %}',
+                data: {
+                    items: JSON.stringify(item_data)
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_bom").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_bom").html(data.messages);
+                        $("#text_error_bom").show();
+                    }
+                }
+            });
+        }
+    });
+    $("#summarysave").on('click', function(e) {
+        $('#SummaryDetailForm').parsley().validate();
+        if ($('#SummaryDetailForm').parsley().validate() === false) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_update_sales_summary" %}',
+                data: {
+                    company_nameid: $("#company_nameid").val(),
+                    worksite_address: $("#worksite_address").val(),
+                    contact_person: $("#contact_person").val(),
+                    email: $("#email").val(),
+                    tel: $("#tel").val(),
+                    fax: $("#fax").val(),
+                    re: $("#RE").val(),
+                    proj_id: $("#proj_id").val(),
+                    qtt_id: $("#qtt_id").val(),
+                    note: $("#note").val(),
+                    // latitude: $("#latitude").val(),
+                    // longitude: $("#longitude").val(),
+                    // proj_incharge: $("#proj_incharge").val(),
+                    sales_status: $("#sales_status").val(),
+                    summaryid: `{{sale_pk}}`,
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error").html(data.messages);
+                        $("#text_error").show();
+                    }
+                }
+            });
+
+        }
+    });
+    function formatDate(date) {
+        var d = new Date(date),
+            month = '' + (d.getMonth() + 1),
+            day = '' + d.getDate(),
+            year = d.getFullYear();
+
+        if (month.length < 2)
+            month = '0' + month;
+        if (day.length < 2)
+            day = '0' + day;
+
+        return [year, month, day].join('-');
+    }
+    $("#pitemoverviewtab").on('click', function(e){
+        localStorage.setItem("workitem", '1');
+    });
+    $("#pitemactivitytab").on('click', function(e){
+        localStorage.setItem("workitem", '2');
+    });
+    var worktabactive = localStorage.getItem("workitem");
+    if (worktabactive == null || worktabactive == '1') {
+        $("#pitemoverviewtab").addClass('active');
+        $("#pitemactivitytab").removeClass('active');
+
+        $("#pitemoverview").addClass('active');
+        $("#pitemactivity").removeClass('active');
+    }
+    else if (worktabactive == '2') {
+        $("#pitemoverviewtab").removeClass('active');
+        $("#pitemactivitytab").addClass('active');
+
+        $("#pitemoverview").removeClass('active');
+        $("#pitemactivity").addClass('active');
+    }
+    $("#psiteoverviewtab").on('click', function(e){
+        localStorage.setItem("workprogress", '1');
+    });
+    $("#psitelogtab").on('click', function(e){
+        localStorage.setItem("workprogress", '2');
+    });
+    var progresstabactive = localStorage.getItem("workprogress");
+    if (progresstabactive == null || progresstabactive == '1') {
+        $("#psiteoverviewtab").addClass('active');
+        $("#psitelogtab").removeClass('active');
+
+        $("#psiteoverview").addClass('active');
+        $("#psitelog").removeClass('active');
+    }
+    else if (progresstabactive == '2') {
+        $("#psiteoverviewtab").removeClass('active');
+        $("#psitelogtab").addClass('active');
+
+        $("#psiteoverview").removeClass('active');
+        $("#psitelog").addClass('active');
+    }
+    $('a[role=tab]').click(function(){
+        if (this.id == "pdetailtab") {
+            localStorage.setItem("projectitem", '1');
+        } else if (this.id == "site_progresstab") {
+            localStorage.setItem("projectitem", '2');
+            localStorage.setItem("workprogress", '1');
+            $("#psiteoverviewtab").addClass('active');
+            $("#psitelogtab").removeClass('active');
+
+            $("#psiteoverview").addClass('active');
+            $("#psitelog").removeClass('active');
+        } else if (this.id == "tbmtab") {
+            localStorage.setItem("projectitem", '3');
+        } else if (this.id == "bomtab") {
+            localStorage.setItem("projectitem", '4');
+        } else if (this.id == "mandaystab") {
+            localStorage.setItem("projectitem", '5');
+        } else if (this.id == "teamtab") {
+            localStorage.setItem("projectitem", '6');
+        } else if (this.id == "dotab") {
+            localStorage.setItem("projectitem", '7');
+        } else if (this.id == "srtab") {
+            localStorage.setItem("projectitem", '8');
+        } else if (this.id == "pctab") {
+            localStorage.setItem("projectitem", '9');
+        } else if (this.id == "filetab") {
+            localStorage.setItem("projectitem", '0');
+        } else if (this.id == "proj_itemtab") {
+            localStorage.setItem("projectitem", '11');
+            localStorage.setItem("workitem", '1');
+            $("#pitemoverviewtab").addClass('active');
+            $("#pitemactivitytab").removeClass('active');
+
+            $("#pitemoverview").addClass('active');
+            $("#pitemactivity").removeClass('active');
+        }
+    });
+    var tabactive = localStorage.getItem("projectitem");
+    if (tabactive == null || tabactive == '1')
+    {
+        $("#pdetailtab").addClass('active');
+        $("#site_progresstab").removeClass('active');
+        $("#tbmtab").removeClass('active');
+        $("#bomtab").removeClass('active');
+        $("#mandaystab").removeClass('active');
+        $("#teamtab").removeClass('active');
+        $("#dotab").removeClass('active');
+        $("#srtab").removeClass('active');
+        $("#pctab").removeClass('active');
+        $("#filetab").removeClass('active');
+        $("#proj_itemtab").removeClass('active');
+
+        $("#pdetails").addClass('active');
+        $("#site_progress").removeClass('active');
+        $("#tbm").removeClass('active');
+        $("#bom").removeClass('active');
+        $("#mandays").removeClass('active');
+        $("#team").removeClass('active');
+        $("#do").removeClass('active');
+        $("#SR").removeClass('active');
+        $("#pc").removeClass('active');
+        $("#file").removeClass('active');
+        $("#proj_item").removeClass('active');
+
+    }
+    else if (tabactive == '2') {
+        $("#pdetailtab").removeClass('active');
+        $("#site_progresstab").addClass('active');
+        $("#tbmtab").removeClass('active');
+        $("#bomtab").removeClass('active');
+        $("#mandaystab").removeClass('active');
+        $("#teamtab").removeClass('active');
+        $("#dotab").removeClass('active');
+        $("#srtab").removeClass('active');
+        $("#pctab").removeClass('active');
+        $("#filetab").removeClass('active');
+        $("#proj_itemtab").removeClass('active');
+
+        $("#pdetails").removeClass('active');
+        $("#site_progress").addClass('active');
+        $("#tbm").removeClass('active');
+        $("#bom").removeClass('active');
+        $("#mandays").removeClass('active');
+        $("#team").removeClass('active');
+        $("#do").removeClass('active');
+        $("#SR").removeClass('active');
+        $("#pc").removeClass('active');
+        $("#file").removeClass('active');
+        $("#proj_item").removeClass('active');
+    }
+    else if (tabactive == '3')
+    {
+        $("#pdetailtab").removeClass('active');
+        $("#site_progresstab").removeClass('active');
+        $("#tbmtab").addClass('active');
+        $("#bomtab").removeClass('active');
+        $("#mandaystab").removeClass('active');
+        $("#teamtab").removeClass('active');
+        $("#dotab").removeClass('active');
+        $("#srtab").removeClass('active');
+        $("#pctab").removeClass('active');
+        $("#filetab").removeClass('active');
+        $("#proj_itemtab").removeClass('active');
+
+        $("#pdetails").removeClass('active');
+        $("#site_progress").removeClass('active');
+        $("#tbm").addClass('active');
+        $("#bom").removeClass('active');
+        $("#mandays").removeClass('active');
+        $("#team").removeClass('active');
+        $("#do").removeClass('active');
+        $("#SR").removeClass('active');
+        $("#pc").removeClass('active');
+        $("#file").removeClass('active');
+        $("#proj_item").removeClass('active');
+    }
+    else if (tabactive == '4'){
+        $("#pdetailtab").removeClass('active');
+        $("#site_progresstab").removeClass('active');
+        $("#tbmtab").removeClass('active');
+        $("#bomtab").addClass('active');
+        $("#mandaystab").removeClass('active');
+        $("#teamtab").removeClass('active');
+        $("#dotab").removeClass('active');
+        $("#srtab").removeClass('active');
+        $("#pctab").removeClass('active');
+        $("#filetab").removeClass('active');
+        $("#proj_itemtab").removeClass('active');
+
+        $("#pdetails").removeClass('active');
+        $("#site_progress").removeClass('active');
+        $("#tbm").removeClass('active');
+        $("#bom").addClass('active');
+        $("#mandays").removeClass('active');
+        $("#team").removeClass('active');
+        $("#do").removeClass('active');
+        $("#SR").removeClass('active');
+        $("#pc").removeClass('active');
+        $("#file").removeClass('active');
+        $("#proj_item").removeClass('active');
+    }
+    else if (tabactive == '5')
+    {
+        $("#pdetailtab").removeClass('active');
+        $("#site_progresstab").removeClass('active');
+        $("#tbmtab").removeClass('active');
+        $("#bomtab").removeClass('active');
+        $("#mandaystab").addClass('active');
+        $("#teamtab").removeClass('active');
+        $("#dotab").removeClass('active');
+        $("#srtab").removeClass('active');
+        $("#pctab").removeClass('active');
+        $("#filetab").removeClass('active');
+        $("#proj_itemtab").removeClass('active');
+
+        $("#pdetails").removeClass('active');
+        $("#site_progress").removeClass('active');
+        $("#tbm").removeClass('active');
+        $("#bom").removeClass('active');
+        $("#mandays").addClass('active');
+        $("#team").removeClass('active');
+        $("#do").removeClass('active');
+        $("#SR").removeClass('active');
+        $("#pc").removeClass('active');
+        $("#file").removeClass('active');
+        $("#proj_item").removeClass('active');
+    }
+    else if (tabactive == '6') {
+        $("#pdetailtab").removeClass('active');
+        $("#site_progresstab").removeClass('active');
+        $("#tbmtab").removeClass('active');
+        $("#bomtab").removeClass('active');
+        $("#mandaystab").removeClass('active');
+        $("#teamtab").addClass('active');
+        $("#dotab").removeClass('active');
+        $("#srtab").removeClass('active');
+        $("#pctab").removeClass('active');
+        $("#filetab").removeClass('active');
+        $("#proj_itemtab").removeClass('active');
+
+        $("#pdetails").removeClass('active');
+        $("#site_progress").removeClass('active');
+        $("#tbm").removeClass('active');
+        $("#bom").removeClass('active');
+        $("#mandays").removeClass('active');
+        $("#team").addClass('active');
+        $("#do").removeClass('active');
+        $("#SR").removeClass('active');
+        $("#pc").removeClass('active');
+        $("#file").removeClass('active');
+        $("#proj_item").removeClass('active');
+    }
+    else if (tabactive == '7')
+    {
+        $("#pdetailtab").removeClass('active');
+        $("#site_progresstab").removeClass('active');
+        $("#tbmtab").removeClass('active');
+        $("#bomtab").removeClass('active');
+        $("#mandaystab").removeClass('active');
+        $("#teamtab").removeClass('active');
+        $("#dotab").addClass('active');
+        $("#srtab").removeClass('active');
+        $("#pctab").removeClass('active');
+        $("#filetab").removeClass('active');
+        $("#proj_itemtab").removeClass('active');
+
+        $("#pdetails").removeClass('active');
+        $("#site_progress").removeClass('active');
+        $("#tbm").removeClass('active');
+        $("#bom").removeClass('active');
+        $("#mandays").removeClass('active');
+        $("#team").removeClass('active');
+        $("#do").addClass('active');
+        $("#SR").removeClass('active');
+        $("#pc").removeClass('active');
+        $("#file").removeClass('active');
+        $("#proj_item").removeClass('active');
+    }
+    else if (tabactive == '8'){
+        $("#pdetailtab").removeClass('active');
+        $("#site_progresstab").removeClass('active');
+        $("#tbmtab").removeClass('active');
+        $("#bomtab").removeClass('active');
+        $("#mandaystab").removeClass('active');
+        $("#teamtab").removeClass('active');
+        $("#dotab").removeClass('active');
+        $("#srtab").addClass('active');
+        $("#pctab").removeClass('active');
+        $("#filetab").removeClass('active');
+        $("#proj_itemtab").removeClass('active');
+
+        $("#pdetails").removeClass('active');
+        $("#site_progress").removeClass('active');
+        $("#tbm").removeClass('active');
+        $("#bom").removeClass('active');
+        $("#mandays").removeClass('active');
+        $("#team").removeClass('active');
+        $("#do").removeClass('active');
+        $("#SR").addClass('active');
+        $("#pc").removeClass('active');
+        $("#file").removeClass('active');
+        $("#proj_item").removeClass('active');
+    }
+    else if (tabactive == '9'){
+        $("#pdetailtab").removeClass('active');
+        $("#site_progresstab").removeClass('active');
+        $("#tbmtab").removeClass('active');
+        $("#bomtab").removeClass('active');
+        $("#mandaystab").removeClass('active');
+        $("#teamtab").removeClass('active');
+        $("#dotab").removeClass('active');
+        $("#srtab").removeClass('active');
+        $("#pctab").addClass('active');
+        $("#filetab").removeClass('active');
+        $("#proj_itemtab").removeClass('active');
+
+        $("#pdetails").removeClass('active');
+        $("#site_progress").removeClass('active');
+        $("#tbm").removeClass('active');
+        $("#bom").removeClass('active');
+        $("#mandays").removeClass('active');
+        $("#team").removeClass('active');
+        $("#do").removeClass('active');
+        $("#SR").removeClass('active');
+        $("#pc").addClass('active');
+        $("#file").removeClass('active');
+        $("#proj_item").removeClass('active');
+
+    }
+    else if (tabactive == '0'){
+        $("#pdetailtab").removeClass('active');
+        $("#site_progresstab").removeClass('active');
+        $("#tbmtab").removeClass('active');
+        $("#bomtab").removeClass('active');
+        $("#mandaystab").removeClass('active');
+        $("#teamtab").removeClass('active');
+        $("#dotab").removeClass('active');
+        $("#srtab").removeClass('active');
+        $("#pctab").removeClass('active');
+        $("#filetab").addClass('active');
+        $("#proj_itemtab").removeClass('active');
+
+        $("#pdetails").removeClass('active');
+        $("#site_progress").removeClass('active');
+        $("#tbm").removeClass('active');
+        $("#bom").removeClass('active');
+        $("#mandays").removeClass('active');
+        $("#team").removeClass('active');
+        $("#do").removeClass('active');
+        $("#SR").removeClass('active');
+        $("#pc").removeClass('active');
+        $("#file").addClass('active');
+        $("#proj_item").removeClass('active');
+    } else if (tabactive == '11'){
+        $("#pdetailtab").removeClass('active');
+        $("#site_progresstab").removeClass('active');
+        $("#tbmtab").removeClass('active');
+        $("#bomtab").removeClass('active');
+        $("#mandaystab").removeClass('active');
+        $("#teamtab").removeClass('active');
+        $("#dotab").removeClass('active');
+        $("#srtab").removeClass('active');
+        $("#pctab").removeClass('active');
+        $("#filetab").removeClass('active');
+        $("#proj_itemtab").addClass('active');
+
+        $("#pdetails").removeClass('active');
+        $("#site_progress").removeClass('active');
+        $("#tbm").removeClass('active');
+        $("#bom").removeClass('active');
+        $("#mandays").removeClass('active');
+        $("#team").removeClass('active');
+        $("#do").removeClass('active');
+        $("#SR").removeClass('active');
+        $("#pc").removeClass('active');
+        $("#file").removeClass('active');
+        $("#proj_item").addClass('active');
+    }
+
+    $("#pteamadd").on('click', function(e){
+        $("#teamuser").val("");
+        $("#teamuser").trigger("change");
+        $("#teampriority").val("");
+        $("#bomid").val("-1");
+        $("#head_title_team").html('Add Team');
+        $(".btn_teamadd").html('Add');
+        $("#teammodal").modal('show');
+    });
+    $(".btn_teamadd").on('click', function(e){
+        $('#TeamForm').parsley().validate();
+        if ($('#TeamForm').parsley().validate() === false) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_team" %}',
+                data: {
+                    teamuser: $("#teamuser").val(),
+                    priority: $("#teampriority").val(),
+                    teamid: $("#teamid").val(),
+                    projectid: `{{sale_pk}}`,
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_team").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_team").html(data.messages);
+                        $("#text_error_team").show();
+                    }
+                }
+            });
+        }
+    });
+    function updateteam(id){
+        $("#teamid").val(id);
+        $("#head_title_team").html('Update Team');
+        $(".btn_teamadd").html('Update');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_team" %}',
+            data: {
+                teamid: $("#teamid").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data)
+                $("#teamuser").val(up_data.teamuser);
+                $('#teamuser').trigger('change');
+                $("#teampriority").val(up_data.priority);
+                $('#teampriority').trigger('change');
+
+            }
+        });
+        $("#teammodal").modal('show');
+    };
+    function deleteteam(id, name) {
+        $("#teamdel_id").val(id);
+        $("#del_team_description").html("Are you sure you want to delete this record "+'"'+name+'"'+"?");
+        $("#teamdeleteModal").modal('show');
+    }
+    $("#teamdel_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_team" %}',
+            data: {
+                'team_id': $("#teamdel_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload();
+                }
+            }
+        });
+        $('#teamdeletModal').modal('hide')
+    });
+    function deletefile(id, name) {
+        $("#filedel_id").val(id);
+        $("#del_file_description").html("Are you sure you want to delete this record "+'"'+name+'"'+"?");
+        $("#filedeleteModal").modal('show');
+    }
+    $("#filedel_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_file" %}',
+            data: {
+                'filedel_id': $("#filedel_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload();
+                }
+            }
+        });
+        $('#filedeletModal').modal('hide')
+    });
+    function deletebom(id, name) {
+        $("#bomdel_id").val(id);
+        $("#del_bom_description").html("Are you sure you want to delete this record "+'"'+name+'"'+"?");
+        $("#bomdeleteModal").modal('show');
+    }
+    $("#bomdel_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_bom" %}',
+            data: {
+                'bomdel_id': $("#bomdel_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload();
+                }
+            }
+        });
+        $('#filedeletModal').modal('hide')
+    });
+    function deletedelivery(id, name) {
+        $("#dodel_id").val(id);
+        $("#del_do_description").html("Are you sure you want to delete this record "+'"'+name+'"'+"?");
+        $("#dodeleteModal").modal('show');
+    }
+    $("#dodel_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_sales_do" %}',
+            data: {
+                'dodel_id': $("#dodel_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload();
+                }
+            }
+        });
+        $('#dodeleteModal').modal('hide')
+    });
+    $("#psradd").on('click', function(e){
+        var today = new Date();
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = monthNames[today.getMonth()];
+        var yyyy = today.getFullYear();
+        $("#srdate").val(dd + " " + mm + ", " + yyyy);
+        $('#srdate').datepicker('setDate', dd + " " + mm + ", " + yyyy);
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_check_srnumber" %}',
+            data: {},
+            type: 'POST',
+            success: function (data) {
+                var prefix = "CSR";
+                var strDate = new Date();
+                var fullYear = strDate.getFullYear();
+                if (data['status'] == "exist") {
+                    var sr_no_value = String(data.sr_no);
+                    if (sr_no_value.substring(0,4) == fullYear) {
+                        suffix_val = (parseInt(sr_no_value.substring(4,8)) + 1).toString();
+                        if(suffix_val.length == 3) {
+                            suffix_val = "0" + suffix_val;
+                        }
+                        $("#sr_no").val(prefix+fullYear+suffix_val);
+                    } else {
+
+                        $("#sr_no").val(prefix+fullYear+"1000");
+                    }
+                } else {
+
+                    $("#sr_no").val(prefix+fullYear+"1000");
+                }
+            }
+        });
+        $("#srmodal").modal('show');
+    });
+    $(".btn_sradd").on('click', function(e){
+        $('#SrForm').parsley().validate();
+        if ($('#SrForm').parsley().validate() === false) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            // var doc_data = $("#srdocument").prop('files')[0];
+            var form_data = new FormData();
+            form_data.append('sr_no', $("#sr_no").val());
+            form_data.append('srdate', formatDate($("#srdate").val()));
+            form_data.append('projectid', `{{sale_pk}}`);
+            // form_data.append('document', doc_data);
+            form_data.append('srid', $("#srid").val());
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_sr" %}',
+                data: form_data,
+                cache: false,
+                contentType: false,
+                processData: false,
+                type: 'POST',
+                success: function (data) {
+
+                    if(data.status=="Success"){
+                        if(data.method == "add") {
+                            var redirect_url = "{% url 'project_sr_detail' 0 9999999 %}".replace(0,`{{sale_pk}}`).replace(9999999,data.newSrID);
+                            location.href = redirect_url;
+                        } else if (data.method == "update") {
+                            location.reload();
+                        }
+                    } else {
+                        $("#text_error_sr").html(data.messages);
+                        $("#text_error_sr").show();
+                    }
+                }
+            });
+        }
+    });
+    function deleteservice(id, name) {
+        $("#srdel_id").val(id);
+        $("#del_sr_description").html("Are you sure you want to delete this record "+'"'+name+'"'+"?");
+        $("#srdeleteModal").modal('show');
+    }
+    $("#srdel_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_sr" %}',
+            data: {
+                'srdel_id': $("#srdel_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload();
+                }
+            }
+        });
+        $('#srdeleteModal').modal('hide')
+    });
+    $("#pclaimadd").on('click', function(e){
+        var today = new Date();
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = monthNames[today.getMonth()];
+        var yyyy = today.getFullYear();
+        $("#pcdate").val(dd + " " + mm + ", " + yyyy);
+        $('#pcdate').datepicker('setDate', dd + " " + mm + ", " + yyyy);
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_check_pcnumber" %}',
+            data: {},
+            type: 'POST',
+            success: function (data) {
+                var prefix = "CPC";
+                var strDate = new Date();
+                var fullYear = strDate.getFullYear();
+                if (data['status'] == "exist") {
+                    var pc_no_value = data.pc_no;
+                    if (pc_no_value.substring(0,4) == fullYear) {
+                        suffix_val = (parseInt(pc_no_value.substring(4,8)) + 1).toString();
+                        if(suffix_val.length == 3) {
+                            suffix_val = "0" + suffix_val;
+                        }
+                        $("#pc_no").val(prefix+fullYear+suffix_val);
+                    } else {
+
+                        $("#pc_no").val(prefix+fullYear+"1000");
+                    }
+                } else {
+
+                    $("#pc_no").val(prefix+fullYear+"1000");
+                }
+            }
+        });
+        $("#pcmodal").modal('show');
+    });
+    $(".btn_pcadd").on('click', function(e){
+        $('#PCForm').parsley().validate();
+        if ($('#PCForm').parsley().validate() === false) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            // var doc_data = $("#pcdocument").prop('files')[0];
+            var form_data = new FormData();
+            form_data.append('pc_no', $("#pc_no").val());
+            form_data.append('pcdate', formatDate($("#pcdate").val()));
+            form_data.append('projectid', `{{sale_pk}}`);
+            // form_data.append('document', doc_data);
+            form_data.append('pcid', $("#pcid").val());
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_pc" %}',
+                data: form_data,
+                cache: false,
+                contentType: false,
+                processData: false,
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        if(data.method == "add") {
+                            location.reload();
+                        } else if (data.method == "update") {
+                            location.reload();
+                        }
+                    } else {
+                        $("#text_error_pc").html(data.messages);
+                        $("#text_error_pc").show();
+                    }
+                }
+            });
+        }
+    });
+    function deleteprogress(id, name) {
+        $("#pcdel_id").val(id);
+        $("#del_pc_description").html("Are you sure you want to delete this record "+'"'+name+'"'+"?");
+        $("#pcdeleteModal").modal('show');
+    }
+    $("#pcdel_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_pc" %}',
+            data: {
+                'pcdel_id': $("#pcdel_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload();
+                }
+            }
+        });
+        $('#pcdeleteModal').modal('hide')
+    });
+    function addsubitems(id){
+        $("#itemid").val(id);
+        $("#head_title").html('Add Sub Item');
+        $(".btn_itemadd").html('Add');
+        $("#item_description").val('');
+        $("#item_uom").val('');
+        $("#item_qty").val('');
+        $("#item_allocation").val('');
+        $("#itemsubmodal").modal('show');
+    };
+    $(".btn_itemadd").on('click', function(e){
+        $("#SubItemForm").parsley().validate();
+        if ($('#SubItemForm').parsley().validate() === false) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_sub_item" %}',
+                data: {
+                    description: $("#item_description").val(),
+                    uom: $("#item_uom").val(),
+                    qty: $("#item_qty").val(),
+                    //allocation: $("#item_allocation").val(),
+                    itemid: $("#itemid").val(),
+                    quotationid: `{{quotation_pk}}`
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_sub_item").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_sub_item").html(data.messages);
+                        $("#text_error_sub_item").show();
+                    }
+                }
+            });
+        }
+    });
+    function updateitems(id){
+        $("#iid").val(id);
+        $("#head_title_item").html('Update Item');
+        $(".btn_iadd").html('Update');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_item" %}',
+            data: {
+                iid: $("#iid").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data)
+                $("#i_description").val(up_data.description);
+                $("#i_uom").val(up_data.uom);
+                $("#i_uom").trigger("change");
+                $("#i_qty").val(up_data.qty);
+                $("#i_allocation").val(up_data.allocation);
+            }
+        });
+        $("#itemmodal").modal('show');
+    };
+    $(".btn_iadd").on('click', function(e){
+        $('#ItemForm').parsley().validate();
+        if ($('#ItemForm').parsley().validate() === false) {
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+        }
+        else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_item" %}',
+                data: {
+                    description: $("#i_description").val(),
+                    uom: $("#i_uom").val(),
+                    qty: $("#i_qty").val(),
+                    allocation: $("#i_allocation").val(),
+                    iid: $("#iid").val()
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_item").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_item").html(data.messages);
+                        $("#text_error_item").show();
+                    }
+                }
+            });
+        }
+
+    });
+    function deleteitems(id,name) {
+        $("#itemdel_id").val(id);
+        $("#del_item_description").html("Are you sure you want to delete this record "+'"'+name+'"'+"?");
+        $("#itemdeleteModal").modal('show');
+    }
+    $("#itemdel_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_scope" %}',
+            data: {
+                'scopeid': $("#itemdel_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload();
+                }
+            }
+        });
+        $('#itemdeletModal').modal('hide')
+    });
+    function deletesite(id, name) {
+        $("#sitedel_id").val(id);
+        $("#del_site_description").html("Are you sure you want to delete this record "+'"'+name+'"'+"?");
+        $("#sitedeleteModal").modal('show');
+    }
+
+    $("#sitedel_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_site_progress" %}',
+            data: {
+                'siteid': $("#sitedel_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload();
+                }
+            }
+        });
+        $('#sitedeletModal').modal('hide');
+    });
+    $("#ptoolboxadd").on('click', function(e){
+        $("#toolboxid").val('-1');
+        $("#head_title_toolbox").html('Add ToolBox Item');
+        $(".btn_tooboxadd").html('Add');
+        $("#toolbox_description").val('');
+        $("#toolbox_objective").val('');
+        $("#toolbox_objective").trigger('change');
+        $("#toolbox_activity").val('');
+        $("#toolbox_activity").trigger('change');
+        flag = true;
+        $("#toolboxmodal").modal('show');
+    });
+    $(".btn_toolboxadd").on('click', function(e){
+        $('#ToolBoxItemForm').parsley().validate();
+        if ($('#ToolBoxItemForm').parsley().validate() === false) {
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+        }
+        else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_toolbox_item" %}',
+                data: {
+                    description: $("#toolbox_description").val(),
+                    activity: $("#toolbox_activity").val(),
+                    objective: $("#toolbox_objective").val(),
+                    manager: "Engineer",
+                    projectid: `{{sale_pk}}`,
+                    toolboxid: $("#toolboxid").val()
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_toolbox").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_toolbox").html(data.messages);
+                        $("#text_error_toolbox").show();
+                    }
+                }
+            });
+        }
+
+    });
+    function updatetoolboxitem(id){
+        $("#toolboxid").val(id);
+        $("#head_title_toolbox").html('Update ToolBox Item');
+        $(".btn_tooboxadd").html('Update');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_toolbox_item" %}',
+            data: {
+                toolboxid: $("#toolboxid").val()
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data);
+                flag = false;
+                $("#toolbox_description").val(up_data.description);
+                $('#toolbox_description').trigger('change');
+                $("#toolbox_activity").val(up_data.activity);
+                $('#toolbox_activity').trigger('change');
+                $("#toolbox_objective").val(up_data.objective);
+                $('#toolbox_objective').trigger('change');
+
+            }
+        });
+        $("#toolboxmodal").modal('show');
+
+    };
+    function deletetoolboxitem(id, name) {
+        $("#tbmitemdel_id").val(id);
+        $("#del_tbmitem_description").html("Are you sure you want to delete this record "+'"'+name+'"'+"?");
+        $("#tbmitemdeleteModal").modal('show');
+    }
+
+    $("#tbmitemdel_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_tbm_item" %}',
+            data: {
+                'tbmitemdel_id': $("#tbmitemdel_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload();
+                }
+            }
+        });
+        $('#tbmitemdeleteModal').modal('hide');
+    });
+</script>
+{% endblock %}

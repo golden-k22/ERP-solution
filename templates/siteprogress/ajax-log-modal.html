@@ -1,0 +1,74 @@
+{% load static %}
+<div>
+        <div id="text_error_progress" style="display: none;" class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+        </div>
+        <div class="mb-3 row">
+            <label for="progressdate{{item_cnt}}" class="col-md-4 col-form-label">Date:</label>
+            <div class="col-md-8">
+                <input class="form-control" type="text" id="progressdate{{item_cnt}}" data-date-format="dd M, yyyy" data-provide="datepicker" data-date-autoclose="true" autocomplete="off" required>
+            </div>
+        </div>
+        <div class="mb-3 mt-3 row">
+            <label for="progressdescription{{item_cnt}}" class="col-md-4 col-form-label">Description:</label>
+            <div class="col-md-8 ">
+                <select class="form-control select2" id="progressdescription{{item_cnt}}" required>
+                    <option value="">Select Description</option>
+                    {% for description in scopedescriptions %}
+                        <option value="{{description.description}}">{{description.description}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label for="progressuom{{item_cnt}}" class="col-md-4 col-form-label">UOM:</label>
+            <div class="col-md-8">
+                <select class="form-control uom-select" id="progressuom{{item_cnt}}" name="progressuom">
+                    <option value="">Select UOM</option>
+                    {% for uom in uoms %}
+                        <option value="{{uom.id}}">{{uom.name}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label for="progressqty{{item_cnt}}" class="col-md-4 col-form-label">Qty:</label>
+            <div class="col-md-8">
+                <input class="form-control" type="number" id="progressqty{{item_cnt}}" name="progressqty" onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : event.charCode >= 48 && event.charCode <= 57" required>
+            </div>
+        </div>
+        <div style="margin-top: 25px;margin-bottom: 25px;background: #cccccc;height: 3px;"></div>
+</div>
+
+<script>
+
+    var today = new Date();
+    var dd = String(today.getDate()).padStart(2, '0');
+    var mm = monthNames[today.getMonth()];
+    var yyyy = today.getFullYear();
+    $("#progressdate"+{{item_cnt}}).val(dd + " " + mm + ", " + yyyy);
+    $('#progressdate'+{{item_cnt}}).datepicker('setDate', dd + " " + mm + ", " + yyyy);
+
+
+    $("#progressdescription"+{{item_cnt}}).on('change', function(e){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_site_uom_name" %}',
+            data: {
+                progressdescription: $("#progressdescription"+{{item_cnt}}).val(),
+                proj_id: $("#project_filter").val()
+            },
+            type: 'POST',
+            success: function (data) {
+                if(data.status == "exist") {
+                    $("#progressuom"+{{item_cnt}}).val(data.uom);
+                    $("#progressuom"+{{item_cnt}}).trigger('change');
+                }
+
+            }
+        });
+    });
+
+    $("#progressdescription"+{{item_cnt}}).select2({width: '100%', dropdownParent: $("#manage_progress")});
+    $(".uom-select").select2({width: '100%', dropdownParent: $("#manage_progress")});
+
+</script>

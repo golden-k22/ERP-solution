@@ -1,0 +1,25 @@
+[
+    {
+      "model": "accounts.notificationprivilege",
+      "pk": 1,
+      "fields": {
+        "project_no_created": true,
+        "project_status": true,
+        "project_end": 2,
+        "tbm_no_created": true,
+        "inventory_item_deleted": true,
+        "stock_equal_restock": true,
+        "do_status": true,
+        "service_status": true,
+        "pc_status": true,
+        "usergroup_created": true,
+        "user_no_created": true,
+        "claim_submitted": true,
+        "contract_end": 3,
+        "hardware_end": 3,
+        "schedule_end": 2,
+        "password_change": true,
+        "user_id": 1
+      }
+    }
+]

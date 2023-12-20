@@ -1,0 +1,81 @@
+{% load static %}
+<div class="table-responsive pt-1">
+    <table id="datatable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+        <thead>
+            <tr>
+                <th>Emp No</th>
+                <th>Project No</th>
+                <th>Time-In</th>
+                <th>Time-Out</th>
+                <th>Approved OT HR</th>
+                <th>1.5HR</th>
+                <th>2.0HR</th>
+                <th>PH</th>
+                <th>Meal Allowance</th>
+                <th>Late Hours(min)</th>
+                <th>Night Allowance</th>
+                <th>Shift Type</th>
+            </tr>
+        </thead>
+        <tbody>
+         {% for otcalculation in otcalculations %}
+            <tr>
+                <td class="align-middle">{{otcalculation.emp_no|default_if_none:""}}</td>
+                <td class="align-middle">{{otcalculation.projectcode|default_if_none:""}}</td>
+                <td class="align-middle">{{otcalculation.checkin_time|date:'d M, Y H:i'|default_if_none:""}}</td>
+                <td class="align-middle">{{otcalculation.checkout_time|date:'d M, Y H:i'|default_if_none:""}}</td>
+                <td class="align-middle">{{otcalculation.approved_hour|default_if_none:""}}</td>
+                <td class="align-middle">{{otcalculation.firsthr|default_if_none:""}}</td>
+                <td class="align-middle">{{otcalculation.secondhr|default_if_none:""}}</td>
+                <td class="align-middle">{{otcalculation.ph|default_if_none:""}}</td>
+                <td class="align-middle">{{otcalculation.meal_allowance|default_if_none:""}}</td>
+                <td class="align-middle">{{otcalculation.late_hours|default_if_none:""}}</td>
+                <td class="align-middle">{{otcalculation.night_allowance|default_if_none:""}}</td>
+                <td class="align-middle">{{otcalculation.shift_type|default_if_none:""}}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script>
+    $("#datatable").DataTable({
+        "aaSorting": [[ 0, "desc" ]],
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+        buttons: [
+            {
+                extend: 'colvis',
+                text: "Filter Column",
+                postfixButtons: [ 'colvisRestore' ]
+            },
+            {
+                extend: 'collection',
+                text: "Export",
+                buttons : [
+                    {
+                        extend: 'excelHtml5',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                    {
+                        extend: 'csvHtml5',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                    {
+                        extend: 'pdfHtml5',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                ]
+            },
+         
+        ],
+    }).buttons().container().appendTo(".export_button");
+    $(".dataTables_length select").addClass("form-select form-select-sm");
+    $("#newSearchPlace").html($(".dataTables_filter"));
+</script>

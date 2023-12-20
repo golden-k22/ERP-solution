@@ -1,0 +1,46 @@
+{% load static %}
+<div class="table-responsive pt-1">
+    <table id="dtmandays" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+        <thead>
+            <tr>
+                <!--th>SN</th-->
+                <th>Estimated Mandays</th>
+                <th>Actual Mandays</th>
+                <th>1.5 OT</th>
+                <th>2.0 OT</th>
+            </tr>
+        </thead>
+        <tbody>
+         {% comment %} {% for manday in mandays %}
+            <tr>
+                <!--td class="align-middle">{{forloop.counter}}</td-->
+                <td class="align-middle">{{manday.estimate_day|default_if_none:""}}</td>
+                <td class="align-middle">{{manday.projectcode|default_if_none:""}}</td>
+                <td class="align-middle">{{manday.firsthr|default_if_none:""}}</td>
+                <td class="align-middle">{{manday.secondhr|default_if_none:""}}</td>
+            </tr>
+        {% endfor %} {% endcomment %}
+        {% if mandays %}
+            <tr>
+                <!--td></td-->
+                <td class="align-middle">{{estimated_mandays}}</td>
+                <td class="align-middle">{{actual_mondays}}</td>
+                <td class="align-middle">{{total_1hr}}</td>
+                <td class="align-middle">{{total_2hr}}</td>    
+            </tr>
+        {% endif %}
+        </tbody>
+    </table>
+</div>
+<script>
+    var dtTable = $("#dtmandays").DataTable({
+        "aaSorting": [[ 0, "desc" ]],
+        searching: false, 
+        paging: false, 
+        info: false,
+        ordering: false,
+        //dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            //"<'row'<'col-sm-12'tr>>" +
+            //"<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+</script>

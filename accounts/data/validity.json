@@ -1,0 +1,34 @@
+[
+    {
+        "model": "sales.validity",
+        "pk": 1,
+        "fields": {
+            "method": "7 days from date of quotation",
+            "description": "7 days from date of quotation"
+        }
+    },
+    {
+        "model": "sales.validity",
+        "pk": 2,
+        "fields": {
+            "method": "3 days from date of quotation",
+            "description": "3 days from date of quotation"
+        }
+    },
+    {
+        "model": "sales.validity",
+        "pk": 3,
+        "fields": {
+            "method": "15 days from date of quotation",
+            "description": "15 days from date of quotation"
+        }
+    },
+    {
+        "model": "sales.validity",
+        "pk": 4,
+        "fields": {
+            "method": "30 days from date of quotation",
+            "description": "30 days from date of quotation"
+        }
+    }
+]

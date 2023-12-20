@@ -1,0 +1,26 @@
+[
+    {
+      "model": "accounts.materiallog",
+      "pk": 1,
+      "fields": {
+	    "emp_no": "AA014",
+        "material_code": "100001",
+        "project_name": "CPJ200001 The ABC",
+        "material_out": "5",
+        "date_time": "2021-07-26T15:21:00Z",
+        "comment": "test"
+      }
+    },
+    {
+      "model": "accounts.materiallog",
+      "pk": 2,
+      "fields": {
+        "emp_no": "AA014",
+        "material_code": "100002",
+        "project_name": "CPJ200001 The ABC",
+        "material_out": "5",
+        "date_time": "2021-07-30T15:21:00Z",
+        "comment": "test"
+      }
+    }
+]

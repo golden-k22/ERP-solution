@@ -1,0 +1,511 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block page-title %}PPE Log{% endblock%}
+{% block css %}
+    <link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" rel="stylesheet">
+    <!-- DataTables -->
+    <link href="{% static 'assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'assets/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="{% static 'assets/css/flatpicker.css' %}">
+
+
+{% endblock %}
+{% block content %}
+<style type="text/css">
+    .datepicker {
+        z-index:1151 !important;
+    }
+    .bootstrap-datetimepicker-widgets {
+        z-index:1151 !important;
+    }
+    .select-search {
+        width: 50%;
+        padding: .375rem .75rem;
+        font-size: .8125rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #5b626b;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #ced4da;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        border-radius: .25rem;
+        -webkit-transition: border-color .15s ease-in-out,-webkit-box-shadow .15s ease-in-out;
+        transition: border-color .15s ease-in-out,-webkit-box-shadow .15s ease-in-out;
+        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out,-webkit-box-shadow .15s ease-in-out;
+    }
+    .daterangepicker {
+        padding: 15px!important;
+    }
+    #newSearchPlace div.dataTables_filter {
+        text-align: right;
+        padding-top: 5px;
+    }
+    #newSearchPlace div.dataTables_filter label {
+        font-weight: normal;
+        white-space: nowrap;
+        text-align: left;
+    }
+    #newSearchPlace div.dataTables_filter input {
+        margin-left: 0.5em;
+        margin-right: 0;
+        display: inline-block;
+        width: auto;
+    }
+    .dt-button-collection .dropdown-menu {
+        position:relative !important
+    }
+    .dt-button-collection {
+        left: unset !important;
+        right: 10px ;
+    }
+    .dropdown-item.active, .dropdown-item:active {
+        color: #f4f5f7;
+        text-decoration: none;
+        background-color: #7a6fbe;
+    }
+</style>
+<div class="container-fluid">
+    <div id="loading" style="z-index:1151 !important;font-size: 30px; position: absolute; top: 40%; left: 50%;">
+        <img src="{% static 'assets/images/spinning-circles.svg' %}" width="80" alt="" style="background: transparent;">
+    </div>
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="page-title-box">
+                <h4>PPE Log
+                </h4>
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'all_ppelog' %}"><b>PPE Log</b></a></li>
+                        <li class="breadcrumb-item active">All PPE Log</li>
+                    </ol>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="row">
+                                <div class="mt-1 col-md-3 space-custom">
+                                    <button type="button" id="materiallogadd" class="btn btn-primary w-100" style="height: 38px;"><i class="mdi mdi-calendar-plus"></i> New</button>
+                                </div>
+                                <div class="mt-1 col-md-6 space-custom">
+                                    <div class="export_button justify-content-center d-flex"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="row justify-content-end">
+                                <div class="mt-1 col-md-2 space-custom">
+                                    <select class="form-control search_filter" id="search_empno" required>
+                                        <option value="">Emp No</option>
+                                        {% for emp_no in emp_nos %}
+                                            <option value="{{emp_no.emp_no}}">{{emp_no.emp_no}}</option>
+                                        {% endfor %}
+                                    </select>
+
+                                </div>
+                                <div class="mt-1 col-md-2 space-custom">
+                                    <select class="form-control search_filter" id="search_name" required>
+                                        <option value="">Project Name</option>
+                                        {% for projectname in projectnames %}
+                                            <option value="{{projectname.project_name}}">{{projectname.project_name}}</option>
+                                        {% endfor %}
+                                    </select>
+
+                                </div>
+                                <div class="mt-1 col-md-2 space-custom">
+                                    <select class="form-control search_filter" id="search_code" required>
+                                        <option value="">PPE Code</option>
+                                        {% for ppecode in ppecodes %}
+                                            <option value="{{ppecode.ppe_code}}">{{ppecode.ppe_code}}</option>
+                                        {% endfor %}
+                                    </select>
+
+                                </div>
+
+                                <div class="col-md-1 space-custom justify-content-start">
+<!--                                    <a href="javascript:void(0);" id="materiallogsearch" class="btn btn-primary m-1"><i class="dripicons-search align-middle"></i></a>-->
+                                </div>
+                                <div class="mt-1 col-md-3">
+                                    <div id="newSearchPlace"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div id="materiallog_data"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--materiallog modal content -->
+<div id="materiallogmodal" class="modal fade" role="dialog" aria-labelledby="materiallogModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title">Add New PPE Log</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_info">
+                <form class="needs-validation p-3" id="MaterialLogForm">
+                    {% csrf_token %}
+
+                    <div id="text_error" class="alert alert-danger alert-dismissible fade show mb-2" role="alert">
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="emp_no" class="col-md-4 col-form-label">Emp No:</label>
+                        <div class="col-md-8">
+                            <select class="form-control select2" id="emp_no" required>
+                                <option value="">Select the Emp No</option>
+                                {% for emp in emps %}
+                                    <option value="{{emp.empid|add:' '|add:emp.first_name}}">{{emp.empid|add:' '|add:emp.first_name}}</option>
+                                {% endfor %}
+                            </select>
+
+<!--                            <input class="form-control" type="text"  id="emp_no" required>-->
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="material_code" class="col-md-4 col-form-label">PPE Code:</label>
+                        <div class="col-md-8">
+                            <select class="form-control select2" id="material_code" required>
+                                <option value="">Select the PPE Code</option>
+                                {% for ppe in ppes %}
+                                    <option value="{{ppe.ppe_code}}" data-qty="{{ppe.stock_qty}}" data-desc="{{ppe.ppe_desc}}" > {{ppe.ppe_code}} {{ppe.ppe_desc}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 mt-3 row">
+                        <label for="project_name" class="col-md-4 col-form-label">Project Name:</label>
+                        <div class="col-md-8">
+                            <select class="form-control select2" id="project_name" required>
+                                <option value="">Select the Project Name</option>
+                                {% for project in projects %}
+                                    <option value="{{project.proj_name}}">{{project.proj_name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 row">
+                        <label for="material_out" class="col-md-4 col-form-label">PPE Out:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="number"  id="material_out" data-parsley-materialout="" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="comment" class="col-md-4 col-form-label">Comment:</label>
+                        <div class="col-md-8">
+                            <textarea class="form-control" type="text" rows="4" id="comment"></textarea>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="date_time" class="col-md-4 col-form-label">Date & Time:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text"  id="date_time" data-provide="datepicker" data-date-autoclose="true" required>
+                        </div>
+                    </div>
+                    <input type="hidden" id="materiallogid" value="-1" />
+                </form>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_materiallogadd">Add</button>
+
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- Delete Materiallog modal content -->
+<div id="deleteModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="delModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="delModalLabel">Delete PPE Log</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5 id="del_description"></h5>
+                <input type="hidden" id="del_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button id="del_confirm" type="button" class="btn btn-primary waves-effect btn-sm waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'assets/libs/select2/js/select2.full.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+<!-- Buttons examples -->
+<script src="{% static 'assets/libs/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js' %}"></script>
+<script src="{% static 'assets/libs/jszip/jszip.min.js' %}"></script>
+<script src="{% static 'assets/libs/pdfmake/build/pdfmake.min.js' %}"></script>
+<script src="{% static 'assets/libs/pdfmake/build/vfs_fonts.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.html5.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.print.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.colVis.min.js' %}"></script>
+<!-- Responsive examples -->
+<script src="{% static 'assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+<!-- <script src="{% static 'assets/libs/moment/min/moment.min.js' %}"></script> -->
+<script src="{% static 'assets/js/flatpicker.js' %}"></script>
+<script>
+    $(document).ready(function(){
+        $("#datatable").DataTable();
+        $("#text_error").hide();
+    });
+    window.Parsley.addValidator('materialout', {
+          validateString: function(value,id, instance) {
+            var msg = '';
+            var container = instance.$element.closest('.form-item');
+            var helpContainer = '<ul class="parsley-errors-list filled"><li class="parsley-age"></li></ul>';
+            let qty = $("#material_code").find('option:selected').data('qty');
+            if(value<=0 || value>qty)
+                msg = 'value should be from 1 to '+qty;
+            if(msg !== ''){
+                container.append(helpContainer);
+                container.find('.parsley-age').html(msg)
+                return $.Deferred().reject(msg);
+            } else {
+                container.find('select').filter(function(){ return this.value}).parent().addClass('parsley-success');
+                return true;
+            }
+          },
+<!--          messages: {-->
+<!--            en: 'value should be from 1 to '+$("#material_code").find('option:selected').data('qty')-->
+<!--          }-->
+        });
+    $("#date_time").flatpickr({
+        enableTime: true,
+        dateFormat: "d M, Y H:i",
+        allowInput: true,
+    });
+    function formatDateTime(date) {
+        var d = new Date(date),
+            month = '' + (d.getMonth() + 1),
+            day = '' + d.getDate(),
+            year = d.getFullYear();
+
+        if (month.length < 2) {
+            month = '0' + month;
+        }
+
+        if (day.length < 2) {
+            day = '0' + day;
+        }
+        var hour =  ("0" + (d.getHours())).slice(-2);
+        var min =  ("0" + (d.getMinutes())).slice(-2);
+
+        return year + "-" + month + "-" + day + " " + hour + ":" +  min
+    }
+    ajax_all_ppelog();
+
+    function ajax_all_ppelog() {
+        $('#loading').show();
+        $.ajax({
+			headers: { "X-CSRFToken": '{{csrf_token}}' },
+			url: '{% url "ajax_all_ppelog" %}',
+			data: {
+
+			},
+			type: 'POST',
+			success: function (data) {
+				$("#materiallog_data").html(data)
+			},
+            complete: function(){
+                $('#loading').hide();
+            }
+		});
+    };
+    function deletemateriallog(id, name) {
+        $("#del_id").val(id);
+        $("#del_description").html("Are you sure you want to delete this record "+'"'+name+'"'+"?");
+        $("#deleteModal").modal('show');
+    }
+    $("#del_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_ppelog" %}',
+            data: {
+                'materiallogid': $("#del_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload();
+                }
+            }
+        });
+        $('#deletModal').modal('hide');
+    });
+
+    function materiallogsearch(){
+        if($("#search_empno").val() == "" &&  $("#search_code").val() == "" && $("#search_name").val() == "") {
+            location.reload();
+        } else {
+            $('#loading').show();
+            $(".export_button").html('');
+            $("#newSearchPlace").html('');
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_filter_ppelog" %}',
+                data: {
+                    search_empno: $("#search_empno").val(),
+                    search_code: $("#search_code").val(),
+                    search_name: $("#search_name").val(),
+                },
+                type: 'POST',
+                success: function (data) {
+                    $("#materiallog_data").html(data)
+                },
+                complete: function(){
+                    $('#loading').hide();
+                }
+            });
+        }
+    };
+    $("#search_empno").on('change', function(e){
+        materiallogsearch();
+    });
+    $("#search_code").on('change', function(e){
+        materiallogsearch();
+    });
+    $("#search_name").on('change', function(e){
+        materiallogsearch();
+    });
+
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+    $("#materiallogadd").on('click', function(e){
+
+        var today = new Date();
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = monthNames[today.getMonth()];
+        var yyyy = today.getFullYear();
+        var hh=today.getHours();
+        var MM=today.getMinutes();
+        $("#date_time").val(dd + " " + mm + ", " + yyyy+" "+hh+":"+MM);
+<!--        $('#date_time').datepicker('setDate', dd + " " + mm + ", " + yyyy);-->
+
+        $("#head_title").html('Add New PPE Log');
+        $(".btn_materiallogadd").html('Add');
+        $("#materiallogid").val("-1");
+        $("#project_name").val("");
+        $('#project_name').trigger('change');
+        $("#emp_no").val("");
+        $('#emp_no').trigger('change');
+        $("#material_code").val("");
+        $('#material_code').trigger('change');
+        $("#material_out").val("");
+        $("#comment").val("");
+
+        $("#materiallogmodal").modal('show');
+    });
+    $(".select2").select2({width: '100%', dropdownParent: $("#manage_info")});
+    $(".search_filter").select2({width: '100%'});
+    $(".btn_materiallogadd").on('click', function(e){
+        $("#MaterialLogForm").parsley().validate();
+
+        if ($('#MaterialLogForm').parsley().validate() === false) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_ppelog" %}',
+                data: {
+                    project_name: $("#project_name").val(),
+                    emp_no: $("#emp_no").val(),
+                    material_code: $("#material_code").val(),
+                    product_desc: $("#material_code").find('option:selected').data('desc'),
+                    material_out: $("#material_out").val(),
+                    comment: $("#comment").val(),
+                    date_time: formatDateTime($("#date_time").val()),
+                    materiallogid: $("#materiallogid").val()
+
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error").html(data.messages);
+                        $("#text_error").show();
+                    }
+                }
+            });
+        }
+    });
+    function updatemateriallog(id) {
+        $("#materiallogid").val(id);
+        $("#head_title").html('Update PPE Log');
+        $(".btn_materiallogadd").html('Update');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_ppelog" %}',
+            data: {
+                materiallogid: $("#materiallogid").val()
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data);
+                $("#project_name").val(up_data.project_name);
+                $('#project_name').trigger('change');
+                $("#emp_no").val(up_data.emp_no);
+                $('#emp_no').trigger('change');
+                $("#material_code").val(up_data.material_code);
+                $('#material_code').trigger('change');
+                $("#material_out").val(up_data.material_out);
+                $('#material_out').trigger('change');
+                $('#comment').val(up_data.comment);
+                $("#date_time").val(up_data.date_time);
+            }
+        });
+        $("#materiallogmodal").modal('show');
+
+    }
+    function formatDate(date) {
+        var d = new Date(date),
+            month = '' + (d.getMonth() + 1),
+            day = '' + d.getDate(),
+            year = d.getFullYear();
+
+        if (month.length < 2)
+            month = '0' + month;
+        if (day.length < 2)
+            day = '0' + day;
+
+        return [year, month, day].join('-');
+    }
+</script>
+{% endblock %}
+
+

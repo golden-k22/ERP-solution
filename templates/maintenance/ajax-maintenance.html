@@ -1,0 +1,82 @@
+{% load static %}
+<div class="table-responsive">
+    <table id="datatable-buttons" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+        <thead>
+            <tr>
+                <th>Maintenance No</th>
+                <th>Customer</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>In-charge</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+         {% for maintenance in maintenances %}
+            <tr>
+                <td class="align-middle">{{maintenance.main_no|default_if_none:""}}</td>
+                <td class="align-middle">{{maintenance.company_nameid|default_if_none:""}}</td>
+                <td class="align-middle">{{maintenance.start_date|date:"d M, Y"|default_if_none:""}}</td>
+                <td class="align-middle">{{maintenance.end_date|date:"d M, Y"|default_if_none:""}}</td>
+                <td class="align-middle">{{maintenance.proj_incharge|default_if_none:""}}</td>
+                <td class="align-middle">{{maintenance.main_status|default_if_none:""}}</td>
+                <td class="align-middle">
+                    <a href="{% url 'maintenance_detail' maintenance.id %}" class="btn btn-outline-secondary btn-sm" title="View">
+                        <i class="ion ion-md-eye"></i>
+                    </a>
+                    <!-- a href="javascript:void(0);" onclick="updatemain('{{maintenance.id}}')" class="btn btn-outline-primary btn-sm edit com_update" title="Edit">
+                        <i class="fas fa-pencil-alt"></i>
+                    </a -->
+                    <a href="javascript:void(0);" onclick="deletemain('{{maintenance.id}}','{{maintenance.main_no}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
+                        <i class="far fa-trash-alt"></i>
+                    </a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script>
+    var dtTable = $("#datatable").DataTable({
+        //lengthChange:!1,
+        "aaSorting": [[ 0, "desc" ]],
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+        paging: true,
+        buttons: [
+            {
+                extend: 'colvis',
+                text: "Filter Column",
+                postfixButtons: [ 'colvisRestore' ]
+            },
+            {
+                extend: 'collection',
+                text: "Export",
+                buttons : [
+                    {
+                        extend: 'excelHtml5',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                    {
+                        extend: 'csvHtml5',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                    {
+                        extend: 'pdfHtml5',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                ]
+            },
+        ],
+    }).buttons().container().appendTo(".export_button");
+    $(".dataTables_length select").addClass("form-select form-select-sm");
+    $("#newSearchPlace").html($(".dataTables_filter"));
+</script>

@@ -1,0 +1,15 @@
+[
+    {
+      "model": "accounts.privilege",
+      "pk": 1,
+      "fields": {
+        "sales_summary": "Full Access",
+        "sales_report": "Full Access",
+        "proj_summary": "Full Access",
+        "proj_ot": "Full Access",
+        "invent_material": "Full Access",
+        "prof_summary": "Full Access",
+        "user_id": 1
+      }
+    }
+]

@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block page-title %}Activity Logs{% endblock%}
+{% block css %}
+    {% comment %} <link href="{% static 'assets/yearpicker/yearpicker.css' %}" rel="stylesheet">  {% endcomment %}
+    <link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'assets/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/css/daterangepicker-bs3.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'assets/css/flatpicker.css' %}">
+
+{% endblock %}
+{% block content %}
+<style type="text/css">
+    #newSearchPlace div.dataTables_filter {
+        text-align: right;
+        padding-top: 5px;
+    }
+    .select-search {
+        width: 85%;
+        padding: .575rem .75rem;
+        font-size: .8125rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #5b626b;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #ced4da;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        border-radius: .25rem;
+        -webkit-transition: border-color .15s ease-in-out,-webkit-box-shadow .15s ease-in-out;
+        transition: border-color .15s ease-in-out,-webkit-box-shadow .15s ease-in-out;
+        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out,-webkit-box-shadow .15s ease-in-out;
+    }
+    .daterangepicker {
+        padding: 15px!important;
+    }
+    #newSearchPlace div.dataTables_filter label {
+        font-weight: normal;
+        white-space: nowrap;
+        text-align: left;
+    }
+    #newSearchPlace div.dataTables_filter input {
+        margin-left: 0.5em;
+        margin-right: 0;
+        display: inline-block;
+        width: auto;
+    }
+    .dt-button-collection .dropdown-menu {
+        position:relative !important
+    }
+    .dt-button-collection {
+        left: unset !important;
+        right: 10px ;
+    }
+    .dropdown-item.active, .dropdown-item:active {
+        color: #f4f5f7;
+        text-decoration: none;
+        background-color: #7a6fbe;
+    }
+</style>
+<div class="container-fluid">
+    <div id="loading" style="z-index:1151 !important;font-size: 30px; position: absolute; top: 40%; left: 50%;">
+        <img src="{% static 'assets/images/spinning-circles.svg' %}" width="80" alt="" style="background: transparent;">
+    </div>
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="page-title-box">
+                <h4>Activity Logs
+                </h4>
+                
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a class="text-primary" href="{% url 'activity_logs' %}"><b>Activity Logs</b></a></li>
+                    <li class="breadcrumb-item active">All Logs</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    <!-- end page title -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="row">
+                                <div class="mt-1 col-md-1 space-custom"></div>
+                                <div class="mt-1 col-md-11 space-custom">
+                                    <div class="export_button justify-content-start d-flex"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="row justify-content-end d-flex">
+                                <div class="mt-1 col-md-2 space-custom">
+                                </div>
+                                <div class="mt-1 col-md-2 space-custom">
+                                </div>
+                                <div class="mt-1 col-md-2 space-custom">
+                                    <select class="form-control search_filter" id="search_user" required>
+                                        <option value="">User</option>
+                                        {% for user in users %}
+                                            <option value="{{user.id}}">{{user.username}}</option>
+                                        {% endfor %}
+                                    </select>
+                                    
+                                </div>
+                                <div class="mt-1 col-md-2 space-custom">
+                                    <input class="select-search input-daterange-datepicker" style="height:38px;" type="text"  id="daterange" autocomplete="off" placeholder="Date Range" required>
+                                </div>
+                                <div class="mt-1 col-md-3">
+                                    <div id="newSearchPlace"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="log_data"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+    <script src="{% static 'assets/libs/select2/js/select2.full.min.js' %}"></script>
+    <script src="{% static 'assets/libs/bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+    <!-- Required datatable js -->
+    <script src="{% static 'assets/libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'assets/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+    <!-- Buttons examples -->
+    <script src="{% static 'assets/libs/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
+    <script src="{% static 'assets/libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js' %}"></script>
+    <script src="{% static 'assets/libs/jszip/jszip.min.js' %}"></script>
+    <script src="{% static 'assets/libs/pdfmake/build/pdfmake.min.js' %}"></script>
+    <script src="{% static 'assets/libs/pdfmake/build/vfs_fonts.js' %}"></script>
+    <script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.html5.min.js' %}"></script>
+    <script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.print.min.js' %}"></script>
+    <script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.colVis.min.js' %}"></script>
+    <!-- Responsive examples -->
+    <script src="{% static 'assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+    <script src="{% static 'assets/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+
+    <script src="{% static 'assets/js/daterangepicker.js' %}"></script>
+    <script src="{% static 'assets/js/flatpicker.js' %}"></script>
+    {% comment %} <script src="{% static 'assets/yearpicker/yearpicker.js' %}"></script> {% endcomment %}
+    <script>
+        $(document).ready(function(){
+            $("#text_error").hide();
+            $("#role_error").hide();
+<!--            $('#loading').hide();-->
+        });
+
+        ajax_all_logs();
+    
+        function ajax_all_logs() {
+            $('#loading').show();
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_all_logs" %}',
+                data: {
+                    
+                },
+                type: 'POST',
+                success: function (data) {
+                    $("#log_data").html(data);
+                },
+                complete: function(){
+                    $('#loading').hide();
+                }
+            });
+        };
+        function usersearch(){
+            if($("#search_empno").val() == "" &&  $("#daterange").val() == "") {
+                location.reload();
+            } else {
+                $(".export_button").html('');
+                $("#newSearchPlace").html('');
+                $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_filter_logs" %}',
+                data: {
+                    search_user: $("#search_user").val(),
+                    date_range: $("#daterange").val(),
+                },
+                type: 'POST',
+                success: function (data) {
+                    $("#log_data").html(data);
+                    
+                }
+            });
+            }
+        };
+        $("#search_user").on('change', function(e){
+            usersearch();
+        });
+
+        $("#daterange").on('change', function(e){
+            usersearch();
+        });
+
+        $(".select2").select2({width: '100%', dropdownParent: $("#manage_info"), dropdownCssClass: 'hover-primary',});
+        $(".search_filter").select2({width: '100%'});
+        options_role = [];
+        $('#role option').each(function(idx) {
+            options_role.push({id: $(this).val(), text: $(this).text()});
+        });
+
+        $('.input-daterange-datepicker').daterangepicker({
+            format: 'YYYY.MM.DD HH:mm',
+            howDropdowns: true,
+            showWeekNumbers: true,
+            timePicker: true,
+            timePickerIncrement: 1,
+            timePicker12Hour: true,
+            opens: 'center',
+            drops: 'down',
+            buttonClasses: ['btn', 'btn-sm'],
+            applyClass: 'btn-primary',
+            cancelClass: 'btn-danger',
+            locale: {
+                fromLabel: 'Date From',
+                toLabel: 'Date To',
+                customRangeLabel: 'Custom',
+            }
+        });
+
+    </script>
+{% endblock %}

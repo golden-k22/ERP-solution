@@ -1,0 +1,61 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+
+    <head>
+
+        <meta charset="utf-8" />
+        <title>{% block page-title %}Not Allowed{% endblock %} | ERP Solutions</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta content="Premium Multipurpose Admin & Dashboard Template" name="description" />
+        <meta content="Themesbrand" name="author" />
+        <!-- App favicon -->
+        <link rel="shortcut icon" href="{% static 'assets/images/favicon.ico' %}">
+        
+        <!-- Bootstrap Css -->
+        <link href="{% static 'assets/css/bootstrap.min.css' %}" id="bootstrap-style" rel="stylesheet" type="text/css" />
+        <!-- Icons Css -->
+        <link href="{% static 'assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
+        <!-- App Css-->
+        <link href="{% static 'assets/css/app.min.css' %}" id="app-style" rel="stylesheet" type="text/css" />
+
+    </head>
+
+    <body>
+        <div class="account-pages my-5 pt-sm-5">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-md-8 col-lg-6 col-xl-5">
+                        <div class="card overflow-hidden">
+                            <div class="card-body pt-0">
+
+                                <div class="ex-page-content text-center">
+                                    <h2 class="text-dark" style="font-size: 60px!important;font-weight: 500;line-height: 150px;text-shadow: rgba(61, 61, 61, 0.3) 1px 1px, rgba(61, 61, 61, 0.2) 2px 2px, rgba(61, 61, 61, 0.3) 3px 3px;">Not Allowed!</h2>
+                                    <h3 class="">Sorry, page can not access</h3>
+                                    <br>
+
+                                    <a class="btn btn-info mb-4 waves-effect waves-light" href="/"><i class="mdi mdi-home"></i> Back to Dashboard</a>
+                                </div>
+
+                            </div>
+                        </div>
+                        <div class="mt-5 text-center">
+                            © {% now 'Y' %} <span class="d-none d-sm-inline-block"> - Crafted with <i class="mdi mdi-heart text-danger"></i> by <b class="text-danger">ERP Solutions Team.</b></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- JAVASCRIPT -->
+        <script src="{% static 'assets/libs/jquery/jquery.min.js' %}"></script>
+        <script src="{% static 'assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+        <script src="{% static 'assets/libs/metismenu/metisMenu.min.js' %}"></script>
+        <script src="{% static 'assets/libs/simplebar/simplebar.min.js' %}"></script>
+        <script src="{% static 'assets/libs/node-waves/waves.min.js' %}"></script>
+        <script src="{% static 'assets/libs/jquery-sparkline/jquery.sparkline.min.js' %}"></script>
+        <!-- App js -->
+        <script src="{% static 'assets/js/app.js' %}"></script>
+    </body>
+
+</html>

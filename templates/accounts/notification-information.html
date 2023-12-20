@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block page-title %}Notification Information{% endblock%}
+{% block css %}
+    <link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'assets/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/css/daterangepicker-bs3.css' %}" rel="stylesheet">
+{% endblock %}
+{% block content %}
+<style>
+    
+</style>
+<div class="container-fluid">
+    <div id="loading" style="z-index:1151 !important;font-size: 30px; position: absolute; top: 40%; left: 50%;">
+        <img src="{% static 'assets/images/spinning-circles.svg' %}" width="80" alt="" style="background: transparent;">
+    </div>
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="page-title-box">
+                <h4>Notification Information</h4>
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a class="text-primary" href="{% url 'notification_information' %}"><b>Notification Information</b></a></li>
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">All Notification Information</a></li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="mt-2 col-md-7 col-lg-7 col-xl-4 col-sm-7 pb-1" style="margin-left:3em">
+                    <div class="row">
+                        <div class="mt-1 col-md-2 ">
+                            <button type="button" id="btn_read" class="btn btn-primary new-button" style="height: 38px;white-space: nowrap;" > Read </button>
+                        </div>
+                        <div class="mt-1 col-md-2">
+                            <button type="button" id="btn_unread" class="btn btn-warning new-button" style="height: 38px;white-space: nowrap;" > Unread</button>
+                        </div>
+                        <div class="mt-1 col-md-2">
+                            <button type="button" id="btn_remove" class="btn btn-danger new-button"  style="height: 38px;white-space: nowrap;" > Remove</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="table-responsive pt-1">
+                        <table id="datatable-buttons" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>From</th>
+                                    <th>Notification</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                             {% for noti in notifications %}
+                                <tr>
+                                    <td class="align-middle">
+                                        <input type="checkbox" id="{{noti.id}}" class="notification" onclick="updateCheckedList('{{noti.id}}')">
+                                        <label for="{{noti.id}}" class="toggle"></label>
+                                    </td>
+                                    <td class="align-middle">
+                                        <a href="#" class="title">{{noti.actor}}</a>
+                                        <span class="star-toggle far fa-star"></span>
+                                    </td>
+                                    <td class="align-middle">
+                                        <a href="#" class="subject">
+                                            {% if noti.unread %}
+                                            <span class="bg-danger badge me-2">Unread</span>
+                                            {% else %}
+                                            <span class="bg-primary badge me-2">Read</span>
+                                            {% endif %}
+                                            <span class="teaser">
+                                                {{noti.description}}
+                                            </span>
+                                        </a>
+                                    </td>
+                                    <td class="align-middle">
+                                        <div class="date">{{noti.timestamp|date:"H:i d M"}}</div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+
+
+<!--                    <ul class="message-list">-->
+
+<!--                        {% for noti in notifications %}-->
+<!--                        <li class="unread">-->
+<!--                            <div class="col-mail col-mail-1">-->
+<!--                                <div class="checkbox-wrapper-mail">-->
+<!--                                    <input type="checkbox" id="{{noti.id}}" class="notification" onclick="updateCheckedList('{{noti.id}}')">-->
+<!--                                    <label for="{{noti.id}}" class="toggle"></label>-->
+<!--                                </div>-->
+<!--                                <a href="#" class="title">{{noti.actor}}</a>-->
+<!--                                <span class="star-toggle far fa-star"></span>-->
+<!--                            </div>-->
+<!--                            <div class="col-mail col-mail-2">-->
+<!--                                <a href="#" class="subject">-->
+<!--                                    {% if noti.unread %}-->
+<!--                                    <span class="bg-danger badge me-2">Unread</span>-->
+<!--                                    {% else %}-->
+<!--                                    <span class="bg-primary badge me-2">Read</span>-->
+<!--                                    {% endif %}-->
+<!--                                    <span class="teaser">-->
+<!--                                        {{noti.description}}-->
+<!--                                    </span>-->
+<!--                                </a>-->
+<!--                                <div class="date">{{noti.timestamp|date:"H:i d M"}}</div>-->
+<!--                            </div>-->
+<!--                        </li>-->
+<!--                        {% endfor %}-->
+<!--                    </ul>-->
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Delete tools modal content -->
+<div id="notideleteModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="notidelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="notidelModalLabel">Delete Notification</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5>Are you sure you want to delete selected notifications?</h5>
+<!--                <input type="hidden" id="notidel_id" value="-1">-->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button id="notidel_confirm" type="button" class="btn btn-primary waves-effect btn-sm waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'assets/libs/select2/js/select2.full.min.js' %}"></script>
+<script src="{% static 'assets/libs/bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+<!-- Buttons examples -->
+<script src="{% static 'assets/libs/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js' %}"></script>
+<script src="{% static 'assets/libs/jszip/jszip.min.js' %}"></script>
+<script src="{% static 'assets/libs/pdfmake/build/pdfmake.min.js' %}"></script>
+<script src="{% static 'assets/libs/pdfmake/build/vfs_fonts.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.html5.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.print.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.colVis.min.js' %}"></script>
+<!-- Responsive examples -->
+<script src="{% static 'assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+<script>
+    var noti_ids=[];
+    $(document).ready(function(){
+        $('#loading').hide();
+    });
+    function updateCheckedList(id) {
+        if($('#'+id)[0].checked){
+            noti_ids.push(id)
+        }else{
+            noti_ids.pop(id)
+        }
+    }
+
+    $("#btn_read").on('click', function(e){
+        for(let i=0;i<noti_ids.length;i++){
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_read_notify" %}',
+                data: {
+                    notifyid: noti_ids[i],
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="ok"){
+                        location.reload();
+                    }
+                }
+            });
+        }
+    });
+    $("#btn_unread").on('click', function(e){
+        for(let i=0;i<noti_ids.length;i++){
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_unread_notify" %}',
+                data: {
+                    notifyid: noti_ids[i],
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="ok"){
+                        location.reload();
+                    }
+                }
+            });
+        }
+    });
+    $("#btn_remove").on('click', function(e){
+        $("#notideleteModal").modal('show');
+    });
+    $("#notidel_confirm").on('click', function(event){
+        for(let i=0;i<noti_ids.length;i++){
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_remove_notify" %}',
+                data: {
+                    notifyid: noti_ids[i],
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="ok"){
+                        location.reload();
+                    }
+                }
+            });
+        }
+        $('#notideleteModal').modal('hide');
+    });
+    var dtTable = $("#datatable-buttons").DataTable({
+        "aaSorting": [[ 0, "desc" ]],
+        "aoColumns": [
+            null,
+            null,
+            null,
+            { "sType": "date" },
+        ],
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+        buttons: [
+        ],
+    }).buttons().container().appendTo(".export_button");
+    $(".dataTables_length select").addClass("form-select form-select-sm");
+    $("#newSearchPlace").html($(".dataTables_filter"));
+</script>
+
+{% endblock %}

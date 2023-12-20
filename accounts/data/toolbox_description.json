@@ -1,0 +1,74 @@
+[
+    {
+        "model": "toolbox.toolboxdescription",
+        "pk": 1,
+        "fields": {
+            "description": "Check temperature and report any worker not feeling well",
+            "objective": 1
+        }
+    },
+    {
+        "model": "toolbox.toolboxdescription",
+        "pk": 2,
+        "fields": {
+            "description": "Health topics (Heat Injuries, Dengue Fever etc)",
+            "objective": 1
+        }
+    },
+    {
+        "model": "toolbox.toolboxdescription",
+        "pk": 3,
+        "fields": {
+            "description": "Worker Quarters' Hygiene",
+            "objective": 1
+        }
+    },
+    {
+        "model": "toolbox.toolboxdescription",
+        "pk": 4,
+        "fields": {
+            "description": "Check site condition is suitable for work",
+            "objective": 2
+        }
+    },
+    {
+        "model": "toolbox.toolboxdescription",
+        "pk": 5,
+        "fields": {
+            "description": "Report any unsafe working condition to supervisor before start work",
+            "objective": 2
+        }
+    },
+    {
+        "model": "toolbox.toolboxdescription",
+        "pk": 6,
+        "fields": {
+            "description": "No electrical wire in contact with wet surface or exposed to nearby wet surface",
+            "objective": 2
+        }
+    },
+    {
+        "model": "toolbox.toolboxdescription",
+        "pk": 7,
+        "fields": {
+            "description": "Brief on Emergency Evacuation Route / Emergency Response Plan",
+            "objective": 2
+        }
+    },
+    {
+        "model": "toolbox.toolboxdescription",
+        "pk": 8,
+        "fields": {
+            "description": "Emphasize work site safety rules and regulations",
+            "objective": 2
+        }
+    },
+    {
+        "model": "toolbox.toolboxdescription",
+        "pk": 9,
+        "fields": {
+            "description": "Safe and proper use of power tools and PPE",
+            "objective": 2
+        }
+    }
+]

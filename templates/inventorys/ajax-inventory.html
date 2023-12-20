@@ -1,0 +1,65 @@
+{% load static %}
+<div class="table-responsive pt-1">
+    <table id="datatable-buttons" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+        <thead>
+            <tr>
+                <th>Material No</th>
+                <th>Product Name</th>
+                <th>Part Number</th>
+                <th>Color</th>
+                <th>Brand</th>
+                <th>Stock Qty</th>
+                <th>UOM</th>
+                <th>Location</th>
+                <th>Remark</th>
+                <th>Replenish Qty(Min)</th>
+                <th>Restock Qty</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+         {% for material in materials %}
+            <tr>
+                <td class="align-middle">{{material.material_code|default_if_none:""}}</td>
+                <td class="align-middle">{{material.product_desc|default_if_none:""}}</td>
+                <td class="align-middle">{{material.part_number|default_if_none:""}}</td>
+                <td class="align-middle">{{material.color|default_if_none:""}}</td>
+                <td class="align-middle">{{material.brand|default_if_none:""}}</td>
+                <td class="align-middle">{{material.stock_qty|default_if_none:""}}</td>
+                <td class="align-middle">{{material.uom|default_if_none:""}}</td>
+                <td class="align-middle">{{material.location|default_if_none:""}}</td>
+                <td class="align-middle">{{material.remark|default_if_none:""}}</td>
+                <td class="align-middle">{{material.replenish_qty|default_if_none:""}}</td>
+                <td class="align-middle">{{material.restock_qty|default_if_none:""}}</td>
+                <td class="align-middle">
+                    <a href="javascript:void(0);" onclick="updatematerial('{{material.id}}')" class="btn btn-outline-primary btn-sm edit com_update" title="Edit">
+                        <i class="fas fa-pencil-alt"></i>
+                    </a>
+<!--                    <a href="javascript:void(0);" onclick="deletematerial('{{material.id}}','{{material.material_code}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">-->
+<!--                        <i class="far fa-trash-alt"></i>-->
+<!--                    </a>-->
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script>
+    $("#datatable-buttons").DataTable({
+        // lengthChange:!1,
+        "aaSorting": [[ 0, "desc" ]],
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+        buttons: [
+            {
+                extend: 'colvis',
+                text: "Filter Column",
+                postfixButtons: [ 'colvisRestore' ]
+            },
+         
+        ],
+    }).buttons().container().appendTo(".export_button");
+    $(".dataTables_length select").addClass("form-select form-select-sm");
+    $("#newSearchPlace").html($(".dataTables_filter"));
+</script>

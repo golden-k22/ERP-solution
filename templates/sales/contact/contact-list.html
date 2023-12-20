@@ -1,0 +1,725 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block page-title %}Contact{% endblock%}
+{% block css %}
+<link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+<!-- DataTables -->
+<link href="{% static 'assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet"
+      type="text/css"/>
+<link href="{% static 'assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet"
+      type="text/css"/>
+<!-- Responsive datatable examples -->
+<link href="{% static 'assets/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet"
+      type="text/css"/>
+
+{% endblock %}
+{% block content %}
+<style type="text/css">
+    #newSearchPlace div.dataTables_filter {
+        text-align: right;
+        padding-top: 5px;
+    }
+    #newSearchPlace div.dataTables_filter label {
+        font-weight: normal;
+        white-space: nowrap;
+        text-align: left;
+    }
+    #newSearchPlace div.dataTables_filter input {
+        margin-left: 0.5em;
+        margin-right: 0;
+        display: inline-block;
+        width: auto;
+    }
+    .dt-button-collection .dropdown-menu {
+        position:relative !important
+    }
+    .dt-button-collection {
+        left: unset !important;
+        right: 10px ;
+    }
+    .dropdown-item.active, .dropdown-item:active {
+        color: #f4f5f7;
+        text-decoration: none;
+        background-color: #7a6fbe;
+    }
+
+</style>
+<div class="container-fluid">
+    <!-- start page title -->
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="page-title-box">
+                <h4>Contact
+
+                </h4>
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a class="text-primary"
+                                                   href="{% url 'all_contact' %}"><b>Contact</b></a></li>
+                    <li class="breadcrumb-item active">All Contact</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    <!-- end page title -->
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row mb-1">
+                        <div class="col-md-6">
+                            <div class="row">
+                                <div class="mt-1 col-md-2 space-custom">
+                                    <button type="button" id="contactadd" class="btn btn-primary w-100 p-2"
+                                            style="height: 38px;white-space: nowrap;"><i
+                                            class="mdi mdi-calendar-plus mr-2"></i> New
+                                    </button>
+                                </div>
+                                <div class="mt-1 col-md-2 space-custom">
+                                    <div class="export_button justify-content-center d-flex"></div>
+                                </div>
+                                {% if request.user.role == "Managers" %}
+                                <div class="mt-1 col-md-2 space-custom">
+                                    <button type="button" id="btn_import" class="btn btn-primary w-100"
+                                            style="height: 38px;white-space: nowrap;"> Import
+                                    </button>
+                                </div>
+                                <div class="mt-1 col-md-2 space-custom">
+                                    <a href="{% url 'ajax-export-contact' %}" class="btn btn-info"
+                                       style="height: 38px;white-space: nowrap;"> Template Export</a>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="row justify-content-end">
+                                <div class="mt-1 col-md-2 space-custom">
+                                    <select class="form-control search_filter" id="contact_person" required>
+                                        <option value="">Contact</option>
+                                        {% for contact_per in contact_persons %}
+                                        <option value="{{contact_per.contact_person}}">{{contact_per.contact_person}}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+
+                                </div>
+                                <div class="mt-1 col-md-2 space-custom">
+                                    <select class="form-control search_filter" id="search_email" required>
+                                        <option value="">Email</option>
+                                        {% for email in emails %}
+                                        <option value="{{email.email}}">{{email.email}}</option>
+                                        {% endfor %}
+                                    </select>
+
+                                </div>
+                                <div class="mt-1 col-md-2 space-custom">
+                                    <select class="form-control search_filter" id="role_filter" required>
+                                        <option value="">Role</option>
+                                        {% for role in roles %}
+                                        <option value="{{role.role}}">{{role.role}}</option>
+                                        {% endfor %}
+                                    </select>
+
+                                </div>
+                                <div class="col-md-1 space-custom">
+<!--                                    <a href="javascript:void(0);" id="contactsearch" class="btn btn-primary m-1"><i-->
+<!--                                            class="dripicons-search align-middle"></i></a>-->
+                                </div>
+                                <div class="mt-1 col-md-3">
+                                    <div class="mt-1 d-flex justify-content-end">
+                                        <div id="newSearchPlace"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div id="contact_data"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--contact modal content -->
+<div id="contactmodal" class="modal fade" role="dialog" aria-labelledby="conpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title">Add New Contact</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_info">
+                <form class="needs-validation" id="ContactForm">
+                    {% csrf_token %}
+
+                    <div id="text_error" class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+                    </div>
+
+                    <div class="mb-3 row">
+                        <label for="contactperson" class="col-md-4 col-form-label">Contact Person:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="contactperson" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 row">
+                        <label for="salutation" class="col-md-4 col-form-label">Salutation:</label>
+                        <div class="col-md-8">
+                            <select class="form-control select2" id="salutation" required>
+                                <option value="">Salutation</option>
+                                {% for salutation in salutations %}
+                                    <option value="{{salutation.name}}">{{salutation.name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 row">
+                        <label for="tel" class="col-md-4 col-form-label">Tel:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" maxlength="8" pattern="\d{8}" id="tel" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="did" class="col-md-4 col-form-label">DID:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" maxlength="8" pattern="\d{8}" id="did">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="mobile" class="col-md-4 col-form-label">Mobile:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" maxlength="8" pattern="\d{8}" id="mobile">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="fax" class="col-md-4 col-form-label">Fax:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="fax">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="email" class="col-md-4 col-form-label">Email:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="email" id="email">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="role" class="col-md-4 col-form-label">Position:</label>
+                        <div class="col-md-8">
+                            <select class="form-control select2" id="role">
+                                <option value="">Select Position</option>
+
+                                {% for position in positions %}
+                                <option value="{{position.name}}">{{position.name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="company" class="col-md-4 col-form-label">Company:</label>
+                        <div class="col-md-8">
+                            <select class="form-control select2" id="company" required>
+                                <option value="">Select Company..</option>
+                                {% for company in companys %}
+                                <option value="{{company.id}}">{{company.name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </form>
+                <input type="hidden" id="conid" value="-1"/>
+
+            </div>
+            <div class="modal-footer">
+                <fieldset class="w-100">
+                    <div class="float-start">
+                        <p class="fst-italic text-primary"><a href="javascript:void(0);" id="btn_create_com"
+                                                              style="text-decoration: underline!important;"><b>New
+                            Company? Click Here</b></a></p>
+                    </div>
+                    <div class="float-end">
+                        <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">
+                            Cancel
+                        </button>
+                        <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_conadd">Add
+                        </button>
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
+<!-- Delete contact modal content -->
+<div id="deleteModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="delModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="delModalLabel">Delete Contact</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5 id="del_description"></h5>
+                <input type="hidden" id="del_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect" data-bs-dismiss="modal">Cancel</button>
+                <button id="del_confirm" type="button" class="btn btn-primary waves-effect waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
+<!--company modal content -->
+<div id="companymodal" class="modal fade" role="dialog" aria-labelledby="compModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="chead_title">Add New Company</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_info_com">
+                <form class="needs-validation" id="CompanyForm">
+                    {% csrf_token %}
+
+                    <div id="text_error_com" class="alert alert-danger alert-dismissible fade show mb-0"
+                         style="display: none;" role="alert">
+                    </div>
+
+                    <div class="mb-3 mt-3 row">
+                        <label for="cname" class="col-md-4 col-form-label">Name:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="cname" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="caddress" class="col-md-4 col-form-label">Address:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="caddress" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="cunit" class="col-md-4 col-form-label">Unit</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="cunit" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="cpostalcode" class="col-md-4 col-form-label">Postal Code:</label>
+                        <div class="col-md-8">
+                            <input type="text"
+                                   onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : event.charCode >= 48 && event.charCode <= 57"
+                                   class="form-control" type="text" id="cpostalcode" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="ccountry" class="col-md-4 col-form-label">Country:</label>
+                        <div class="col-md-8">
+                            <select class="form-control" id="ccountry" required>
+                                <option value="">Select the Country</option>
+                                {% for country in countrys %}
+                                <option value="{{country.id}}">{{country.name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="cassociate" class="col-md-4 col-form-label">Associate:</label>
+                        <div class="col-md-8">
+                            <select class="form-control select2" id="cassociate" required>
+                                <option value="">Please select Associate</option>
+                                <option value="Customer">Customer</option>
+                                <option value="Supplier">Supplier</option>
+                                <option value="Partner">Partner</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+                <input type="hidden" id="ccomid" value="-1"/>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm btn_comcancel"
+                        data-bs-dismiss="modal">Cancel
+                </button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_comadd">Add</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!--Contact import modal content -->
+<div id="importModal" class="modal fade" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_import">Import CSV</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <div class="col-12 p-0 text-center">
+                        <p>
+                            CSV file should have Contact Person, Tel ,Fax, Email, Role.<br>
+                        </p>
+                    </div>
+                </div>
+                <div class="form-group text-center mb-0">
+                    <div id="text_import_error" class="alert alert-danger alert-dismissible fade show mb-0" role="alert"
+                         style="display:none;font-size: 14px;"></div>
+                </div>
+                <div class="form-group row m-0">
+                    <div class="col-3 p-0 justify-content-center d-flex">
+                        <a href="javascript:void(0);"><i class="fas fa-3x fa-file-csv"></i></a>
+                        <input type="file" name="csv_file" id="csv_file" style="display: none;">
+
+                    </div>
+                    <div class="col-9 p-1">
+                        <h4 id="csv_file_name" style="line-height: 2rem;">please click csv icon</h4>
+                        <input type="hidden" id="file_upload_exist" value="-1">
+                    </div>
+                </div>
+                <div class="form-group text-center mt-2 mb-0" id="div_result">
+                    <h4 class="text-primary">Result</h4>
+                    <label id="p_result"></label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btn_cancel" class="btn btn-secondary waves-effect btn-sm"
+                        data-bs-dismiss="modal">Cancel
+                </button>
+                <button type="button" id="btn_import_save" class="btn btn-primary waves-effect waves-light btn-sm">Add
+                </button>
+                <button id="btn_import_close" type="button" class="btn btn-secondary">Close</button>
+
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+{% endblock %}
+{% block scripts %}
+
+<script src="{% static 'assets/libs/select2/js/select2.full.min.js' %}"></script>
+<!-- Required datatable js -->
+<script src="{% static 'assets/libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+<!-- Buttons examples -->
+<script src="{% static 'assets/libs/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js' %}"></script>
+<script src="{% static 'assets/libs/jszip/jszip.min.js' %}"></script>
+<script src="{% static 'assets/libs/pdfmake/build/pdfmake.min.js' %}"></script>
+<script src="{% static 'assets/libs/pdfmake/build/vfs_fonts.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.html5.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.print.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.colVis.min.js' %}"></script>
+<!-- Responsive examples -->
+<script src="{% static 'assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+<!-- Datatable init js -->
+<script> 
+    $(document).ready(function(){
+        $("#text_error").hide();
+        
+    });
+    ajax_all_contact();
+
+    function ajax_all_contact() {
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_all_contact" %}',
+            data: {
+                user_role: '{{request.user.role}}',
+                user_name: '{{request.user.username}}',
+            },
+            type: 'POST',
+            success: function (data) {
+                $("#contact_data").html(data);
+            }
+        });
+    };
+    
+    function updatecontact(id){
+        $("#conid").val(id);
+        $("#head_title").html('Update Contact');
+        $(".btn_conadd").html('Update');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_contact" %}',
+            data: {
+                conid: $("#conid").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data)
+                $("#contactperson").val(up_data.contact_person);
+                $("#salutation").val(up_data.salutation);
+                $('#salutation').trigger('change');
+                $("#tel").val(up_data.tel);
+                $("#fax").val(up_data.fax);
+                $("#email").val(up_data.email);
+                $("#role").val(up_data.role);
+                $('#role').trigger('change');
+                $("#company").val(up_data.company);
+                $('#company').trigger('change');
+            }
+        });
+        $("#contactmodal").modal('show');
+    };
+
+    $("#btn_create_com").on('click', function(e){
+        $("#ccomid").val("-1");
+        $("#cname").val("");
+        $("#caddress").val("");
+        $("#cunit").val("");
+        $("#cpostalcode").val("");
+        $("#ccountry").val("");
+        $('#ccountry').trigger('change');
+        $("#quotationmodal").modal('hide');
+        $("#companymodal").modal('show');
+    })
+
+    function deletecontact(id, name) {
+        $("#del_id").val(id);
+        $("#del_description").html("Are you sure you want to delete this record "+'"'+name+'"'+"?");
+        $("#deleteModal").modal('show');
+    }
+    $("#del_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_contact" %}',
+            data: {
+                'con_id': $("#del_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload(); 
+                }
+            }
+        });
+        $('#deletModal').modal('hide')
+    });
+    $("#contactadd").on('click', function(e){
+        $("#head_title").html('Add New Contact');
+        $(".btn_conadd").html('Add');
+        $("#conid").val("-1");
+        $("#contactperson").val("");
+        $("#tel").val("");
+        $("#fax").val("");
+        $("#email").val("");
+        $("#role").val("");
+        $("#company").val("");
+        $('#company').trigger('change');
+        $("#text_error").hide();
+        $("#contactmodal").modal('show');
+    });
+    $("#contactmodal").on("hidden.bs.modal", function (e) {
+      location.reload();
+    });
+    $(".btn_comcancel").on('click', function(e){
+        $("#contactmodal").modal('show');
+    });
+    $(".btn_conadd").on('click', function(e){
+        $('#ContactForm').parsley().validate();
+        if ($('#ContactForm').parsley().validate() === false) {         
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
+        else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_contact" %}',
+                data: {
+                    contactperson: $("#contactperson").val(),
+                    tel: $("#tel").val(),
+                    fax: $("#fax").val(),
+                    did: $("#did").val(),
+                    mobile: $("#mobile").val(),
+                    email: $("#email").val(),
+                    salutation: $("#salutation").val(),
+                    role: $("#role").val(),
+                    company: $("#company").val(),
+                    conid: $("#conid").val(),
+                    created_by: '{{request.user.username}}'
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error").html(data.messages);
+                        $("#text_error").show();
+                    }
+                }
+            });
+        }
+        
+    });
+    $(".select2").select2({width: '100%', dropdownParent: $("#manage_info")});
+    $(".search_filter").select2({width: '100%'});
+    $("#ccountry").select2({width: '100%', dropdownParent: $("#manage_info_com")});
+    $("#cassociate").select2({width: '100%', dropdownParent: $("#manage_info_com")});
+    function contactSearch(){
+        if($("#contact_person").val() == "" &&  $("#search_email").val() == "" && $("#role_filter").val() == "") {
+            location.reload();
+        } else {
+            $(".export_button").html('');
+            $("#newSearchPlace").html('');
+            $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_filter_contact" %}',
+            data: {
+                contact_person: $("#contact_person").val(),
+                search_email: $("#search_email").val(),
+                role_filter: $("#role_filter").val(),
+                user_role: '{{request.user.role}}',
+                user_name: '{{request.user.username}}',
+            },
+            type: 'POST',
+            success: function (data) {
+                $("#contact_data").html(data);
+                
+            }
+        });
+        }
+    };
+    $("#contact_person").on('change', function(e){
+        contactSearch();
+    });
+    $("#search_email").on('change', function(e){
+        contactSearch();
+    });
+    $("#role_filter").on('change', function(e){
+        contactSearch();
+    });
+    $(".btn_comadd").on('click', function(e){
+        $('#CompanyForm').parsley().validate();
+        if ($('#CompanyForm').parsley().validate() === false) {         
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
+        else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_contact_company" %}',
+                data: {
+                    name: $("#cname").val(),
+                    address: $("#caddress").val(),
+                    unit: $("#cunit").val(),
+                    postalcode: $("#cpostalcode").val(),
+                    country: $("#ccountry").val(),
+                    associate: $("#cassociate").val(),
+                    comid: $("#ccomid").val()
+
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_com").hide();
+                        $("#contactmodal").modal('show');
+                        options_company.push({id: data.companyid, text: data.companyname})
+                        var newOption = new Option(data.companyname, data.companyid, true, true);
+                        $('#company').append(newOption).trigger('change');
+
+                        $("#companymodal").modal('hide');
+                    } else {
+                        $("#text_error_com").html(data.messages);
+                        $("#text_error_com").show();
+                    }
+                }
+            });
+        }
+        
+    });
+    options_company = [];
+    $('#company option').each(function(idx) {
+        options_company.push({id: $(this).val(), text: $(this).text()});
+    });
+    // import process start
+    $("#btn_import").on('click', function(){
+        $("#div_result").hide();
+        $("#btn_import_save").show();
+        $("#btn_cancel").show();
+        $("#btn_import_close").hide();
+        $("#importModal").modal('show');
+    });
+    $(".fa-file-csv").on('click', function(){
+        $("#csv_file").click();
+    });
+    $('#csv_file').on('change', function(event) {
+        var inputFile = event.currentTarget;
+        var file_name = inputFile.files[0].name;
+        var arr_file_name = file_name.split(".");
+        var file_extension = arr_file_name[arr_file_name.length - 1];
+
+        if (file_extension != "csv"){
+            $("#file_upload_exist").val("-1");
+            $("#text_import_error").html("Should be CSV file");
+            $("#text_import_error").show();
+            $('#csv_file').empty();
+        }else{
+            $("#text_import_error").hide();
+            $("#file_upload_exist").val("1");
+            if(file_name.length <= 30) {
+                $('#csv_file_name')
+                    .html(file_name.substring(0,30));
+            }
+            else {
+                $('#csv_file_name')
+                    .html(file_name.substring(0,30)+'...');
+            }
+        }
+    });
+    $("#btn_import_close").on('click', function(){
+        $("#importModal").modal("hide");
+        location.reload();
+    });
+    $("#btn_import_save").on('click', function(){
+        if($("#file_upload_exist").val() == "-1"){
+            $("#text_import_error").html("You must select csv file");
+            $("#text_import_error").show();
+        }else{
+            var file_data = $('#csv_file').prop('files')[0];   
+            var form_data = new FormData();                  
+            form_data.append('file', file_data);
+            $.ajax({
+                headers:{ 'X-CSRFToken': "{{csrf_token}}" },
+                url: "{% url 'ajax-import-contact' %}",
+                type: 'POST',
+                data: form_data,
+                cache: false,
+                contentType: false,
+                processData: false,
+                success: function (data) {
+                    if(data.error_code == "1"){
+                        $("#text_import_error").html("Your csv file must have Name, Address, Unit, Postal Code, Associate.");
+                        $("#text_import_error").show();
+                        $("#file_upload_exist").val("-1");
+                        $('#csv_file').empty();
+                        $('#csv_file_name').html("");
+                    }else{
+                        $("#p_result").html("Total Record: " + data.total + "&nbsp;&nbsp;&nbsp;&nbsp;Success: " + data.success + "&nbsp;&nbsp;&nbsp;&nbsp;Failed: " + data.failed + "&nbsp;&nbsp;&nbsp;&nbsp;Update: " + data.exist);
+                        $("#div_result").show();
+                        $("#btn_import_save").hide();
+                        $("#btn_cancel").hide();
+                        $("#btn_import_close").show();
+                    }
+                }
+            });
+        }
+    });
+
+</script>
+
+{% endblock %}

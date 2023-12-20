@@ -1,0 +1,73 @@
+{% load static %}
+<div>
+        <div id="text_error_bom{{item_cnt}}" style="display: none;" class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+        </div>
+
+        <div class="mb-3 mt-3 row">
+            <label for="bdescription{{item_cnt}}" class="col-md-4 col-form-label">Item Description:</label>
+            <div class="col-md-8">
+                <textarea type="text" rows="3" class="form-control" id="bdescription{{item_cnt}}" name="bdescription" required></textarea>
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label for="buom{{item_cnt}}" class="col-md-4 col-form-label">UOM:</label>
+            <div class="col-md-8">
+                <select class="form-control uom-select" id="buom{{item_cnt}}" name="buom" required>
+                    <option value="">Select UOM</option>
+                    {% for uom in uoms %}
+                        <option value="{{uom.id}}">{{uom.name}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label for="bordered_qty{{item_cnt}}" class="col-md-4 col-form-label">Ordered Qty:</label>
+            <div class="col-md-8">
+                <input class="form-control" type="number" id="bordered_qty{{item_cnt}}" name="bordered_qty" onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : event.charCode >= 48 && event.charCode <= 57" required>
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label for="bbrand{{item_cnt}}" class="col-md-4 col-form-label">Brand:</label>
+            <div class="col-md-8">
+                <input class="form-control" type="text" id="bbrand{{item_cnt}}" name="bbrand" required>
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label for="bdelivery_qty{{item_cnt}}" class="col-md-4 col-form-label">Delivered Qty:</label>
+            <div class="col-md-8">
+                <input class="form-control" type="number" onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : event.charCode >= 48 && event.charCode <= 57" id="bdelivery_qty{{item_cnt}}" name="bdelivery_qty" readonly>
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label for="bdelivered_po_no{{item_cnt}}" class="col-md-4 col-form-label">PO NO:</label>
+            <div class="col-md-8">
+                <input class="form-control" type="text" id="bdelivered_po_no{{item_cnt}}" name="bdelivered_po_no">
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label for="bomdate{{item_cnt}}" class="col-md-4 col-form-label">Date:</label>
+            <div class="col-md-8">
+                <input class="form-control" type="text" id="bomdate{{item_cnt}}" data-date-format="dd M, yyyy" data-provide="datepicker" data-date-autoclose="true" autocomplete="off">
+            </div>
+        </div>
+
+        <div class="mb-3 row">
+            <label for="bremark{{item_cnt}}" class="col-md-4 col-form-label">Remark:</label>
+            <div class="col-md-8">
+                <textarea class="form-control" rows="3" type="text" id="bremark{{item_cnt}}" name="bremark"></textarea>
+            </div>
+        </div>
+        <div style="margin-top: 25px;background: #cccccc;height: 3px;"></div>
+</div>
+<script>
+    $(".select2").select2({width: '0%'});
+    $(".uom-select").select2({width: '100%', dropdownParent: $("#manage_bom")});
+
+
+    var today = new Date();
+    var dd = String(today.getDate()).padStart(2, '0');
+    var mm = monthNames[today.getMonth()];
+    var yyyy = today.getFullYear();
+    $("#bomdate"+{{item_cnt}}).val(dd + " " + mm + ", " + yyyy);
+    $('#bomdate'+{{item_cnt}}).datepicker('setDate', dd + " " + mm + ", " + yyyy);
+</script>

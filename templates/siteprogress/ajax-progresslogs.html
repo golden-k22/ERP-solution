@@ -1,0 +1,74 @@
+{% load static %}
+<div class="table-responsive pt-1">
+    <table id="logtable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+        <thead>
+            <tr>
+                <th>S/N</th>
+                <th>Description</th>
+                <th>Qty</th>
+                <th>UOM</th>
+                <th>Allocation(%)</th>
+                <th>Cummulative Qty</th>
+                <th>Cummulative(%)</th>
+            </tr>
+        </thead>
+        {% for progresslog in progresslogs %}
+        <tbody>
+            <tr>
+                <td class="align-middle">{{forloop.counter}}</td>
+                <td class="align-middle">{{progresslog.description|wordwrap:150|linebreaks|default_if_none:""}}</td>
+                <td class="align-middle">{{progresslog.qty|default_if_none:""}}</td>
+                <td class="align-middle">{{progresslog.uom|default_if_none:""}}</td>
+                <td class="align-middle">{{progresslog.allocation_perc|floatformat:2|default_if_none:""}} %</td>
+                <td class="align-middle">{{progresslog.cumulativeqty|default_if_none:""}}</td>
+                <td class="align-middle">{{progresslog.cumulativeperc|floatformat:2|default_if_none:""}} %</td>
+            </tr>
+        </tbody>
+        
+        {% if progresslog.childs %}
+            <tbody> 
+                {% for child in progresslog.childs %}
+                <tr>
+                    <td class="align-middle"></td>
+                    <td class="align-middle">{{child.description|default_if_none:""}}</td>
+                    <td class="align-middle">{{child.qty|default_if_none:""}}</td>
+                    <td class="align-middle">{{child.uom|default_if_none:""}}</td>
+                    <td class="align-middle">
+                        {% if child.allocation_perc %}
+                            {{child.allocation_perc|floatformat:2|default_if_none:""}} %
+                        {% endif %}
+                    </td>
+                    <td class="align-middle">{{child.cumulativeqty|default_if_none:""}}</td>
+                    <td class="align-middle">{{child.cumulativeperc|floatformat:2|default_if_none:0}} %</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        {% endif %}
+        {% endfor %}
+
+        {% if progresslogs %}
+        <tbody>
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td class="align-middle">Total</td>
+                <td class="align-middle">{{subtotal|floatformat:2|default_if_none:""}} %</td>
+            </tr>
+        </tbody>
+        {% endif %}
+    </table>
+</div>
+<script>
+    $("#logtable").DataTable({
+        //dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            //"<'row'<'col-sm-12'tr>>" +
+            //"<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+        paging: false,
+        searching: false, 
+        ordering: false,
+        info: false
+    });
+</script>

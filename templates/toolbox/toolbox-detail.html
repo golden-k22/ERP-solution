@@ -1,0 +1,816 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load jsignature_filters %}
+{% block page-title %}ToolBox Detail{% endblock%}
+{% block css %}
+    <link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" rel="stylesheet">
+    <!-- DataTables -->
+    <link href="{% static 'assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'assets/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" /> 
+{% endblock %}
+{% block content %}
+<style>
+    #signature {
+		border: 2px dotted black;
+		background-color:lightgrey;
+	}
+    #signatureparent {
+		color:darkblue;
+		background-color:darkgrey;
+		padding:5px;
+	}
+    .select2-container .select2-selection--single .select2-selection__rendered {
+        display: block;
+        padding-left: 8px;
+        padding-right: 20px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%!important;
+        white-space: nowrap;
+    }
+</style>
+<div class="container-fluid">
+    <!-- start page title -->
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="page-title-box">
+                <h4>ToolBox Meeting Details
+                </h4>
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item active"><a class="text-primary" href="{% url 'all_toolbox' %}"><b>TBM Summary</b></a></li>
+                    <li class="breadcrumb-item active">TBM Details</li>
+                </ol> 
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link" style="padding-left: 30px;padding-right: 30px;" id="detailtab" data-bs-toggle="tab" href="#tdetails" role="tab">
+                                <span class="d-block d-sm-none">DT</span>
+                                <span class="d-none d-sm-block">Details</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" style="padding-left: 30px;padding-right: 30px;" id="objecttab" href="#tobject" role="tab">
+                                <span class="d-block d-sm-none">OB</span>
+                                <span class="d-none d-sm-block">Objectives</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" style="padding-left: 30px;padding-right: 30px;" id="attendtab" href="#tattend" role="tab">
+                                <span class="d-block d-sm-none">AT</span>
+                                <span class="d-none d-sm-block">Attendees</span>
+                            </a>
+                        </li>
+                    </ul>
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        <div class="tab-pane mt-2 p-3" id="tdetails" role="tabpanel">
+                            <form data-parsley-validate id="ToolBoxDetailForm">
+                                {% csrf_token %}
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="justify-content-start d-flex">
+                                            <div class="mb-3">
+                                                <a href="javascript:void(0);" id="toolboxupdate" class="align-middle btn-lg btn-outline-primary"><i class="fas fa-pencil-alt mr-2"></i></a>
+                                                <a href="javascript:void(0);" id="toolboxcancel" class="align-middle btn-lg btn-outline-danger" style="display: none;"><i class="ion ion-ios-close-circle mr-2"></i></a>
+                                                <button type="button" id="toolboxsave" class="btn btn-primary btn-sm" style="margin-bottom: 0px!important;"><i class="mdi mdi-content-save-move"></i> Save</button>
+                                                <a href="{% url 'export_tbm_pdf' value=toolbox_pk %}" class="btn btn-info waves-effect waves-light btn-sm" style="margin-bottom: 0px!important;"> Print</a>
+                                                <!--div class="dropdown d-inline-block ms-1">
+                                                    <a class="align-middle btn btn-outline-dark waves-effect btn-sm dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                            Export <i class="mdi mdi-chevron-down"></i>
+                                                        </a>
+                                                    <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                                                        <a class="dropdown-item" href="">PDF</a>
+                                                        <a class="dropdown-item" href="">Excel</a>
+                                                    </div>
+                                                </div-->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <hr class="my-auto flex-grow-1" style="height:1px;">
+                                <div id="text_error" class="alert alert-danger alert-dismissible fade show mb-0" style="display: none;" role="alert">
+                                </div>
+                                <div class="row p-3" >
+                                    <div class="col-md-6">
+                                        <div class="row pt-2">
+                                            <div class="mb-3">
+                                                <label class="form-label" for="supervisor">Supervisor</label>
+                                                <select class="form-control select2" id="supervisor" name="supervisor" required>
+                                                    <option value="">Select Supervisor</option>
+                                                    {% for suser in supervisors %}
+                                                        <option value="{{suser.username}}" {% if suser.username == tbm.supervisor %} selected{% endif %}>{{suser.username}}</option>
+                                                    {% endfor %}
+
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="row pt-2">
+                                            <div class="mb-3">
+                                                <label class="form-label" for="project_no">Project No</label>
+                                                <input type="text" class="form-control" id="project_no" name="project_no" value="{{tbm.project_no|default_if_none:''}}" required readonly>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row pt-2">
+                                            <div class="mb-3">
+                                                <label class="form-label" for="project_name">Project Name</label>
+                                                <input class="form-control" id="project_name" name="project_name" value="{{tbm.project_name|default_if_none:''}}" required>
+                                            </div>
+                                        </div>
+                                        <div class="row pt-2">
+                                            <div class="mb-3">
+                                                <label class="form-label" for="worksite">WorkSite</label>
+                                                <input class="form-control" id="worksite" name="worksite" value="{{project.worksite_address|default_if_none:''}}" required readonly>
+                                            </div>
+                                        </div>
+                                        <div class="pt-2 row">
+                                            <label for="date" class="form-label">Date:</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="mdi mdi-calendar"></i></span>
+                                                <input type="text" class="form-control" id="date" name="date" data-date-format="dd M yyyy" data-provide="datepicker" data-date-autoclose="true" value="{{tbm.date|date:'d M, Y'|default_if_none:''}}" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2"></div>
+                                    <div class="col-md-4">
+                                        <div class="row pt-2 me-3 ms-3">
+                                            <span class="badge bg-primary pt-3 pb-3 fst-italic" style="font-size: 18px!important;">TOLLBOX MEETING</span>
+                                        </div>
+                                        <div class="row m-3">
+                                            <div class="d-flex justify-content-center">
+                                                <input type="text" class="form-control fw-bold" id="tbm_no" style="text-align: center;padding-top: 10px;padding-bottom: 10px;font-size: 20px; width: 50%;" name="tbm_no" value="{{tbm.tbm_no|default_if_none:''}}" required readonly>
+                                            </div>
+                                            
+                                        </div>
+                                        
+                                    </div>
+                                    
+                                </div>
+                            </form>
+                        </div>
+                        <div class="tab-pane mt-2 p-3" id="tobject" role="tabpanel">
+                            <span class="p-1 fw-bold" style="font-size: 15px;">
+                                Objectives:
+                            </span>
+                            <div class="row mt-3">
+                                <div class="mt-1 col-md-3">
+                                    <button type="button" id="toolboxitemadd" class="btn btn-outline-secondary waves-effect waves-light btn-sm"><i class="mdi mdi-content-save-move"></i> Add</button>
+                                    <button type="button" id="toolboxitemimport" class="btn btn-outline-primary waves-effect waves-light btn-sm">Import</button>
+                                    <a href="" class="btn btn-outline-dark" style="white-space: nowrap;" > Template Export</a>
+                                </div>
+                            </div>
+                            <div class="table-responsive mt-2">
+                                <table id="toolboxdt" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                                    <thead>
+                                        <tr style="background: whitesmoke;">
+                                            <th width="5%">SN</th>
+                                            <!--th width="10%">Activity</th-->
+                                            <th width="10%">Objective</th>
+                                            <th width="35%">Description</th>
+<!--                                            <th width="30%">Remark</th>-->
+                                            <th width="10%">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for toolboxitem in toolboxitems %}
+                                        <tr>
+                                            <td class="align-middle">{{ forloop.counter }}</td>
+                                            <!--td class="align-middle">{{toolboxitem.activity|default_if_none:""}}</td-->
+                                            <td class="align-middle">{{toolboxitem.objective|default_if_none:""}}</td>
+                                            <td class="align-middle">{{toolboxitem.description|default_if_none:""}}</td>
+<!--                                            <td class="align-middle">{{toolboxitem.remark|default_if_none:""}}</td>-->
+                                            <td class="align-middle">
+                                                <a href="javascript:void(0);" class="btn btn-outline-primary btn-sm edit" onclick="updatetoolboxlogitem('{{toolboxitem.id}}')" title="Edit">
+                                                    <i class="fas fa-pencil-alt"></i>
+                                                </a>
+                                                <a href="javascript:void(0);" onclick="deletetoolboxlogitem('{{toolboxitem.id}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
+                                                    <i class="far fa-trash-alt"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="tab-pane mt-2 p-3" id="tattend" role="tabpanel">
+                            <span class="p-1 fw-bold" style="font-size: 15px;">
+                                Attendee's Signatures:
+                            </span>
+                            <div class="row mt-3">
+                                <div class="mt-1 col-md-3">
+                                    <button type="button" id="attendeesignadd" class="btn btn-outline-secondary waves-effect waves-light btn-sm"><i class="mdi mdi-content-save-move"></i> Add</button>
+                                    <button type="button" id="attendeesognimport" class="btn btn-outline-primary waves-effect waves-light btn-sm">Import</button>
+                                    <a href="" class="btn btn-outline-dark" style="white-space: nowrap;" > Template Export</a>
+                                </div>
+                            </div>
+                            <div class="table-responsive mt-2">
+                                <table id="toolattenddt" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                                    <thead>
+                                        <tr style="background: whitesmoke;">
+                                            <th>SN</th>
+                                            <th>Name</th>
+                                            <th>NRIC FIN(Last 4 Digits)</th>
+                                            <th>Signature</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for log in attendlogs %}
+                                        <tr>
+                                            <td class="align-middle">{{ forloop.counter }}</td>
+                                            <td class="align-middle">{{log.name|default_if_none:""}}</td>
+                                            <td class="align-middle">{{log.nric|default_if_none:""}}</td>
+                                            <td class="align-middle">
+                                                {% if log.signature %}
+                                                <img class="img-thumbnail" style="height: 50px;" src="{{log.signature|signature_base64}}">
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="javascript:void(0);" onclick="updateattend('{{log.id}}')" class="btn btn-outline-primary btn-sm edit com_update" title="Edit">
+                                                    <i class="fas fa-pencil-alt"></i>
+                                                </a>
+                                                <a href="javascript:void(0);" onclick="deleteattend('{{log.id}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
+                                                    <i class="far fa-trash-alt"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Tool Box Objectives modal content -->
+<div id="toolboxmodal" class="modal fade" role="dialog" aria-labelledby="toolboxModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_toolbox">Add ToolBox Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_toolbox">
+                <form class="needs-validation p-3" id="ToolBoxItemForm">
+                    {% csrf_token %}
+
+                    <div id="text_error_toolbox" class="alert alert-danger alert-dismissible fade show mb-0" style="display: none;" role="alert">
+                    </div>
+                    <!--div class="mb-3 row">
+                        <label for="toolbox_activity" class="col-md-4 col-form-label">Activity:</label>
+                        <div class="col-md-8">
+                            <select class="form-control" id="toolbox_activity" required>
+                                <option value="">Select Activity</option>
+                                {% for active in projectitemactivitys %}
+                                    <option value="{{active.description}}">{{active.description}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div-->
+                    <div class="mb-3 row">
+                        <label for="toolbox_objective" class="col-md-4 col-form-label">Objective:</label>
+                        <div class="col-md-8">
+                            <select class="form-control" id="toolbox_objective" required>
+                                <option value="">Select Objective</option>
+                                {% for objective in tbm_objectives %}
+                                    <option value="{{objective.classify}}" data-id="{{objective.id}}">{{objective.classify}}</option>
+                                {% endfor %}
+                                <option value="Others" data-id="-1">Others</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="toolbox_description" class="col-md-4 col-form-label">Description:</label>
+                        <div class="col-md-8">
+
+                            <div id="toolbox_description_div">
+                                <select class="form-control" id="toolbox_description" required>
+                                    <option value="">Select..</option>
+                                    {% for description in tbm_descriptions %}
+                                        <option value="{{description.description}}">{{description.description}}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div id="toolbox_description_text_div">
+                                <textarea class="form-control" type="text" rows="3" id="toolbox_description_text"></textarea>
+                            </div>
+                        </div>
+                    </div>
+<!--                    <div class="mb-3 row">-->
+<!--                        <label for="toolbox_remark" class="col-md-4 col-form-label">Remark:</label>-->
+<!--                        <div class="col-md-8">-->
+<!--                            <textarea class="form-control" type="text" rows="3" id="toolbox_remark"></textarea>-->
+<!--                        </div>-->
+<!--                    </div>-->
+                </form>
+                <input type="hidden" id="toolboxid" value="-1" />
+            
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_toolboxadd">Add</button>
+                
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Delete Toolbox Item modal content -->
+<div id="tbmitemdeleteModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="tbmitemdelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="tbmitemdelModalLabel">Delete ToolBox Objective</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5>Are you sure you want to delete this record?</h5>
+                <input type="hidden" id="tbmitemdel_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button id="tbmitemdel_confirm" type="button" class="btn btn-primary waves-effect btn-sm waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!--Tool Box Attend modal content -->
+<div id="tbmattendmodal" class="modal fade" role="dialog" aria-labelledby="tbmattendModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_attend">Add New Attendees</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_attend">
+                <form class="needs-validation p-3" id="AttendForm">
+                    {% csrf_token %}
+
+                    <div id="text_error_attend" class="alert alert-danger alert-dismissible fade show mb-0" style="display: none;" role="alert">
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="attend_name" class="col-md-4 col-form-label">Name:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" list="user_list" type="text" id="attend_name" required>
+                            <datalist id="user_list">
+                                {% for user in attend_users %}
+                                    <option value="{{user.username}}">{{user.username}}</option>
+                                {% endfor %}
+                            </datalist>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="attend_nric" class="col-md-4 col-form-label">NRIC(Last 4 Digits):</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text"  id="attend_nric" required>
+                        </div>
+                    </div>
+                    <div id="signatureparent">
+                        <div id="signature"></div>
+                    </div>
+                    <div class="pt-3">
+                        <button type="button" class="btn btn-outline-dark waves-effect btn-sm" id="signreset">Reset</button>
+                    </div>
+                    
+                </form>
+                <input type="hidden" id="tbmattedid" value="-1" />
+            
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_attendadd">Add</button>
+                
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Delete Toolbox Attend modal content -->
+<div id="attenddeleteModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="attenddelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="delModalLabel">Delete Attendees</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5>Are you sure you want to delete this record?</h5>
+                <input type="hidden" id="attenddel_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button id="attenddel_confirm" type="button" class="btn btn-primary waves-effect btn-sm waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'assets/libs/select2/js/select2.full.min.js' %}"></script>
+<script src="{% static 'assets/libs/bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+<!-- Responsive examples -->
+<script src="{% static 'assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+<script src="{% static 'assets/js/jSignature/jSignature.js' %}"></script>
+<script src="{% static 'assets/js/jSignature/plugins/jSignature.CompressorBase30.js' %}"></script>
+<script src="{% static 'assets/js/jSignature/plugins/jSignature.CompressorSVG.js' %}"></script>
+<script src="{% static 'assets/js/jSignature/plugins/jSignature.UndoButton.js' %}"></script>
+<script src="{% static 'assets/js/jSignature/plugins/signhere/jSignature.SignHere.js' %}"></script>
+<script>
+    var $sigdiv = $("#signature").jSignature({'UndoButton':true, height: 150, width: 720, 'decor-color': 'transparent'});
+
+    $("#ToolBoxDetailForm input").prop("disabled", true);
+    $("#ToolBoxDetailForm textarea").prop("disabled", true);
+    $('#ToolBoxDetailForm .select2').prop('disabled', true);
+    $('#toolboxsave').prop('disabled', true);
+    $(".select2").select2({width: '100%'});
+    $("#toolboxupdate").on('click', function(e){
+        $("#ToolBoxDetailForm input").prop("disabled", false);
+        $("#ToolBoxDetailForm textarea").prop("disabled", false);
+        $('#ToolBoxDetailForm .select2').prop('disabled', false);
+        $('#toolboxsave').prop('disabled', false);
+        
+        $('#toolboxcancel').show();
+        $('#toolboxupdate').hide();
+    });
+    $("#toolboxcancel").on('click', function(e){
+        $("#ToolBoxDetailForm input").prop("disabled", true);
+        $("#ToolBoxDetailForm textarea").prop("disabled", true);
+        $('#ToolBoxDetailForm .select2').prop('disabled', true);
+        $('#toolboxsave').prop('disabled', true);
+
+        $('#toolboxcancel').hide();
+        $('#toolboxupdate').show();
+    });
+    $("#toolbox_activity").select2({width: '100%', dropdownParent: $("#manage_toolbox")});
+    $("#toolbox_objective").select2({width: '100%', dropdownParent: $("#manage_toolbox")});
+    $("#toolbox_description").select2({width: '100%', dropdownParent: $("#manage_toolbox")});
+    $("#toolboxsave").on('click', function(e){
+        $('#ToolBoxDetailForm').parsley().validate();
+        if ($('#ToolBoxDetailForm').parsley().validate() === false) {         
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_update_toolbox" %}',
+                data: {
+                    supervisor: $("#supervisor").val(),
+                    project_no: $("#project_no").val(),
+                    date: formatDate($("#date").val()),
+                    project_name: $("#project_name").val(),
+                    tbmid: `{{toolbox_pk}}`,
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error").html(data.messages);
+                        $("#text_error").show();
+                    }
+                }
+            });
+        }
+    });
+    function formatDate(date) {
+        var d = new Date(date),
+            month = '' + (d.getMonth() + 1),
+            day = '' + d.getDate(),
+            year = d.getFullYear();
+
+        if (month.length < 2) 
+            month = '0' + month;
+        if (day.length < 2) 
+            day = '0' + day;
+
+        return [year, month, day].join('-');
+    }
+    $('a[role=tab]').click(function() {
+        if (this.id == "detailtab") {
+            localStorage.setItem("toolboxtab", '1');
+        } else if (this.id == "objecttab") {
+            localStorage.setItem("toolboxtab", '2');
+        } else if (this.id == "attendtab") {
+            localStorage.setItem("toolboxtab", '3');
+        }
+    });
+    var tabactive = localStorage.getItem("toolboxtab");
+    if (tabactive == null || tabactive == '1') {
+        $("#detailtab").addClass('active');
+        $("#objecttab").removeClass('active');
+        $("#attendtab").removeClass('active');
+
+        $("#tdetails").addClass('active');
+        $("#tobject").removeClass('active');
+        $("#tattend").removeClass('active');
+    }
+    else if (tabactive == '2') {
+        $("#detailtab").removeClass('active');
+        $("#objecttab").addClass('active');
+        $("#attendtab").removeClass('active');
+
+        $("#tdetails").removeClass('active');
+        $("#tobject").addClass('active');
+        $("#tattend").removeClass('active');
+    }
+    else if (tabactive == '3') {
+        $("#detailtab").removeClass('active');
+        $("#objecttab").removeClass('active');
+        $("#attendtab").addClass('active');
+
+        $("#tdetails").removeClass('active');
+        $("#tobject").removeClass('active');
+        $("#tattend").addClass('active');
+    }
+    $("#toolboxdt").DataTable({
+        searching: false, 
+        paging: true, 
+        info: true,
+        ordering: false,
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+    $("#toolattenddt").DataTable({
+        searching: false, 
+        paging: true, 
+        info: true,
+        ordering: false,
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+    $("#toolboxitemadd").on('click', function(e){
+        $("#toolboxid").val('-1');
+        $("#head_title_toolbox").html('Add ToolBox Objectives');
+        $(".btn_toolboxadd").html('Add');
+        $("#toolbox_description").val('');
+        $("#toolbox_description").trigger('change');
+        $("#toolbox_objective").val('');
+        $("#toolbox_objective").trigger('change');
+        $("#toolbox_activity").val('');
+        $("#toolbox_activity").trigger('change');
+        $("#toolboxmodal").modal('show');
+    });
+    $(".btn_toolboxadd").on('click', function(e){
+        $('#ToolBoxItemForm').parsley().validate();
+        if ($('#ToolBoxItemForm').parsley().validate() === false) {         
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+        }
+        else {
+            let description="";
+            if($("#toolbox_objective").val()=="Others"){
+                description=$("#toolbox_description_text").val()
+            }else{
+                description=$("#toolbox_description").val()
+            }
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_toolboxlog_item" %}',
+                data: {
+                    description: description,
+                    activity: $("#toolbox_activity").val(),
+                    objective: $("#toolbox_objective").val(),
+                    manager: "Supervisor",
+                    projectid: `{{project.id}}`,
+                    tbmpk: `{{toolbox_pk}}`,
+                    //signature: JSON.stringify(signature),
+                    toolboxid: $("#toolboxid").val()
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_toolbox").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_toolbox").html(data.messages);
+                        $("#text_error_toolbox").show();
+                    }
+                }
+            });
+        }
+        
+    });
+    flag = true;
+    $('#toolbox_description_div').css("display", "block");
+    $('#toolbox_description_text_div').css("display", "none");
+    $("#toolbox_objective").on('change', function(e){
+        var toolbox_objective = $(this).find(':selected').data('id');
+
+        if(toolbox_objective=="-1"){
+            $('#toolbox_description_div').css("display", "none");
+            $('#toolbox_description').prop("required", false);
+            $('#toolbox_description_text').prop("required", true);
+            $('#toolbox_description_text_div').css("display", "block");
+        }
+        else{
+            $('#toolbox_description_div').css("display", "block");
+            $('#toolbox_description').prop("required", true);
+            $('#toolbox_description_text').prop("required", false);
+            $('#toolbox_description_text_div').css("display", "none");
+        if(toolbox_objective != "" && flag == true){
+
+                $("#toolbox_description").html('');
+                $.ajax({
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                    url: '{% url "ajax_filter_description" %}',
+                    data: {
+                        toolbox_objective: toolbox_objective,
+                    },
+                    type: 'POST',
+                    success: function (data) {
+                        $("#toolbox_description").html(data);
+
+                    }
+                });
+            }
+
+        }
+    });
+    $("#attendeesignadd").on('click', function(e){
+        $("#tbmattedid").val('-1');
+        $("#head_title_attend").html('Add New Attendees');
+        $(".btn_attendadd").html('Add');
+        $("#attend_name").val("");
+        $("#attend_nric").val("");
+        $sigdiv.jSignature('reset');
+        $("#tbmattendmodal").modal('show');
+    });
+    $("#signreset").on('click', function(e){
+        $sigdiv.jSignature('reset');
+    });
+    $(".btn_attendadd").on('click', function(e){
+        var signature = $sigdiv.jSignature('getData', 'native');
+        console.log($sigdiv.jSignature('getData', 'default'))
+        $('#AttendForm').parsley().validate();
+        if ($('#AttendForm').parsley().validate() === false) {         
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+        }
+        else {
+            if( signature.length == 0) {
+                alert('Please Enter Signature..');
+            } else {
+                $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_toolbox_attend" %}',
+                data: {
+                    name: $("#attend_name").val(),
+                    nric: $("#attend_nric").val(),
+                    toolboxid: `{{toolbox_pk}}`,
+                    signature: JSON.stringify(signature),
+                    default_base64: $sigdiv.jSignature('getData', 'default'),
+                    tbmattedid: $("#tbmattedid").val()
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_attend").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_attend").html(data.messages);
+                        $("#text_error_attend").show();
+                    }
+                }
+            });
+            }
+            
+        }
+        
+    });
+    function deleteattend(id) {
+        $("#attenddel_id").val(id);
+        $("#attenddeleteModal").modal('show');
+    }
+
+    $("#attenddel_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_tbm_attend" %}',
+            data: {
+                'tbmattendid': $("#attenddel_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload(); 
+                }
+            }
+        });
+        $('#attenddeleteModal').modal('hide');
+    });
+    function updateattend(id) {
+        $("#tbmattedid").val(id);
+        $("#head_title_attend").html('Update Attendees');
+        $(".btn_attendadd").html('Update');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_toolbox_attend" %}',
+            data: {
+                tbmattedid: $("#tbmattedid").val()
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data);
+                $("#attend_name").val(up_data.name);
+                $('#attend_nric').val(up_data.nric);  
+                $("#signature").jSignature('setData', JSON.parse(up_data.signature), 'native');
+            }
+        });
+        $("#tbmattendmodal").modal('show');
+    }
+    function updatetoolboxlogitem(id){
+        $("#toolboxid").val(id);
+        $("#head_title_toolbox").html('Update ToolBox Objectives');
+        $(".btn_toolboxadd").html('Update');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_toolboxlog_item" %}',
+            data: {
+                toolboxid: $("#toolboxid").val()
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data);
+                flag = false;
+                $("#toolbox_activity").val(up_data.activity);
+                $('#toolbox_activity').trigger('change');
+                $("#toolbox_objective").val(up_data.objective);
+                $('#toolbox_objective').trigger('change');
+                if(up_data.objective=="Others"){
+                    $("#toolbox_description_text").val(up_data.description);
+                }else{
+                    $("#toolbox_description").val(up_data.description);
+                }
+                $('#toolbox_description').trigger('change');
+                
+            }
+        });
+        $("#toolboxmodal").modal('show');
+        
+    };
+    function deletetoolboxlogitem(id) {
+        $("#tbmitemdel_id").val(id);
+        $("#tbmitemdeleteModal").modal('show');
+    }
+    $("#attend_name").on('change', function(e){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_user_nric" %}',
+            data: {
+                'user_name': $("#attend_name").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    $("#attend_nric").val(data.nric)
+                }
+            }
+        });
+    });
+    $("#tbmitemdel_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_tbmlog_item" %}',
+            data: {
+                'tbmitemdel_id': $("#tbmitemdel_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload(); 
+                }
+            }
+        });
+        $('#tbmitemdeleteModal').modal('hide');
+    });
+</script>
+{% endblock %}

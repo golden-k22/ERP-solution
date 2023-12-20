@@ -1,0 +1,408 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block page-title %}User{% endblock%}
+{% block css %}
+    <link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'assets/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" /> 
+
+{% endblock %}
+{% block content %}
+<style type="text/css">
+    #newSearchPlace div.dataTables_filter {
+        text-align: right;
+        padding-top: 5px;
+    }
+    #newSearchPlace div.dataTables_filter label {
+        font-weight: normal;
+        white-space: nowrap;
+        text-align: left;
+    }
+    #newSearchPlace div.dataTables_filter input {
+        margin-left: 0.5em;
+        margin-right: 0;
+        display: inline-block;
+        width: auto;
+    }
+    .dt-button-collection .dropdown-menu {
+        position:relative !important
+    }
+    .dt-button-collection {
+        left: unset !important;
+        right: 10px ;
+    }
+    .dropdown-item.active, .dropdown-item:active {
+        color: #f4f5f7;
+        text-decoration: none;
+        background-color: #7a6fbe;
+    }
+</style>
+<div class="container-fluid">
+    <div id="loading" style="z-index:1151 !important;font-size: 30px; position: absolute; top: 40%; left: 50%;">
+        <img src="{% static 'assets/images/spinning-circles.svg' %}" width="80" alt="" style="background: transparent;">
+    </div>
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="page-title-box">
+                <h4>Users 
+                </h4>
+                
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a class="text-primary" href="{% url 'all_users' %}"><b>Users</b></a></li>
+                    <li class="breadcrumb-item active">All Users</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    <!-- end page title -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="row">
+                                <div class="mt-1 col-md-3 space-custom">
+                                    <button type="button" id="useradd" class="btn btn-primary w-100 p-2" style="height: 38px;white-space: nowrap;"><i class="mdi mdi-calendar-plus mr-2"></i> New</button>
+                                </div>
+                                <div class="mt-1 col-md-9 space-custom">
+                                    <div class="export_button justify-content-start d-flex"></div>
+                                </div>
+                            </div> 
+                        </div>
+                        <div class="col-md-8">
+                            <div class="row justify-content-end d-flex">
+                                <div class="mt-1 col-md-2 space-custom">
+                                    <select class="form-control search_filter" id="search_empno" required>
+                                        <option value="">Emp No</option>
+                                        {% for empid in empids %}
+                                            <option value="{{empid.empid}}">{{empid.empid}}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mt-1 col-md-2 space-custom">
+                                    <select class="form-control search_filter" id="search_nric" required>
+                                        <option value="">NRIC/FIN</option>
+                                        {% for nric in nrics %}
+                                            <option value="{{nric.nric}}">{{nric.nric}}</option>
+                                        {% endfor %}
+                                    </select>
+                                    
+                                </div>
+                                <div class="mt-1 col-md-2 space-custom">
+                                    <select class="form-control search_filter" id="search_role" required>
+                                        <option value="">Role</option>
+                                        {% for role in roles %}
+                                            <option value="{{role.name}}">{{role.name}}</option>
+                                        {% endfor %}
+                                    </select>
+                                    
+                                </div>
+                                <div class="col-md-1 space-custom">
+<!--                                    <a href="javascript:void(0);" id="usersearch" class="btn btn-primary m-1"><i class="dripicons-search align-middle"></i></a>-->
+                                </div>
+                                <div class="mt-1 col-md-3">
+                                    <div id="newSearchPlace"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="users_data"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--user modal content -->
+<div id="usermodal" class="modal fade" role="dialog" aria-labelledby="userModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title">Add New User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_info">
+                <form data-parsley-validate id="UserForm">
+                    {% csrf_token %}
+
+                    <div id="text_error" class="alert alert-danger alert-dismissible fade show mb-2" role="alert">
+                    </div>
+                    
+                    <div class="mb-3 mt-3 row">
+                        <label for="empno" class="col-md-4 col-form-label">Emp No:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text"  id="empno" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="firstname" class="col-md-4 col-form-label">First Name:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="firstname" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="lastname" class="col-md-4 col-form-label">Last Name</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="lastname" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="nationality" class="col-md-4 col-form-label">Nationality:</label>
+                        <div class="col-md-8">
+                            <input type="text" class="form-control" type="text" id="nationality" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="nric" class="col-md-4 col-form-label">NRIC / FIN:</label>
+                        <div class="col-md-8">
+                            <input type="text" class="form-control" type="text" id="nric" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 row">
+                        <label for="role" class="col-md-4 col-form-label">Role:</label>
+                        <div class="col-md-8">
+                            <select class="form-control select2" id="role" required>
+                                <option value="">Select the Role</option>
+                                {% for role in roles %}
+                                    <option value="{{role.name}}">{{role.name}}</option>
+                                {% endfor %}
+                                
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="phone" class="col-md-4 col-form-label">Phone:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="phone" required>
+                        </div>
+                    </div>
+                </form>
+                <input type="hidden" id="userid" value="-1" />
+            
+            </div>
+            <div class="modal-footer">
+                <fieldset class="w-100">
+                    <div class="float-start">
+                        <p class="fst-italic text-primary"><a href="javascript:void(0);" id="btn_create_role" style="text-decoration: underline!important;"><b>Create New Role?</b></a></p>                       
+                    </div>
+                    <div class="float-end">
+                        <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_useradd">Add</button>
+                    </div>
+                </fieldset>   
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<div id="createrole" class="modal fade bs-example-modal-sm" tabindex="-1" role="dialog" aria-labelledby="newroleModalLabel" aria-hidden="true" role="document">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="newroleModalLabel">Create New Role</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <form data-parsley-validate id="UserRoleForm">
+                    <div id="role_error" class="alert alert-danger alert-dismissible fade show mb-2" role="alert">
+                    </div>
+                    <div class="mb-3 mt-3 row">
+                        <label for="nric" class="col-md-4 col-form-label">Role:</label>
+                        <div class="col-md-8">
+                            <input type="text" class="form-control" type="text" id="newrole" required>
+                        </div>
+                    </div>
+                </form>
+                
+            </div>
+            <div class="modal-footer">
+                <button type="button" data-bs-dismiss="modal" class="btn btn-outline-secondary waves-effect waves-light btn-sm ml-2">Cancel</button>
+                <button type="button" id="btn_save_role" class="btn btn-primary waves-effect waves-light btn-sm mr-2">Submit</button>
+              </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+{% endblock %}
+{% block scripts %}
+    <script src="{% static 'assets/libs/select2/js/select2.full.min.js' %}"></script>
+    <!-- Required datatable js -->
+    <script src="{% static 'assets/libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'assets/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+    <!-- Buttons examples -->
+    <script src="{% static 'assets/libs/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
+    <script src="{% static 'assets/libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js' %}"></script>
+    <script src="{% static 'assets/libs/jszip/jszip.min.js' %}"></script>
+    <script src="{% static 'assets/libs/pdfmake/build/pdfmake.min.js' %}"></script>
+    <script src="{% static 'assets/libs/pdfmake/build/vfs_fonts.js' %}"></script>
+    <script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.html5.min.js' %}"></script>
+    <script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.print.min.js' %}"></script>
+    <script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.colVis.min.js' %}"></script>
+    <!-- Responsive examples -->
+    <script src="{% static 'assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+    <script src="{% static 'assets/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+    <script>
+        $(document).ready(function(){
+            $("#text_error").hide();
+            $("#role_error").hide();
+            $('#loading').hide();
+        });
+
+        ajax_all_users();
+    
+        function ajax_all_users() {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_all_users" %}',
+                data: {
+                    
+                },
+                type: 'POST',
+                success: function (data) {
+                    $("#users_data").html(data);
+                }
+            });
+        };
+        function usersearch(){
+            if($("#search_empno").val() == "" &&  $("#search_nric").val() == "" && $("#search_role").val() == "") {
+                location.reload();
+            } else {
+                $(".export_button").html('');
+                $("#newSearchPlace").html('');
+                $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_filter_user" %}',
+                data: {
+                    search_empno: $("#search_empno").val(),
+                    search_nric: $("#search_nric").val(),
+                    search_role: $("#search_role").val(),
+
+                },
+                type: 'POST',
+                success: function (data) {
+                    $("#users_data").html(data);
+                    
+                }
+            });
+            }
+        };
+
+        $("#search_empno").on('change', function(e){
+            usersearch();
+        });
+        $("#search_nric").on('change', function(e){
+            usersearch();
+        });
+        $("#search_role").on('change', function(e){
+            usersearch();
+        });
+
+        $("#useradd").on('click', function(e){
+            $("#head_title").html('Add New User');
+            $("#userid").val("-1");
+            $("#empno").val(""),
+            $("#firstname").val(""),
+            $("#lastname").val(""),
+            $("#nationality").val(""),
+            $("#nric").val(""),
+            $("#role").val(""),
+            $('#role').trigger('change');
+            $("#phone").val(""),
+
+            $("#usermodal").modal('show');
+        });
+        $(".select2").select2({width: '100%', dropdownParent: $("#manage_info"), dropdownCssClass: 'hover-primary',});
+        $(".search_filter").select2({width: '100%'});
+        $(".btn_useradd").on('click', function(e){
+            if ($('#UserForm').parsley().validate() === false) {         
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            } else {
+                $('#loading').show();
+                $.ajax({
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                    url: '{% url "ajax_add_user" %}',
+                    data: {
+                        empno: $("#empno").val(),
+                        firstname: $("#firstname").val(),
+                        lastname: $("#lastname").val(),
+                        nationality: $("#nationality").val(),
+                        nric: $("#nric").val(),
+                        role: $("#role").val(),
+                        phone: $("#phone").val(),
+                        
+                        userid: $("#userid").val()
+
+                    },
+                    type: 'POST',
+                    success: function (data) {
+                        if(data.status=="Success"){
+                            $("#text_error").hide();
+                            if(data.method == "add") {
+                                var redirect_url = "{% url 'user_detail' 0 %}".replace(0,data.newUserId);
+                                location.href = redirect_url;
+                            } else if (data.method == "update") {
+                                location.reload();
+                            }
+                        } else {
+                            $("#text_error").html(data.messages);
+                            $("#text_error").show();
+                        }
+                    },
+                    complete: function(){
+                        $('#loading').hide();
+                    }
+                });
+            }
+        });
+        $("#btn_create_role").on('click', function(e){
+            $("#newrole").val("");
+            $("#createrole").modal('show');
+        });
+
+        $("#btn_save_role").on('click', function(e){
+            if ($('#UserRoleForm').parsley().validate() === false) {         
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            } else {
+                $.ajax({
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                    url: '{% url "ajax_add_role" %}',
+                    data: {
+                        role_name: $("#newrole").val(),
+                    },
+                    
+                    type: 'POST',
+                    success: function (data) {
+                        
+                        if (data.status == "Success"){
+                            options_role.push({id: $("#newrole").val(), text: $("#newrole").val()})
+                            var newOption = new Option($("#newrole").val(), $("#newrole").val(), false, false);
+                            $('#role').append(newOption).trigger('change');
+                            $("#createrole").modal('hide');
+                            $("#newrole").val("");
+                        } else {
+                            $("#role_error").html(data.messages);
+                            $("#role_error").show();
+                            $("#newrole").val("");
+                        }
+                        
+                    
+                    }
+                });
+            }
+        });
+        options_role = [];
+        $('#role option').each(function(idx) {
+            options_role.push({id: $(this).val(), text: $(this).text()});
+        });
+    </script>
+{% endblock %}

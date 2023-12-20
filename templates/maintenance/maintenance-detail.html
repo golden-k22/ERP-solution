@@ -1,0 +1,1572 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block page-title %}Maintenance Details{% endblock%}
+{% block css %}
+    <link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" rel="stylesheet">
+    <!-- DataTables -->
+    <link href="{% static 'assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'assets/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" /> 
+    <link href="{% static 'assets/css/daterangepicker-bs3.css' %}" rel="stylesheet"> 
+{% endblock %}
+{% block content %}
+<style type="text/css">
+    .datepicker {
+        z-index:1151 !important;
+    }
+    #searchFilePlace div.dataTables_filter {
+        text-align: right;
+        padding-top: 5px;
+    }
+    #searchFilePlace div.dataTables_filter label {
+        font-weight: normal;
+        white-space: nowrap;
+        text-align: left;
+    }
+    
+    #searchFilePlace div.dataTables_filter input {
+        margin-left: 0.5em;
+        margin-right: 0;
+        display: inline-block;
+        width: auto;
+    }
+    #searchServicePlace div.dataTables_filter {
+        text-align: right;
+        padding-top: 5px;
+    }
+    #searchServicePlace div.dataTables_filter label {
+        font-weight: normal;
+        white-space: nowrap;
+        text-align: left;
+    }
+    
+    #searchServicePlace div.dataTables_filter input {
+        margin-left: 0.5em;
+        margin-right: 0;
+        display: inline-block;
+        width: auto;
+    }
+    #searchDevicePlace div.dataTables_filter {
+        text-align: right;
+        padding-top: 5px;
+    }
+    #searchDevicePlace div.dataTables_filter label {
+        font-weight: normal;
+        white-space: nowrap;
+        text-align: left;
+    }
+    
+    #searchDevicePlace div.dataTables_filter input {
+        margin-left: 0.5em;
+        margin-right: 0;
+        display: inline-block;
+        width: auto;
+    }
+    #searchSchedulePlace div.dataTables_filter {
+        text-align: right;
+        padding-top: 5px;
+    }
+    #searchSchedulePlace div.dataTables_filter label {
+        font-weight: normal;
+        white-space: nowrap;
+        text-align: left;
+    }
+    
+    #searchSchedulePlace div.dataTables_filter input {
+        margin-left: 0.5em;
+        margin-right: 0;
+        display: inline-block;
+        width: auto;
+    }
+    .select2-selection--single {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+</style>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="page-title-box">
+                <h4>Maintenance Details
+                </h4>
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'all_maintenance' %}"><b>Maintenance</b></a></li>
+                        <li class="breadcrumb-item active">Maintenance Details</li>
+                    </ol>
+                    
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link" style="padding-left: 30px;padding-right: 30px;" data-bs-toggle="tab" id="maindetailtab" href="#maindetails" role="tab">
+                                <span class="d-block d-sm-none">DT</span>
+                                <span class="d-none d-sm-block">Details</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" style="padding-left: 30px;padding-right: 30px;" id="mainitemstab" data-bs-toggle="tab" href="#mainitems" role="tab">
+                                <span class="d-block d-sm-none">IT</span>
+                                <span class="d-none d-sm-block">Items</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" style="padding-left: 30px;padding-right: 30px;" id="maindevicetab" data-bs-toggle="tab" href="#maindevice" role="tab">
+                                <span class="d-block d-sm-none">DV</span>
+                                <span class="d-none d-sm-block">Device</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" style="padding-left: 30px;padding-right: 30px;" id="mainscheduletab" data-bs-toggle="tab" href="#mainschedule" role="tab">
+                                <span class="d-block d-sm-none">SD</span>
+                                <span class="d-none d-sm-block">Schedule</span>
+                            </a>
+                        </li>
+                        
+                        <li class="nav-item">
+                            <a class="nav-link" style="padding-left: 30px;padding-right: 30px;" id="mainSRtab" data-bs-toggle="tab" href="#mainSR" role="tab">
+                                <span class="d-block d-sm-none">SR</span>
+                                <span class="d-none d-sm-block">SR</span>
+                            </a>
+                        </li>
+                       
+                        <li class="nav-item">
+                            <a class="nav-link" style="padding-left: 30px;padding-right: 30px;" id="mainfiletab" data-bs-toggle="tab" href="#mainfile" role="tab">
+                                <span class="d-block d-sm-none">Files</span>
+                                <span class="d-none d-sm-block">Files</span>
+                            </a>
+                        </li>
+                    </ul>
+                        
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        <div class="tab-pane p-3" id="maindetails" role="tabpanel">
+                            <form data-parsley-validate id="MaintenanceDetailForm">
+                                <div class="button-items mb-3">
+                                    <a href="javascript:void(0);" id="mainupdate" class="align-middle btn-lg btn-outline-primary"><i class="fas fa-pencil-alt mr-2"></i></a>
+                                    <a href="javascript:void(0);" id="maincancel" class="align-middle btn-lg btn-outline-danger"><i class="ion ion-ios-close-circle mr-2"></i></a>
+                                    <button type="button" id="mainsave" class="btn btn-primary btn-sm" style="margin-bottom: 0px!important;"><i class="mdi mdi-content-save-move"></i> Save</button>
+                                </div>
+                                <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;">
+                                <div class="row p-3" >
+                                    <div class="col-md-7">
+                                        <div class="row pt-2">
+                                            <div class="mb-3">
+                                                <label class="form-label" for="company_nameid">Company</label>
+                                                <select class="form-control select2" id="company_nameid" name="company_nameid" required>
+                                                    <option value="">Select the Company</option>
+                                                    {% for company in companies %}
+                                                        <option value="{{company.id}}" {% if company.id == maintenance.company_nameid.id %}selected{% endif %}>{{company.name}}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="mb-3">
+                                                <label class="form-label" for="worksite_address">Worksite</label>
+                                                <input type="text" class="form-control" id="worksite_address" name="worksite_address" value="{{maintenance.worksite_address|default_if_none:''}}" required>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="contact_person">Contact</label>
+                                                    <select class="form-control select2" id="contact_person" name="contact_person" required>
+                                                        <option value="">Select the Contacts</option>
+                                                        {% for contact in contacts %}
+                                                            <option value="{{contact.id}}" {% if contact.id == maintenance.contact_person.id %}selected{% endif %}>{{contact.contact_person}}</option>
+                                                        {% endfor %}
+                                                    </select>
+        
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="email">Email</label>
+                                                    <input type="email" class="form-control" id="email" name="email" value="{{maintenance.email|default_if_none:''}}" required>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="tel">Tel</label>
+                                                    <input type="text" class="form-control" id="tel"  name="tel" value="{{maintenance.tel|default_if_none:''}}" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="fax">Fax</label>
+                                                    <input type="text" class="form-control" id="fax" name="fax" value="{{maintenance.fax|default_if_none:''}}">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="site_incharge">Site Incharge</label>
+                                                    <input type="text" class="form-control" id="site_incharge"  name="site_incharge" value="{{maintenance.site_incharge|default_if_none:maintenance.contact_person.contact_person|default_if_none:''}}" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="site_tel">Site Tel</label>
+                                                    <input type="text" class="form-control" id="site_tel" name="site_tel" value="{{maintenance.site_tel|default_if_none:maintenance.tel|default_if_none:''}}" required>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="start_date">Start Date</label>
+                                                    <input type="text" class="form-control" id="start_date"  name="start_date" value="{{maintenance.start_date|date:'d M, Y'|default_if_none:''}}" data-date-format="dd M yyyy" data-provide="datepicker" data-date-autoclose="true" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="end_date">End Date</label>
+                                                    <input type="text" class="form-control" id="end_date" name="end_date" value="{{maintenance.end_date|date:'d M, Y'|default_if_none:''}}" data-date-format="dd M yyyy" data-provide="datepicker" data-date-autoclose="true" required>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row pt-2">
+                                            <div class="mb-3">
+                                                <label class="form-label" for="RE">Subject</label>
+                                                <textarea class="form-control" id="RE" name="RE" rows="5" required>{{maintenance.RE|default_if_none:''}}</textarea>
+                                            </div>
+                                        </div>
+            
+                                    </div>
+                                    <div class="col-md-1"></div>
+                                    <div class="col-md-4">
+                                        <div class="row pt-2 me-3 ms-3">
+                                            <span class="badge bg-primary pt-3 pb-3 fst-italic" style="font-size: 18px!important;">MAINTENANCE NO</span>
+                                        </div>
+                                        <div class="row mt-3 mb-3 me-5 ms-5">
+                                            <input type="text" class="form-control" id="main_no" name="main_no" style="text-align: center;padding-top: 10px;padding-bottom: 10px;font-size: 20px;" value="{{maintenance.main_no|default_if_none:''}}" required>
+                                        </div>
+                                        <div class="mt-3 mb-3 me-2 ms-2 row">
+                                            <label for="quot_no" class="col-md-4 col-form-label">Quotation No:</label>
+                                            <div class="col-md-8">
+                                                <input type="text" class="form-control" id="quot_no" name="quot_no" value="{{maintenance.quot_no|default_if_none:''}}" required>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-3 me-2 ms-2">
+                                            
+                                            <label for="proj_incharge" class="col-md-4 col-form-label">Project Incharge:</label>
+                                            <div class="col-md-8">
+                                                <select class="form-control select2" id="proj_incharge" name="proj_incharge" required>
+                                                    <option value="">Project Incharge</option>
+                                                    {% for contact in projects_incharge %}
+                                                        <option value="{{contact.username}}"{% if contact.username == maintenance.proj_incharge %} selected{% endif %}>{{contact.username}}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            
+                                        </div>
+                                        <div class="mb-3 me-2 ms-2 row">
+                                            <label for="proj_status" class="col-md-4 col-form-label">Status:</label>
+                                            <div class="col-md-8">
+                                                <select class="form-control select2" id="main_status" name="main_status" required>
+                                                    <option value="">Select the Status</option>
+                                                    <option value="Open" {% if maintenance.main_status == "Open" %}selected{% endif %}>Open</option>
+                                                    <option value="On-going" {% if maintenance.main_status == "On-going" %}selected{% endif %}>On-going</option>
+                                                    <option value="Completed" {% if maintenance.main_status == "Completed" %}selected{% endif %}>Completed</option>
+                                                    <option value="Closed" {% if maintenance.main_status == "Closed" %}selected{% endif %}>Closed</option>
+        
+                                                </select>
+                                            </div>
+                                        </div>
+            
+                                    </div>
+                                    
+                                </div>
+                                
+                            </form>
+                        </div>
+                        <div class="tab-pane p-3" id="mainitems" role="tabpanel">
+                            <span class="p-1 fw-bold" style="font-size: 15px;">
+                                Work Details
+                            </span>
+                            <div class="table-responsive mt-2">
+                                <table id="workdt" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                                    <thead>
+                                        <tr>
+                                            <th width="5%">SN</th>
+                                            <th width="75%">Description</th>
+                                            <th width="10%">UOM</th>
+                                            <th width="10%">QTY</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for mainitem in maintenanceitems %}
+                                        <tr>
+                                            <td width="5%" class="align-middle">{{ forloop.counter }}</td>
+                                            <td width="75%" class="align-middle">{{mainitem.description|wordwrap:150|linebreaks|default_if_none:""}}</td>
+                                            <td width="10%" class="align-middle">{{mainitem.uom|default_if_none:""}}</td>
+                                            <td width="10%" class="align-middle">{{mainitem.qty|default_if_none:""}}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="row pt-2">
+                                <div class="mb-3">
+                                    <label class="form-label" for="note">Note</label>
+                                    <textarea class="form-control" id="note" name="note" rows="5" required>{{maintenance.quotation.note|default_if_none:''}}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane p-3" id="maindevice" role="tabpanel">
+                            <span class="p-1 fw-bold" style="font-size: 15px;">
+                                Device
+                            </span>
+                            <div class="row mt-3">
+                                <div class="mt-1 col-md-3">
+                                    <button type="button" id="maindeviceadd" class="btn btn-outline-secondary waves-effect waves-light btn-sm"><i class="mdi mdi-content-save-move"></i> Add</button>
+                                </div>
+                                <div class="mt-1 col-md-9">
+                                    <div class="justify-content-end d-flex">
+                                        <div id="searchDevicePlace"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="table-responsive mt-2">
+                                <table id="maindevicetable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                                    <thead>
+                                        <tr>
+                                            <th>S/N</th>
+                                            <th>Hardware Code</th>
+                                            <th>Hardware Name</th>
+                                            <th>Serial Number</th>
+                                            <th>Brand</th>
+                                            <th>UOM</th>
+                                            <th>Qty</th>
+                                            <th>Expiry Date</th>
+                                            <th>Licensing Renewal Date</th>
+                                            <th>Remark</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                     {% for device in devices %}
+                                        <tr>
+                                            <td class="align-middle">{{forloop.counter}}</td>
+                                            <td class="align-middle">{{device.hardware_code|default_if_none:""}}</td>
+                                            <td class="align-middle">{{device.hardware_desc|default_if_none:""}}</td>
+                                            <td class="align-middle">{{device.serial_number|default_if_none:""}}</td>
+                                            <td class="align-middle">{{device.brand|default_if_none:""}}</td>
+                                            <td class="align-middle">{{device.uom|default_if_none:""}}</td>
+                                            <td class="align-middle">{{device.qty|default_if_none:""}}</td>
+                                            <td class="align-middle">{{device.expiry_date|date:"d M, Y"|default_if_none:""}}</td>
+                                            <td class="align-middle">{{device.licensing_date|date:"d M, Y"|default_if_none:""}}</td>
+                                            <td class="align-middle">{{device.remark|default_if_none:""}}</td>
+                                            <td class="align-middle">
+                                                <a href="javascript:void(0);" onclick="updatedevice('{{device.id}}')" class="btn btn-outline-primary btn-sm edit com_update" title="Edit">
+                                                    <i class="fas fa-pencil-alt"></i>
+                                                </a>
+                                                <a href="javascript:void(0);" onclick="deletedevice('{{device.id}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
+                                                    <i class="far fa-trash-alt"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="tab-pane p-3" id="mainschedule" role="tabpanel">
+                            <span class="p-1 fw-bold" style="font-size: 15px;">
+                                Schedule
+                            </span>
+                            <div class="row mt-3">
+                                <div class="mt-1 col-md-3">
+                                    <button type="button" id="mainscheduleadd" class="btn btn-outline-secondary waves-effect waves-light btn-sm"><i class="mdi mdi-content-save-move"></i> Add</button>
+                                </div>
+                                <div class="mt-1 col-md-9">
+                                    <div class="justify-content-end d-flex">
+                                        <div id="searchSchedulePlace"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="table-responsive mt-2">
+                                <table id="mainscheduletable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                                    <thead>
+                                        <tr>
+                                            <th>SN</th>
+                                            <th>Date</th>
+                                            <th>Description</th>
+                                            <th>Reminder</th>
+                                            <th>Remark</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for schedule in schedules %}
+                                        <tr>
+                                            <td class="align-middle">{{forloop.counter}}</td>
+                                            <td class="align-middle">{{schedule.date|date:"d M, Y"|default_if_none:""}}</td>
+                                            <td class="align-middle">{{schedule.description|default_if_none:""}}</td> 
+                                            <td class="align-middle">{{schedule.get_reminder_str|default_if_none:""}}</td>
+                                            <td class="align-middle">{{schedule.remark|default_if_none:""}}</td>
+
+                                            <td class="align-middle">
+                                
+                                                <a href="javascript:void(0);" onclick="updateschedule('{{schedule.id}}')" class="btn btn-outline-primary btn-sm edit com_update" title="Edit">
+                                                    <i class="fas fa-pencil-alt"></i>
+                                                </a>
+                                                
+                                                <a href="javascript:void(0);" onclick="deleteschedule('{{schedule.id}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
+                                                    <i class="far fa-trash-alt"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="tab-pane p-3" id="mainSR" role="tabpanel">
+                            <span class="p-1 fw-bold" style="font-size: 15px;">
+                                Service Report 
+                            </span>
+                            <div class="row mt-3">
+                                <div class="mt-1 col-md-3">
+                                    <button type="button" id="mainsradd" class="btn btn-outline-secondary waves-effect waves-light btn-sm"><i class="mdi mdi-content-save-move"></i> Add</button>
+                                </div>
+                                <div class="mt-1 col-md-9">
+                                    <div class="justify-content-end d-flex">
+                                        <div id="searchServicePlace"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="table-responsive mt-2">
+                                <table id="mainsrtable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                                    <thead>
+                                        <tr>
+                                            <th>SN</th>
+                                            <th>Sr No</th>
+                                            <th>Date</th>
+                                            <th>Status</th>
+                                            <th>Customer Signed SR</th>
+                                            <th>Uploaded By</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for service in srlist %}
+                                        <tr>
+                                            <td class="align-middle">{{forloop.counter}}</td>
+                                            <td class="align-middle">{{service.sr_no|default_if_none:""}}</td>
+                                            <td class="align-middle">{{service.date|date:"d M, Y"|default_if_none:""}}</td>
+                                            <td class="align-middle">{{service.status|default_if_none:""}}</td>
+                                            <td class="align-middle">{{service.filename|default_if_none:""}}</td>
+                                            <td class="align-middle">{{service.uploaded_by.empid|default_if_none:""}}</td>
+
+                                            <td class="align-middle">
+                                
+                                                <a href="{% url 'maintenance_sr_detail' maintenance_pk service.id %}" class="btn btn-outline-primary btn-sm edit" title="Edit">
+                                                    <i class="ion ion-md-eye"></i>
+                                                </a>
+                                                <a href="javascript:void(0);" onclick="uploadservice('{{service.id}}')" class="btn btn-outline-info btn-sm edit" title="Upload">
+                                                    <i class="mdi mdi-cloud-upload-outline"></i>
+                                                </a>
+                                                {% if service.document %}
+                                                <a href="{{service.document.url}}" class="btn btn-outline-primary btn-sm edit" download title="Download">
+                                                    <i class="mdi mdi-arrow-down-bold"></i>
+                                                </a>
+                                                {% endif %}
+                                                <a href="javascript:void(0);" onclick="deleteservice('{{service.id}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
+                                                    <i class="far fa-trash-alt"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="tab-pane p-3" id="mainfile" role="tabpanel">
+                            <span class="p-1 fw-bold" style="font-size: 15px;">
+                                Files Attachment
+                            </span>
+                            <div class="row mt-3">
+                                <div class="mt-1 col-md-3">
+                                    <button type="button" id="mainfilesadd" class="btn btn-outline-secondary waves-effect waves-light btn-sm"><i class="mdi mdi-content-save-move"></i> Add</button>
+                                </div>
+                                <div class="mt-1 col-md-9">
+                                    <div class="justify-content-end d-flex">
+                                        <div id="searchFilePlace"></div>
+                                    </div>
+                                    
+                                </div>
+                            </div>
+                            <div class="table-responsive mt-2">
+                                <table id="filetable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                                    <thead>
+                                        <tr>
+                                            <th>SN</th>
+                                            <th>Name</th>
+                                            <th>Document</th>
+                                            <th>Uploaded By</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for file in filelist %}
+                                        <tr>
+                                            <td class="align-middle">{{forloop.counter}}</td>
+                                            <td class="align-middle">{{file.name|default_if_none:""}}</td>
+                                            <td class="align-middle">{{file.filename|default_if_none:""}}</td>
+                                            <td class="align-middle">{{file.uploaded_by.empid|default_if_none:""}}</td>
+
+                                            <td class="align-middle">
+                                                <a href="{{file.document.url}}" class="btn btn-outline-primary btn-sm edit" download title="Download">
+                                                    <i class="mdi mdi-arrow-down-bold"></i>
+                                                </a>
+                                    
+                                                <a href="javascript:void(0);" onclick="deletefile('{{file.id}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
+                                                    <i class="far fa-trash-alt"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--File modal content -->
+<div id="filemodal" class="modal fade" role="dialog" aria-labelledby="fileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_file">Add New File</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_file">
+                <form class="needs-validation p-3" id="FileForm">
+                    {% csrf_token %}
+                    <div id="text_error_file" style="display: none;" class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+                    </div>
+                    
+                    <div class="mb-3 mt-3 row">
+                        <label for="filename" class="col-md-4 col-form-label">Name:</label>
+                        <div class="col-md-8">
+                            <input type="text" class="form-control" id="filename" name="filename" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="filedocument" class="col-md-4 col-form-label">Document:</label>
+                        <div class="col-md-8">
+                            <input class="filestyle" data-buttonname="btn-secondary" type="file" id="filedocument" required>
+                        </div>
+                    </div>
+                </form>
+                <input type="hidden" id="fileid" value="-1" />
+            
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_fileadd">Add</button>
+                
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- Delete File modal content -->
+<div id="filedeleteModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="filedelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="FiledelModalLabel">Delete File</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5>Are you sure you want to delete this record?</h5>
+                <input type="hidden" id="filedel_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect" data-bs-dismiss="modal">Cancel</button>
+                <button id="filedel_confirm" type="button" class="btn btn-primary waves-effect waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!--SR modal content -->
+<div id="srmodal" class="modal fade" role="dialog" aria-labelledby="srModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_sr">Add New Service Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_service">
+                <form class="needs-validation p-3" id="SrForm">
+                    {% csrf_token %}
+                    <div id="text_error_sr" style="display: none;" class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+                    </div>
+                    
+                    <div class="mb-3 mt-3 row">
+                        <label for="sr_no" class="col-md-4 col-form-label">SR No:</label>
+                        <div class="col-md-8">
+                            <input type="text" class="form-control" id="sr_no"  name="sr_no" required readonly>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="srdate" class="col-md-4 col-form-label">Date:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="srdate" data-date-format="dd M, yyyy" data-provide="datepicker" data-date-autoclose="true" autocomplete="off" required>
+                        </div>
+                    </div>
+                    
+                </form>
+                <input type="hidden" id="srid" value="-1" />
+            
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_sradd">Add</button>
+                
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!--Schedule modal content -->
+<div id="schedulemodal" class="modal fade" role="dialog" aria-labelledby="scheduleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_schedule">Add New Schedule</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_schedule">
+                <form class="needs-validation p-3" id="ScheduleForm">
+                    {% csrf_token %}
+                    <div id="text_error_schedule" style="display: none;" class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+                    </div>
+                    
+                    <div class="mb-3 row">
+                        <label for="scheduledate" class="col-md-4 col-form-label">Date:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="scheduledate" data-date-format="dd M, yyyy" data-provide="datepicker" data-date-autoclose="true" autocomplete="off" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 mt-3 row">
+                        <label for="scheduledescription" class="col-md-4 col-form-label">Description:</label>
+                        <div class="col-md-8">
+                            <input type="text" class="form-control" id="scheduledescription"  name="scheduledescription" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 mt-3 row">
+                        <label for="schedulereminder" class="col-md-4 col-form-label">Reminder:</label>
+                        <div class="col-md-8">
+                            <select class="form-control schedulereminder" id="schedulereminder" required>
+                                <option value="">Select Reminder..</option>
+                                <option value="1">Before 1 Day</option>
+                                <option value="3">Before 3 Days</option>
+                                <option value="7">Before 1 Week</option>
+                                <option value="14">Before 2 Weeks</option>
+                                <option value="30">Before 1 Month</option>
+
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="scheduleremark" class="col-md-4 col-form-label">Remark:</label>
+                        <div class="col-md-8">
+                            <textarea class="form-control" rows="3" id="scheduleremark"></textarea>
+                        </div>
+                        
+                    </div>
+                </form>
+                <input type="hidden" id="scheduleid" value="-1" />
+            
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_scheduleadd">Add</button>
+                
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!--SR DOC modal content -->
+<div id="srdocmodal" class="modal fade" role="dialog" aria-labelledby="srdocModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_sr_doc">Upload Service Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_service_doc">
+                <form class="needs-validation p-3" id="SrDocForm">
+                    {% csrf_token %}
+                    <div id="text_error_sr_doc" style="display: none;" class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+                    </div>
+                    
+                    <div class="mb-3 row">
+                        <label for="srdocument" class="col-md-4 col-form-label">Document:</label>
+                        <div class="col-md-8">
+                            <input class="filestyle" data-buttonname="btn-secondary" type="file" id="srdocument" required>
+                        </div>
+                    </div>
+                    
+                </form>
+                <input type="hidden" id="srdocid" value="-1" />
+            
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_srdocadd">Upload</button>
+                
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- Delete SR modal content -->
+<div id="srdeleteModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="srdelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="SrdelModalLabel">Delete Service Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5>Are you sure you want to delete this record?</h5>
+                <input type="hidden" id="srdel_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect" data-bs-dismiss="modal">Cancel</button>
+                <button id="srdel_confirm" type="button" class="btn btn-primary waves-effect waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!--Device modal content -->
+<div id="devicemodal" class="modal fade" role="dialog" aria-labelledby="deviceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_device">Add New Device</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_device_info">
+                <form class="needs-validation p-3" id="DeviceForm">
+                    {% csrf_token %}
+
+                    <div id="text_error" class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="hardware_code" class="col-md-4 col-form-label">Hardware Code:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text"  id="hardware_code" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="hardware_desc" class="col-md-4 col-form-label">Hardware Name:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text"  id="hardware_desc" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="serial_number" class="col-md-4 col-form-label">Serial Number:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text"  id="serial_number" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 mt-3 row">
+                        <label for="brand" class="col-md-4 col-form-label">Brand:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text"  id="brand" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 mt-3 row">
+                        <label for="supplier" class="col-md-4 col-form-label">Supplier:</label>
+                        <div class="col-md-8">
+                            <select class="form-control supplier" id="supplier">
+                                <option value="">Select Supplier..</option>
+                                {% for supplier in suppliers %}
+                                    <option value="{{supplier.name}}">{{supplier.name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 row">
+                        <label for="uom" class="col-md-4 col-form-label">UOM:</label>
+                        <div class="col-md-8">
+                            <select class="form-control uom-select" id="uom" name="uom" required>
+                                <option value="">Select UOM</option>
+                                {% for uom in uoms %}
+                                    <option value="{{uom.id}}">{{uom.name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="expiry_date" class="col-md-4 col-form-label">Expiry Date</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="expiry_date" data-date-format="dd M yyyy" autocomplete="off" data-provide="datepicker" data-date-autoclose="true" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="licensing_date" class="col-md-4 col-form-label">Licensing Renewal Date</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="licensing_date" data-date-format="dd M yyyy" autocomplete="off" data-provide="datepicker" data-date-autoclose="true">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="remark" class="col-md-4 col-form-label">Remark:</label>
+                        <div class="col-md-8">
+                            <textarea class="form-control" rows="3" id="remark"></textarea>
+                        </div>
+                        
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="stock_qty" class="col-md-4 col-form-label">Qty:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : event.charCode >= 48 && event.charCode <= 57" type="number" rows="4" id="stock_qty" required>
+                        </div>
+                        
+                    </div>
+                    
+                    <input type="hidden" id="deviceid" value="-1" />
+                </form>
+            
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_deviceadd">Add</button>
+                
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- Delete Device modal content -->
+<div id="deleteDeviceModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="delModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="delDeviceModalLabel">Delete Device</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5>Are you sure you want to delete this record?</h5>
+                <input type="hidden" id="deldevice_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button id="deldevice_confirm" type="button" class="btn btn-primary waves-effect btn-sm waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- Delete Schedule modal content -->
+<div id="deleteScheduleModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="delScheduleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="delScheduleModalLabel">Delete Schedule</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5>Are you sure you want to delete this record?</h5>
+                <input type="hidden" id="delschedule_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button id="delschedule_confirm" type="button" class="btn btn-primary waves-effect btn-sm waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'assets/libs/select2/js/select2.full.min.js' %}"></script>
+<script src="{% static 'assets/libs/bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+<!-- Responsive examples -->
+<script src="{% static 'assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+<script src="{% static 'assets/js/daterangepicker.js' %}"></script>
+<script src="{% static 'assets/libs/admin-resources/bootstrap-filestyle/bootstrap-filestyle.min.js' %}"></script>
+<script>
+    $('#note').prop('disabled', true);
+    $(".select2").select2({width: '100%'});
+    $(".uom-select").select2({width: '100%', dropdownParent: $("#manage_device_info")});
+    $(".supplier").select2({width: '100%', dropdownParent: $("#manage_device_info")});
+    $(".schedulereminder").select2({width: '100%', dropdownParent: $("#manage_schedule")});
+    $('#maincancel').hide();
+    $("#MaintenanceDetailForm input").prop("disabled", true);
+    $("#MaintenanceDetailForm textarea").prop("disabled", true);
+    $('#mainsave').prop('disabled', true);
+    $("#MaintenanceDetailForm .select2").prop("disabled", true);
+    $("#text_error").hide();
+    $("#mainupdate").on('click', function(e){
+        $("#MaintenanceDetailForm input").prop("disabled", false);
+        $("#MaintenanceDetailForm textarea").prop("disabled", false);
+        $('select').prop('disabled', false);
+        $('#mainsave').prop('disabled', false);
+        $("#main_no").prop( "disabled", true );
+        $("#quot_no").prop( "disabled", true );
+        $('#maincancel').show();
+        $('#mainupdate').hide();
+    });
+    $("#maincancel").on('click', function(e){
+        $("#MaintenanceDetailForm input").prop("disabled", true);
+        $("#MaintenanceDetailForm textarea").prop("disabled", true);
+        $('select').prop('disabled', true);
+        $('#mainsave').prop('disabled', true);
+        $("#main_no").prop( "disabled", true );
+        $("#quot_no").prop( "disabled", true );
+        $('#maincancel').hide();
+        $('#mainupdate').show();
+    });
+    $("#workdt").DataTable({
+        searching: false, 
+        paging: false, 
+        info: false,
+        ordering: false,
+        //dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            //"<'row'<'col-sm-12'tr>>" +
+            //"<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+    
+    $("#maindevicetable").DataTable({
+        searching: false, 
+        paging: true, 
+        info: true,
+        ordering: false,
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+    $("#mainscheduletable").DataTable({
+        searching: false, 
+        paging: true, 
+        info: true,
+        ordering: false,
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+
+    $("#filetable").DataTable({
+        searching: true, 
+        paging: true, 
+        info: true,
+        ordering: false,
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+    $("#mainsrtable").DataTable({
+        searching: true, 
+        paging: true, 
+        info: true,
+        ordering: false,
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+    $("#searchFilePlace").html('');
+    $("#searchFilePlace").html($("#filetable_filter"));
+    $("#searchServicePlace").html('');
+    $("#searchServicePlace").html($("#mainsrtable_filter"));
+    $("#searchSchedulePlace").html('');
+    $("#searchSchedulePlace").html($("#mainscheduletable_filter"));
+    $("#mainsave").on('click', function(e) {
+        $('#MaintenanceDetailForm').parsley().validate();
+        if ($('#MaintenanceDetailForm').parsley().validate() === false) {         
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_update_main" %}',
+                data: {
+                    company_nameid: $("#company_nameid").val(),
+                    worksite_address: $("#worksite_address").val(),
+                    contact_person: $("#contact_person").val(),
+                    email: $("#email").val(),
+                    tel: $("#tel").val(),
+                    fax: $("#fax").val(),
+                    site_incharge: $("#site_incharge").val(),
+                    site_tel: $("#site_tel").val(),
+                    re: $("#RE").val(),
+                    note: $("#note").val(),
+                    main_no: $("#main_no").val(),
+                    quot_no: $("#quot_no").val(),
+                    start_date: formatDate($("#start_date").val()),
+                    end_date: formatDate($("#end_date").val()),
+                    proj_incharge: $("#proj_incharge").val(),
+                    main_status: $("#main_status").val(),
+                    mainid: `{{maintenance_pk}}`,
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error").html(data.messages);
+                        $("#text_error").show();
+                    }
+                }
+            });
+        }
+    });
+    function formatDate(date) {
+        var d = new Date(date),
+            month = '' + (d.getMonth() + 1),
+            day = '' + d.getDate(),
+            year = d.getFullYear();
+
+        if (month.length < 2) 
+            month = '0' + month;
+        if (day.length < 2) 
+            day = '0' + day;
+
+        return [year, month, day].join('-');
+    }
+    $('a[role=tab]').click(function(){
+        if (this.id == "maindetailtab") {
+            localStorage.setItem("maintenanceitem", '1');
+        } else if (this.id == "mainitemstab") {
+            localStorage.setItem("maintenanceitem", '2');
+        } else if (this.id == "maindevicetab") {
+            localStorage.setItem("maintenanceitem", '3');
+        } else if (this.id == "mainscheduletab") {
+            localStorage.setItem("maintenanceitem", '4');
+        } else if (this.id == "mainSRtab") {
+            localStorage.setItem("maintenanceitem", '5');
+        } else if (this.id == "mainfiletab") {
+            localStorage.setItem("maintenanceitem", '6');
+        } 
+    });
+    var tabactive = localStorage.getItem("maintenanceitem");
+    if (tabactive == null || tabactive == '1') {
+        $("#maindetailtab").addClass('active');
+        $("#mainitemstab").removeClass('active');
+        $("#maindevicetab").removeClass('active');
+        $("#mainscheduletab").removeClass('active');
+        $("#mainSRtab").removeClass('active');
+        $("#mainfiletab").removeClass('active');
+
+        $("#maindetails").addClass('active');
+        $("#mainitems").removeClass('active');
+        $("#maindevice").removeClass('active');
+        $("#mainschedule").removeClass('active');
+        $("#mainSR").removeClass('active');
+        $("#mainfile").removeClass('active');
+
+    } else if (tabactive == '2') {
+        $("#maindetailtab").removeClass('active');
+        $("#mainitemstab").addClass('active');
+        $("#maindevicetab").removeClass('active');
+        $("#mainscheduletab").removeClass('active');
+        $("#mainSRtab").removeClass('active');
+        $("#mainfiletab").removeClass('active');
+
+        $("#maindetails").removeClass('active');
+        $("#mainitems").addClass('active');
+        $("#maindevice").removeClass('active');
+        $("#mainschedule").removeClass('active');
+        $("#mainSR").removeClass('active');
+        $("#mainfile").removeClass('active');
+    } else if (tabactive == '3'){
+        $("#maindetailtab").removeClass('active');
+        $("#mainitemstab").removeClass('active');
+        $("#maindevicetab").addClass('active');
+        $("#mainscheduletab").removeClass('active');
+        $("#mainSRtab").removeClass('active');
+        $("#mainfiletab").removeClass('active');
+
+        $("#maindetails").removeClass('active');
+        $("#mainitems").removeClass('active');
+        $("#maindevice").addClass('active');
+        $("#mainschedule").removeClass('active');
+        $("#mainSR").removeClass('active');
+        $("#mainfile").removeClass('active');
+    } else if (tabactive == '4'){
+        $("#maindetailtab").removeClass('active');
+        $("#mainitemstab").removeClass('active');
+        $("#maindevicetab").removeClass('active');
+        $("#mainscheduletab").addClass('active');
+        $("#mainSRtab").removeClass('active');
+        $("#mainfiletab").removeClass('active');
+
+        $("#maindetails").removeClass('active');
+        $("#mainitems").removeClass('active');
+        $("#maindevice").removeClass('active');
+        $("#mainschedule").addClass('active');
+        $("#mainSR").removeClass('active');
+        $("#mainfile").removeClass('active');
+    } 
+    else if (tabactive == '5'){
+        $("#maindetailtab").removeClass('active');
+        $("#mainitemstab").removeClass('active');
+        $("#maindevicetab").removeClass('active');
+        $("#mainscheduletab").removeClass('active');
+        $("#mainSRtab").addClass('active');
+        $("#mainfiletab").removeClass('active');
+
+        $("#maindetails").removeClass('active');
+        $("#mainitems").removeClass('active');
+        $("#maindevice").removeClass('active');
+        $("#mainschedule").removeClass('active');
+        $("#mainSR").addClass('active');
+        $("#mainfile").removeClass('active');
+    }
+    else if (tabactive == '6'){
+        $("#maindetailtab").removeClass('active');
+        $("#mainitemstab").removeClass('active');
+        $("#maindevicetab").removeClass('active');
+        $("#mainscheduletab").removeClass('active');
+        $("#mainSRtab").removeClass('active');
+        $("#mainfiletab").addClass('active');
+
+        $("#maindetails").removeClass('active');
+        $("#mainitems").removeClass('active');
+        $("#maindevice").removeClass('active');
+        $("#mainschedule").removeClass('active');
+        $("#mainSR").removeClass('active');
+        $("#mainfile").addClass('active');
+    }
+    $("#mainfilesadd").on('click', function(e){
+        $("#filename").val('');
+        $("#filedocument").val('');
+        $("#fileid").val('-1');
+        $("#filemodal").modal('show');
+    });
+    $(".btn_fileadd").on('click', function(e){
+        $('#FileForm').parsley().validate();
+        if ($('#FileForm').parsley().validate() === false) {         
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            var docum_data = $("#filedocument").prop('files')[0];
+            var form_data = new FormData();
+            form_data.append('filename', $("#filename").val());
+            form_data.append('maintenanceid', `{{maintenance_pk}}`);
+            form_data.append('document', docum_data);
+            form_data.append('fileid', $("#fileid").val());
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_main_file" %}',
+                data: form_data,
+                cache: false,
+                contentType: false,
+                processData: false,
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_file").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_file").html(data.messages);
+                        $("#text_error_file").show();
+                    }
+                }
+            });
+        }
+    });
+    function deletefile(id) {
+        $("#filedel_id").val(id);
+        $("#filedeleteModal").modal('show');
+    }
+    $("#filedel_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_main_file" %}',
+            data: {
+                'filedel_id': $("#filedel_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload(); 
+                }
+            }
+        });
+        $('#filedeletModal').modal('hide')
+    });
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+    $("#mainsradd").on('click', function(e){
+        var today = new Date();
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = monthNames[today.getMonth()]; 
+        var yyyy = today.getFullYear();
+        $("#srdate").val(dd + " " + mm + ", " + yyyy);
+        $('#srdate').datepicker('setDate', dd + " " + mm + ", " + yyyy);
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_check_srnumber" %}',
+            data: {},
+            type: 'POST',
+            success: function (data) {
+                var prefix = "CSR";
+                var strDate = new Date(); 
+                var fullYear = strDate.getFullYear().toString().substr(-2);
+                if (data['status'] == "exist") {
+                    var sr_no_value = String(data.sr_no);
+                    if (sr_no_value.substring(0,2) == fullYear) {
+                        suffix_val = (parseInt(sr_no_value.substring(2,6)) + 1).toString();
+                        if(suffix_val.length == 3) {
+                            suffix_val = "0" + suffix_val;
+                        } 
+                        $("#sr_no").val(prefix+fullYear+suffix_val);
+                    } else {
+
+                        $("#sr_no").val(prefix+fullYear+"1000");
+                    }
+                } else {
+                
+                    $("#sr_no").val(prefix+fullYear+"1000");
+                }
+            }
+        });
+        $("#text_error_sr").hide();
+        $("#srmodal").modal('show');
+    });
+    $(".btn_sradd").on('click', function(e){
+        $('#SrForm').parsley().validate();
+        if ($('#SrForm').parsley().validate() === false) {         
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            // var doc_data = $("#srdocument").prop('files')[0];
+            var form_data = new FormData();
+            form_data.append('sr_no', $("#sr_no").val());
+            form_data.append('srdate', formatDate($("#srdate").val()));
+            form_data.append('maintenanceid', `{{maintenance_pk}}`);
+            // form_data.append('document', doc_data);
+            form_data.append('srid', $("#srid").val());
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_main_sr" %}',
+                data: form_data,
+                cache: false,
+                contentType: false,
+                processData: false,
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_sr").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_sr").html(data.messages);
+                        $("#text_error_sr").show();
+                    }
+                }
+            });
+        }
+    });
+    function uploadservice(id){
+        $("#srdocid").val(id);
+        $("#head_title_sr_doc").html('Upload SR Document');
+        $(".btn_srdocadd").html('Upload');
+        $("#srdocmodal").modal('show');
+    }
+    $(".btn_srdocadd").on('click', function(e){
+        var doc_data = $("#srdocument").prop('files')[0];
+        var form_data = new FormData();
+        form_data.append('maintenanceid', `{{maintenance_pk}}`);
+        form_data.append('document', doc_data);
+        form_data.append('srdocid', $("#srdocid").val());
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_add_mainsr_doc" %}',
+            data: form_data,
+            cache: false,
+            contentType: false,
+            processData: false,
+            type: 'POST',
+            success: function (data) {
+                if(data.status=="Success"){
+                    $("#text_error_sr_doc").hide();
+                    location.reload();
+                } else {
+                    $("#text_error_sr_doc").html(data.messages);
+                    $("#text_error_sr_doc").show();
+                }
+            }
+        });
+    });
+    function deleteservice(id) {
+        $("#srdel_id").val(id);
+        $("#srdeleteModal").modal('show');
+    }
+    $("#srdel_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_mainsr" %}',
+            data: {
+                'srdel_id': $("#srdel_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload(); 
+                }
+            }
+        });
+        $('#srdeleteModal').modal('hide')
+    });
+    $("#maindeviceadd").on('click', function(e){
+        $("#head_title_device").html('Add New Device');
+        $(".btn_deviceadd").html('Add');
+        $("#deviceid").val("-1");
+        $("#hardware_code").val("");
+        $("#hardware_desc").val("");
+        $("#serial_number").val("");
+        $("#variant").val("");
+        $("#uom").val("");
+        $('#remark').val("");
+        $('#stock_qty').val("");
+        $('#expiry_date').val("");
+        $('#licensing_date').val("");
+        $('#brand').val("");
+        $('#supplier').val("");
+        $('#supplier').trigger('change');
+        
+        $("#devicemodal").modal('show');
+    });
+    $(".btn_deviceadd").on('click', function(e){
+        $("#DeviceForm").parsley().validate();
+        if ($('#DeviceForm').parsley().validate() === false) {         
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            var form_data = new FormData();
+            form_data.append('deviceid', $("#deviceid").val());
+            form_data.append('hardware_code', $("#hardware_code").val());
+            form_data.append('hardware_desc', $("#hardware_desc").val());
+            form_data.append('serial_number', $("#serial_number").val());
+            form_data.append('variant', $("#variant").val());
+            form_data.append('uom', $("#uom").val());
+            form_data.append('expiry_date', formatDate($("#expiry_date").val()));
+            if ($("#licensing_date").val() != "") {
+                form_data.append('licensing_date', formatDate($("#licensing_date").val()));
+            }             
+            form_data.append('remark', $("#remark").val());
+            form_data.append('stock_qty', $("#stock_qty").val());
+            form_data.append('brand', $("#brand").val());
+            form_data.append('supplier', $("#supplier").val());
+            form_data.append('maintenanceid', `{{maintenance_pk}}`);
+            $.ajax({
+                headers:{ 'X-CSRFToken': "{{csrf_token}}" },
+                url: "{% url 'ajax_add_device' %}",
+                type: 'POST',
+                data: form_data,
+                cache: false,
+                contentType: false,
+                processData: false,
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#DeviceForm").modal('hide');
+                        $("#text_error").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error").html(data.messages);
+                        $("#text_error").show();
+                    }
+                    
+                    
+                }
+            });
+        }
+    });
+    function updatedevice(id) {
+        $("#deviceid").val(id);
+        $("#head_title_device").html('Update Device');
+        $(".btn_deviceadd").html('Update');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_device" %}',
+            data: {
+                deviceid: $("#deviceid").val()
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data);
+                $("#hardware_code").val(up_data.hardware_code);
+                $("#serial_number").val(up_data.serial_number);
+                $("#hardware_desc").val(up_data.hardware_desc);
+                $("#stock_qty").val(up_data.stock_qty);   
+                $("#remark").val(up_data.remark);
+                $("#expiry_date").val(up_data.expiry_date);
+                if(up_data.licensing_date) {
+                    $("#licensing_date").val(up_data.licensing_date);
+                } else {
+                    $("#licensing_date").val("");
+                }           
+                $('#uom').val(up_data.uom);
+                $('#uom').trigger('change');
+                $('#brand').val(up_data.brand);
+                $('#supplier').val(up_data.supplier);
+                $('#supplier').trigger('change');
+            }
+        });
+        $("#devicemodal").modal('show');
+
+    }
+    function deletedevice(id) {
+        $("#deldevice_id").val(id);
+        $("#deleteDeviceModal").modal('show');
+    };
+    $("#deldevice_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_device" %}',
+            data: {
+                'deviceid': $("#deldevice_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload(); 
+                }
+            }
+        });
+        $('#deleteDeviceModal').modal('hide');
+    });
+    $("#mainscheduleadd").on('click', function(e){
+        $("#head_title_schedule").html('Add New Schedule');
+        $(".btn_scheduleadd").html('Add');
+        $("#scheduleid").val("-1");
+        $("#scheduledate").val("");
+        $("#scheduledescription").val("");
+        $("#scheduleremark").val("");
+        $('#schedulereminder').val("");
+        $('#schedulereminder').trigger('change');
+        
+        $("#schedulemodal").modal('show');
+    });
+    $(".btn_scheduleadd").on('click', function(e){
+        $('#ScheduleForm').parsley().validate();
+        if ($('#ScheduleForm').parsley().validate() === false) {         
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_schedule" %}',
+                data: {
+                    description: $("#scheduledescription").val(),
+                    remark: $("#scheduleremark").val(),
+                    reminder: $("#schedulereminder").val(),
+                    date: $("#scheduledate").val() != "" ? formatDate($("#scheduledate").val()) : "",
+                    scheduleid: $("#scheduleid").val(),
+                    maintenanceid: `{{maintenance_pk}}`,
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_schedule").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_schedule").html(data.messages);
+                        $("#text_error_schedule").show();
+                    }
+                }
+            });
+        }
+    });
+    function deleteschedule(id) {
+        $("#delschedule_id").val(id);
+        $("#deleteScheduleModal").modal('show');
+    };
+    $("#delschedule_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_schedule" %}',
+            data: {
+                'scheduleid': $("#delschedule_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload(); 
+                }
+            }
+        });
+        $('#deleteScheduleModal').modal('hide');
+    });
+    function updateschedule(id) {
+        $("#scheduleid").val(id);
+        $("#head_title_schedule").html('Update Schedule');
+        $(".btn_scheduleadd").html('Update');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_schedule" %}',
+            data: {
+                scheduleid: $("#scheduleid").val()
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data);
+                $("#scheduledate").val(up_data.date);
+                $("#scheduledescription").val(up_data.description);
+                $("#scheduleremark").val(up_data.remark);
+                $("#schedulereminder").val(up_data.reminder);   
+                $('#schedulereminder').trigger('change');
+            }
+        });
+        $("#schedulemodal").modal('show');
+
+    }
+</script>
+{% endblock %}

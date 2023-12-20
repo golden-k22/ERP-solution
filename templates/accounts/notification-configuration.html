@@ -1,0 +1,648 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block page-title %}Notification Configuration{% endblock%}
+{% block css %}
+<link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css"/>
+<!-- Sweet Alert-->
+<link href="{% static 'assets/libs/sweetalert2/sweetalert2.min.css' %}" rel="stylesheet" type="text/css"/>
+{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="page-title-box">
+                <h3>Notification Configuration</h3>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <!-- <div class="button-items mb-3">
+                        <a href="javascript:void(0);" id="userupdate" class="align-middle btn-lg"><i class="fas fa-pencil-alt mr-2"></i></a>
+                        <a href="javascript:void(0);" id="userdelete" class="align-middle btn-lg"><i class="far fa-trash-alt mr-2"></i></a>
+                        <button type="button" id="userdetailsave" class="btn btn-primary btn-sm" style="margin-bottom: 0px!important;"><i class="mdi mdi-content-save-move"></i> Save</button>
+                    </div>
+                    <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;"> -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        {% for role_list in role_lists %}
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link {% if forloop.counter0 == 0 %}active{% endif %}" data-bs-toggle="tab"
+                               href="#{{role_list}}" role="tab">
+                                <span class="d-block d-sm-none">{{role_list|make_list|first|title}}</span>
+                                <span class="d-none d-sm-block">{{role_list}}</span>
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        {% for notification_class in notification_classify %}
+                        <div class="tab-pane {% if forloop.counter0 == 0 %}active{% endif %} p-3"
+                             id="{{notification_class.0}}" role="tabpanel">
+                            <div class="mb-3 mt-3 row">
+                                <div class="col-md-4">
+                                    <div class="row">
+                                        <label for="no_{{notification_class.0}}"
+                                               class="col-md-4 col-form-label">Name:</label>
+                                        <div class="col-md-8">
+                                            <select class="form-control change_user select2"
+                                                    data-notify="{{notification_class.0}}"
+                                                    id="no_{{notification_class.0}}" required>
+                                                <option value="">Select the Name</option>
+
+                                                {% for user in notification_class.1 %}
+                                                <option value="{{user.id}}">{{user.username}}</option>
+                                                {% endfor %}
+
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <hr class="my-auto flex-grow-1 mt-3" style="height:2px;">
+                                <div class="mt-3 row">
+                                    <div class="justify-content-between">
+                                        <div class="float-start">
+                                            <h5 class="fst-italic text-primary"><b>Privilege Settings:</b></h5>
+                                        </div>
+                                        <div class="float-end">
+                                            <a href="javascript:void(0);"
+                                               class="align-middle btn-lg notificationupdate"><i
+                                                    class="fas fa-pencil-alt mr-2"></i></a>
+                                            <a href="javascript:void(0);"
+                                               class="align-middle btn-lg btn-outline-danger notificationcancel"><i
+                                                    class="ion ion-ios-close-circle mr-2"></i></a>
+                                            <!-- <a href="javascript:void(0);" id="notificationdelete" class="align-middle btn-lg"><i class="far fa-trash-alt mr-2"></i></a> -->
+                                            <button type="button" class="btn btn-primary btn-sm save_notify_privilege"
+                                                    data-notify="{{notification_class.0}}"><i
+                                                    class="mdi mdi-content-save-move"></i> Save
+                                            </button>
+
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <div class="accordion" id="notificationconfig_{{notification_class.0}}">
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="headingProject">
+                                                <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                                        data-bs-target="#collapseProject" aria-expanded="true"
+                                                        aria-controls="collapseProject">
+                                                    Project
+                                                </button>
+                                            </h2>
+
+                                            <div id="collapseProject" class="accordion-collapse collapse show"
+                                                 aria-labelledby="headingProject"
+                                                 data-bs-parent="#notificationconfig_{{notification_class.0}}">
+                                                <div class="accordion-body">
+                                                    <div class="row">
+                                                        <h5 class="fst-italic text-primary"><b>Project:</b></h5>
+                                                    </div>
+                                                    <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;">
+                                                    <div class="row mt-3 mb-3">
+
+                                                        <label for="projectno_created_{{notification_class.0}}"
+                                                               class="col-md-4 col-form-label">New Project No.
+                                                            Created:</label>
+                                                        <div class="col-md-4">
+                                                            <select class="form-control select2"
+                                                                    id="projectno_created_{{notification_class.0}}"
+                                                                    required>
+                                                                <option value="1">Yes</option>
+                                                                <option value="0">No</option>
+                                                            </select>
+                                                        </div>
+
+                                                    </div>
+                                                    <div class="row mt-3 mb-3">
+                                                        <label for="project_status_{{notification_class.0}}"
+                                                               class="col-md-4 col-form-label">Project Status
+                                                            changed:</label>
+                                                        <div class="col-md-4">
+                                                            <select class="form-control select2"
+                                                                    id="project_status_{{notification_class.0}}"
+                                                                    required>
+                                                                <option value="1">Yes</option>
+                                                                <option value="0">No</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mt-3 mb-3">
+                                                        <label for="project_end_{{notification_class.0}}"
+                                                               class="col-md-4 col-form-label">Notify before End
+                                                            Date:</label>
+                                                        <div class="col-md-4">
+                                                            <select class="form-control select2"
+                                                                    id="project_end_{{notification_class.0}}" required>
+                                                                <option value="2">Before two weeks</option>
+                                                                <option value="3">Before three weeks</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mt-3 mb-3">
+                                                        <label for="tbm_no_created_{{notification_class.0}}"
+                                                               class="col-md-4 col-form-label">New TBM no.
+                                                            created:</label>
+                                                        <div class="col-md-4">
+                                                            <select class="form-control select2"
+                                                                    id="tbm_no_created_{{notification_class.0}}"
+                                                                    required>
+                                                                <option value="1">Yes</option>
+                                                                <option value="0">No</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mt-3 mb-3">
+                                                        <label for="reminder_{{notification_class.0}}"
+                                                               class="col-md-4 col-form-label">Reminder for Customer
+                                                            Signature:</label>
+                                                        <div class="col-md-4">
+                                                            <select class="form-control select2"
+                                                                    id="reminder_{{notification_class.0}}" required>
+                                                                <option value="1">Daily</option>
+                                                                <option value="3" selected>Every 3 days</option>
+                                                                <option value="7">A week</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mt-3 mb-3">
+                                                        <label for="reminder_invoice_{{notification_class.0}}"
+                                                               class="col-md-4 col-form-label">Reminder for Invoice:</label>
+                                                        <div class="col-md-4">
+                                                            <select class="form-control select2"
+                                                                    id="reminder_invoice_{{notification_class.0}}" required>
+                                                                <option value="1">Daily</option>
+                                                                <option value="3" selected>Every 3 days</option>
+                                                                <option value="7">A week</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="headingInventory">
+                                                <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                                        data-bs-target="#collapseInventory" aria-expanded="true"
+                                                        aria-controls="collapseInventory">
+                                                    Inventory
+                                                </button>
+                                            </h2>
+
+                                            <div id="collapseInventory" class="accordion-collapse collapse show"
+                                                 aria-labelledby="headingInventory"
+                                                 data-bs-parent="#notificationconfig_{{notification_class.0}}">
+                                                <div class="accordion-body">
+                                                    <div class="row">
+                                                        <h5 class="fst-italic text-primary"><b>Inventory:</b></h5>
+                                                    </div>
+                                                    <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;">
+                                                    <div class="row mt-3 mb-3">
+
+                                                        <label for="delete_item_{{notification_class.0}}"
+                                                               class="col-md-4 col-form-label">Existing item being
+                                                            deleted:</label>
+                                                        <div class="col-md-4">
+                                                            <select class="form-control select2"
+                                                                    id="delete_item_{{notification_class.0}}" required>
+                                                                <option value="1">Yes</option>
+                                                                <option value="0">No</option>
+                                                            </select>
+                                                        </div>
+
+                                                    </div>
+                                                    <div class="row mt-3 mb-3">
+                                                        <label for="restockqty_{{notification_class.0}}"
+                                                               class="col-md-4 col-form-label">When stock qty equal to
+                                                            restock qty:</label>
+                                                        <div class="col-md-4">
+                                                            <select class="form-control select2"
+                                                                    id="restockqty_{{notification_class.0}}" required>
+                                                                <option value="1">Yes</option>
+                                                                <option value="0">No</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="headingAdmin">
+                                                <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                                        data-bs-target="#collapseAdmin" aria-expanded="true"
+                                                        aria-controls="collapseAdmin">
+                                                    Admin
+                                                </button>
+                                            </h2>
+
+                                            <div id="collapseAdmin" class="accordion-collapse collapse show"
+                                                 aria-labelledby="headingAdmin"
+                                                 data-bs-parent="#notificationconfig_{{notification_class.0}}">
+                                                <div class="accordion-body">
+                                                    <div class="row">
+                                                        <h5 class="fst-italic text-primary"><b>Admin:</b></h5>
+                                                    </div>
+                                                    <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;">
+                                                    <div class="row mt-3 mb-3">
+                                                        <div class="col-md-6">
+                                                            <div class="row">
+                                                                <label for="do_status_{{notification_class.0}}"
+                                                                       class="col-md-4 col-form-label">Delivery Order
+                                                                    status changed:</label>
+                                                                <div class="col-md-4">
+                                                                    <select class="form-control select2"
+                                                                            id="do_status_{{notification_class.0}}"
+                                                                            required>
+                                                                        <option value="1">Yes</option>
+                                                                        <option value="0">No</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="row">
+                                                                <label for="usergroup_created_{{notification_class.0}}"
+                                                                       class="col-md-4 col-form-label">New User Group
+                                                                    created:</label>
+                                                                <div class="col-md-4">
+                                                                    <select class="form-control select2"
+                                                                            id="usergroup_created_{{notification_class.0}}"
+                                                                            required>
+                                                                        <option value="1">Yes</option>
+                                                                        <option value="0">No</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                    <div class="row mt-3 mb-3">
+                                                        <div class="col-md-6">
+                                                            <div class="row">
+                                                                <label for="service_status_{{notification_class.0}}"
+                                                                       class="col-md-4 col-form-label">Service Report
+                                                                    status changed:</label>
+                                                                <div class="col-md-4">
+                                                                    <select class="form-control select2"
+                                                                            id="service_status_{{notification_class.0}}"
+                                                                            required>
+                                                                        <option value="1">Yes</option>
+                                                                        <option value="0">No</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="row">
+                                                                <label for="user_no_{{notification_class.0}}"
+                                                                       class="col-md-4 col-form-label">New User no.
+                                                                    created:</label>
+                                                                <div class="col-md-4">
+                                                                    <select class="form-control select2"
+                                                                            id="user_no_{{notification_class.0}}"
+                                                                            required>
+                                                                        <option value="1">Yes</option>
+                                                                        <option value="0">No</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                    <div class="row mt-3 mb-3">
+                                                        <div class="col-md-6">
+                                                            <div class="row">
+                                                                <label for="pc_status_{{notification_class.0}}"
+                                                                       class="col-md-4 col-form-label">Progress Claim
+                                                                    status changed:</label>
+                                                                <div class="col-md-4">
+                                                                    <select class="form-control select2"
+                                                                            id="pc_status_{{notification_class.0}}"
+                                                                            required>
+                                                                        <option value="1">Yes</option>
+                                                                        <option value="0">No</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="row">
+                                                                <label for="claim_submitted_{{notification_class.0}}"
+                                                                       class="col-md-4 col-form-label">New Claim Submitted:</label>
+                                                                <div class="col-md-4">
+                                                                    <select class="form-control select2"
+                                                                            id="claim_submitted_{{notification_class.0}}"
+                                                                            required>
+                                                                        <option value="1">Yes</option>
+                                                                        <option value="0">No</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                    <div class="row mt-3 mb-3">
+                                                        <div class="col-md-6">
+                                                            <div class="row">
+                                                                <label for="project1_status_{{notification_class.0}}"
+                                                                       class="col-md-4 col-form-label">Project status
+                                                                    changed:</label>
+                                                                <div class="col-md-4">
+                                                                    <select class="form-control select2"
+                                                                            id="project1_status_{{notification_class.0}}"
+                                                                            required>
+                                                                        <option value="1">Yes</option>
+                                                                        <option value="0">No</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="headingMaintenance">
+                                                <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                                        data-bs-target="#collapseMaintenance" aria-expanded="true"
+                                                        aria-controls="collapseMaintenance">
+                                                    Maintenance
+                                                </button>
+                                            </h2>
+
+                                            <div id="collapseMaintenance" class="accordion-collapse collapse show"
+                                                 aria-labelledby="headingMaintenance"
+                                                 data-bs-parent="#notificationconfig_{{notification_class.0}}">
+                                                <div class="accordion-body">
+                                                    <div class="row">
+                                                        <h5 class="fst-italic text-primary"><b>Maintenance:</b></h5>
+                                                    </div>
+                                                    <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;">
+                                                    <div class="row mt-3 mb-3">
+
+                                                        <label for="contract_end_{{notification_class.0}}"
+                                                               class="col-md-4 col-form-label">Notify before Contract
+                                                            End Date:</label>
+                                                        <div class="col-md-4">
+                                                            <select class="form-control select2"
+                                                                    id="contract_end_{{notification_class.0}}" required>
+                                                                <option value="3">Before 3 months</option>
+                                                                <option value="2">Before 2 months</option>
+                                                            </select>
+                                                        </div>
+
+                                                    </div>
+                                                    <div class="row mt-3 mb-3">
+                                                        <label for="hardware_end_{{notification_class.0}}"
+                                                               class="col-md-4 col-form-label">Notify before HardWare
+                                                            Device Licensing Expiry:</label>
+                                                        <div class="col-md-4">
+                                                            <select class="form-control select2"
+                                                                    id="hardware_end_{{notification_class.0}}" required>
+                                                                <option value="3">Before 3 months</option>
+                                                                <option value="2">Before 2 months</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mt-3 mb-3">
+                                                        <label for="schedule_end_{{notification_class.0}}"
+                                                               class="col-md-4 col-form-label">Notify before Schedule
+                                                            Date:</label>
+                                                        <div class="col-md-4">
+                                                            <select class="form-control select2"
+                                                                    id="schedule_end_{{notification_class.0}}" required>
+                                                                <option value="2">Before 2 weeks</option>
+                                                                <option value="3">Before 3 weeks</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="headingProfile">
+                                                <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                                        data-bs-target="#collapseProfile" aria-expanded="true"
+                                                        aria-controls="collapseProfile">
+                                                    User Profile
+                                                </button>
+                                            </h2>
+
+                                            <div id="collapseProfile" class="accordion-collapse collapse show"
+                                                 aria-labelledby="headingProfile"
+                                                 data-bs-parent="#notificationconfig_{{notification_class.0}}">
+                                                <div class="accordion-body">
+                                                    <div class="row">
+                                                        <h5 class="fst-italic text-primary"><b>User Profile:</b></h5>
+                                                    </div>
+                                                    <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;">
+                                                    <div class="row mt-3 mb-3">
+
+                                                        <label for="password_change_{{notification_class.0}}"
+                                                               class="col-md-4 col-form-label">Login Password
+                                                            changed:</label>
+                                                        <div class="col-md-4">
+                                                            <select class="form-control select2"
+                                                                    id="password_change_{{notification_class.0}}"
+                                                                    required>
+                                                                <option value="1">Yes</option>
+                                                                <option value="0">No</option>
+                                                            </select>
+                                                        </div>
+
+                                                    </div>
+                                                    <div class="row mt-3 mb-3">
+                                                        <label for="claimno1_created_{{notification_class.0}}"
+                                                               class="col-md-4 col-form-label">New Claim no.
+                                                            created:</label>
+                                                        <div class="col-md-4">
+                                                            <select class="form-control select2"
+                                                                    id="claimno1_created_{{notification_class.0}}"
+                                                                    required>
+                                                                <option value="1">Yes</option>
+                                                                <option value="0">No</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="headingNotiSetting">
+                                                <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                                        data-bs-target="#collapse_noti_setting" aria-expanded="true"
+                                                        aria-controls="collapse_noti_setting">
+                                                    Notification Setting
+                                                </button>
+                                            </h2>
+
+                                            <div id="collapse_noti_setting" class="accordion-collapse collapse show"
+                                                 aria-labelledby="headingNoti"
+                                                 data-bs-parent="#notificationconfig_{{notification_class.0}}">
+                                                <div class="accordion-body">
+                                                    <div class="row">
+                                                        <h5 class="fst-italic text-primary"><b>Notification Setting:</b>
+                                                        </h5>
+                                                    </div>
+                                                    <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;">
+                                                    <div class="row mt-3 mb-3">
+
+                                                        <label for="password_change_{{notification_class.0}}"
+                                                               class="col-md-4 col-form-label">Send ERP & Mail:</label>
+                                                        <div class="col-md-4">
+                                                            <select class="form-control select2"
+                                                                    id="noti_setting_{{notification_class.0}}" required>
+                                                                <option value="1">Yes</option>
+                                                                <option value="0">No</option>
+                                                            </select>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock%}
+{% block scripts %}
+<script src="{% static 'assets/libs/select2/js/select2.full.min.js' %}"></script>
+<!-- Sweet Alerts js -->
+<script src="{% static 'assets/libs/sweetalert2/sweetalert2.min.js' %}"></script>
+<script>
+    $(".select2").select2({width: '100%'});
+    $('select').prop('disabled', true);
+    $(".save_notify_privilege").prop('disabled', true);
+    $(".notificationcancel").hide();
+    $(".save_notify_privilege").on('click', function(e){
+        var prefix = $(this).data('notify');
+        if ($("#no_"+prefix).val() == "") {
+            Swal.fire(
+                {
+                    title:"Please Select User!",
+                    text:"You did't select user!",
+                    icon:"warning",
+                    confirmButtonColor:"#34c38f",
+                }
+            );
+        }
+        else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_privilege_notification" %}',
+                data: {
+                    projectno_created: $("#projectno_created_"+prefix).val(),
+                    project_status: $("#project_status_"+prefix).val(),
+                    project_end: $("#project_end_"+prefix).val(),
+                    tbm_no_created: $("#tbm_no_created_"+prefix).val(),
+                    reminder_signature: $("#reminder_"+prefix).val(),
+                    reminder_invoice: $("#reminder_invoice_"+prefix).val(),
+                    delete_item: $("#delete_item_"+prefix).val(),
+                    restockqty: $("#restockqty_"+prefix).val(),
+                    do_status: $("#do_status_"+prefix).val(),
+                    usergroup_created: $("#usergroup_created_"+prefix).val(),
+                    service_status: $("#service_status_"+prefix).val(),
+                    user_no: $("#user_no_"+prefix).val(),
+                    pc_status: $("#pc_status_"+prefix).val(),
+                    claim_submitted: $("#claim_submitted_"+prefix).val(),
+                    project1_status: $("#project1_status_"+prefix).val(),
+                    contract_end: $("#contract_end_"+prefix).val(),
+                    hardware_end: $("#hardware_end_"+prefix).val(),
+                    schedule_end: $("#schedule_end_"+prefix).val(),
+                    password_change: $("#password_change_"+prefix).val(),
+                    claimno1_created: $("#claimno1_created_"+prefix).val(),
+                    noti_setting: $("#noti_setting_"+prefix).val(),
+                    username: $("#no_"+prefix).val()
+                },
+                type: 'POST',
+                success: function (data) {
+                    if (data.status == "ok") {
+                        location.reload(); 
+                    }
+                     
+                }
+            });
+        }
+    });
+    $(".notificationupdate").on('click', function(e){
+        $('select').prop('disabled', false);
+        $(".save_notify_privilege").prop('disabled', false);
+        $(".notificationcancel").show();
+        $(".notificationupdate").hide();
+    });
+    $(".notificationcancel").on('click', function(e){
+        $('select').prop('disabled', true);
+        $(".save_notify_privilege").prop('disabled', true);
+        $(".notificationcancel").hide();
+        $(".notificationupdate").show();
+    });
+    $(".change_user").on('change', function(e){
+        var prefix = $(this).data('notify');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_notification_privilege_user_check" %}',
+            data: {
+                userid: $("#no_"+prefix).val()
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data);
+                $("#projectno_created_"+prefix).val(up_data.project_no_created);
+                $("#projectno_created_"+prefix).trigger('change');
+                $("#project_status_"+prefix).val(up_data.project_status);
+                $("#project_status_"+prefix).trigger('change');
+                $("#project_end_"+prefix).val(up_data.project_end);
+                $("#project_end_"+prefix).trigger('change');
+                $("#tbm_no_created_"+prefix).val(up_data.tbm_no_created);
+                $("#tbm_no_created_"+prefix).trigger('change');
+                $("#reminder_"+prefix).val(up_data.reminder_signature);
+                $("#reminder_"+prefix).trigger('change');
+                $("#reminder_invoice_"+prefix).val(up_data.reminder_invoice);
+                $("#reminder_invoice_"+prefix).trigger('change');
+                $("#delete_item_"+prefix).val(up_data.inventory_item_deleted);
+                $("#delete_item_"+prefix).trigger('change');
+                $("#restockqty_"+prefix).val(up_data.stock_equal_restock);
+                $("#restockqty_"+prefix).trigger('change');
+
+                $("#do_status_"+prefix).val(up_data.do_status);
+                $("#do_status_"+prefix).trigger('change');
+                $("#service_status_"+prefix).val(up_data.service_status);
+                $("#service_status_"+prefix).trigger('change');
+                $("#pc_status_"+prefix).val(up_data.pc_status);
+                $("#pc_status_"+prefix).trigger('change');
+                $("#usergroup_created_"+prefix).val(up_data.usergroup_created);
+                $("#usergroup_created_"+prefix).trigger('change');
+                $("#user_no_"+prefix).val(up_data.user_no_created);
+                $("#user_no_"+prefix).trigger('change');
+                $("#claim_submitted_"+prefix).val(up_data.claim_submitted);
+                $("#claim_submitted_"+prefix).trigger('change');
+
+                $("#contract_end_"+prefix).val(up_data.contract_end);
+                $("#contract_end_"+prefix).trigger('change');
+                $("#hardware_end_"+prefix).val(up_data.hardware_end);
+                $("#hardware_end_"+prefix).trigger('change');
+                $("#schedule_end_"+prefix).val(up_data.schedule_end);
+                $("#schedule_end_"+prefix).trigger('change');
+                $("#password_change_"+prefix).val(up_data.password_change);
+                $("#password_change_"+prefix).trigger('change');
+                $("#noti_setting_"+prefix).val(up_data.noti_setting);
+                $("#noti_setting_"+prefix).trigger('change');
+            }
+        });
+    });
+
+</script>
+
+{% endblock %}

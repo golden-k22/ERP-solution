@@ -1,0 +1,80 @@
+{% load static %}
+<div class="table-responsive pt-1">
+    <table id="datatable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+        <thead>
+            <tr>
+                <th>SN</th>
+                <th>Subject</th>
+                <th>Location</th>
+                <th>Description</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Created by</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+         {% for event in events %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td class="align-middle">{{event.title|default_if_none:""}}</td>
+                <td class="align-middle">{{event.location|default_if_none:""}}</td>
+                <td class="align-middle">{{event.description|default_if_none:""}}</td>
+                <td class="align-middle">{{event.start_time|date:'d M, Y H:i'|default_if_none:""}}</td>
+                <td class="align-middle">{{event.end_time|date:'d M, Y H:i'|default_if_none:""}}</td>
+                <td class="align-middle">{{event.user.first_name|default_if_none:""}}</td>
+                <td class="align-middle">
+                    <a href="javascript:void(0);" onclick="updateEvent('{{event.id}}')" class="btn btn-outline-primary btn-sm edit com_update" title="Edit">
+                        <i class="fas fa-pencil-alt"></i>
+                    </a>
+                    <a href="javascript:void(0);" onclick="deleteEvent('{{event.id}}','{{event.title}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
+                        <i class="far fa-trash-alt"></i>
+                    </a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script>
+    $("#datatable").DataTable({
+        "aaSorting": [[ 0, "asc" ]],
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+        buttons: [
+            {
+                extend: 'colvis',
+                text: "Filter Column",
+                postfixButtons: [ 'colvisRestore' ]
+            },
+            {
+                extend: 'collection',
+                text: "Export",
+                buttons : [
+                    {
+                        extend: 'excelHtml5',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                    {
+                        extend: 'csvHtml5',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                    {
+                        extend: 'pdfHtml5',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                ]
+            },
+         
+        ],
+    }).buttons().container().appendTo(".export_button");
+    $(".dataTables_length select").addClass("form-select form-select-sm");
+    $("#newSearchPlace").html($(".dataTables_filter"));
+</script>

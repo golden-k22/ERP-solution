@@ -1,0 +1,5 @@
+{% load static %}
+<option value="">Select the Person</option>
+{% for contact in contacts %}
+    <option value="{{contact.id}}">{{contact.contact_person}}</option>
+{% endfor %}

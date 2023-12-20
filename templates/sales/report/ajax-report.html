@@ -1,0 +1,125 @@
+{% load static %}
+<div class="table-responsive pt-1">
+    <table id="datatable-buttons" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+        <thead>
+            <tr>
+                <th>Quotation No</th>
+                <th>Date</th>
+                <th>Subject</th>
+                <th>Company</th>
+                <th>Amount</th>
+                <th>Sales Person</th>
+                <th>Margin</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+         {% for report in reports %}
+            <tr>
+                <td class="align-middle">{{report.qtt_id|default_if_none:""}}</td>
+                <td class="align-middle">{{report.date|date:"d/M/Y"|default_if_none:""}}</td>
+                <td class="align-middle">{{report.RE|truncatechars:50|default_if_none:""}}</td>
+                <td class="align-middle">{{report.company_nameid|default_if_none:""}}</td>
+                <td class="align-middle">{{report.finaltotal|default_if_none:""}}</td>
+                <td class="align-middle">{{report.sale_person|default_if_none:""}}</td>
+                <td class="align-middle">{{report.margin|default_if_none:""}} %</td>
+                <td class="align-middle">{{report.qtt_status|default_if_none:""}}</td>
+                <td class="align-middle">
+                    <a href="{% url 'report_detail' report.id %}" class="btn btn-outline-secondary btn-sm reportdetailview" title="View">
+                        <i class="ion ion-md-eye"></i>
+                    </a>
+                    <!-- <a href="javascript:void(0);" onclick="updatereport('{{report.id}}')" class="btn btn-outline-primary btn-sm edit com_update" title="Edit">
+                        <i class="fas fa-pencil-alt"></i>
+                    </a> -->
+<!--                    <a href="javascript:void(0);" onclick="deletereport('{{report.id}}','{{report.qtt_id}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">-->
+<!--                        <i class="far fa-trash-alt"></i>-->
+<!--                    </a>-->
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script>
+    var dtTable = $("#datatable-buttons").DataTable({
+        "aaSorting": [[ 0, "desc" ]],
+        "aoColumns": [
+            null,
+            { "sType": "date" },
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+        ],
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+        buttons: [
+            {
+                extend: 'colvis',
+                text: "Filter Column",
+                postfixButtons: [ 'colvisRestore' ]
+            },
+            {
+                extend: 'collection',
+                text: "Export",
+                buttons : [
+                    {
+                        extend: 'excelHtml5',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                    {
+                        extend: 'csvHtml5',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                    {
+                        extend: 'pdfHtml5',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                ]
+            },
+
+
+        ],
+    }).buttons().container().appendTo(".export_button");
+    $(".dataTables_length select").addClass("form-select form-select-sm");
+    $("#newSearchPlace").html($(".dataTables_filter"));
+
+    function numberWithCommas(x) {
+        x=Number(x).toFixed(2)
+        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+    $("#total_amount").html(numberWithCommas({{total_amount}}));
+    $("#awarded_amount").html(numberWithCommas({{awarded_amount}}));
+    $("#open_amount").html(numberWithCommas({{open_amount}}));
+
+    jQuery.fn.dataTableExt.oSort['date-asc']  = function(a,b) {
+        var usDatea = a.split('/');
+        var usDateb = b.split('/');
+
+        var x = (usDatea[2] + usDatea[0] + usDatea[1]) * 1;
+        var y = (usDateb[2] + usDateb[0] + usDateb[1]) * 1;
+
+        return ((x < y) ? -1 : ((x > y) ?  1 : 0));
+    };
+
+    jQuery.fn.dataTableExt.oSort['date-desc'] = function(a,b) {
+        var usDatea = a.split('/');
+        var usDateb = b.split('/');
+
+        var x = (usDatea[2] + usDatea[0] + usDatea[1]) * 1;
+        var y = (usDateb[2] + usDateb[0] + usDateb[1]) * 1;
+
+        return ((x < y) ? 1 : ((x > y) ?  -1 : 0));
+    };
+</script>

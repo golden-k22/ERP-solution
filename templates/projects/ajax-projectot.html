@@ -1,0 +1,86 @@
+{% load static %}
+<div class="table-responsive pt-1">
+    <table id="datatable-buttons" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+        <thead>
+            <tr>
+                <th>OT No</th>
+                <th>Date</th>
+                <th>Project No</th>
+                <th>Project Name</th>
+                <th>Approved Hours</th>
+                <th>Approved By</th>
+                <!-- <th>PH</th> -->
+                <th>Comment</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+         {% for projectot in projectots %}
+            <tr>
+                <td class="align-middle">{{projectot.id|default_if_none:""}}</td>
+                <td class="align-middle">{{projectot.date|date:'d M, Y'|default_if_none:""}}</td>
+                <td class="align-middle">{{projectot.proj_id|default_if_none:""}}</td>
+                <td class="align-middle">{{projectot.proj_name|default_if_none:""}}</td>
+                <td class="align-middle">{{projectot.approved_hour|default_if_none:""}}</td>
+                <td class="align-middle">{{projectot.approved_by|default_if_none:""}}</td>
+                <!-- <td class="align-middle">{{projectot.ph|default_if_none:""}}</td> -->
+                <td class="align-middle">{{projectot.comment|default_if_none:""}}</td>
+                <td class="align-middle">
+                    <!-- <a href="{% url 'quotation_detail' projectot.id %}" class="btn btn-outline-secondary btn-sm" title="View">
+                        <i class="ion ion-md-eye"></i>
+                    </a> -->
+                    <a href="javascript:void(0);" onclick="updateot('{{projectot.id}}')" class="btn btn-outline-primary btn-sm edit com_update" title="Edit">
+                        <i class="fas fa-pencil-alt"></i>
+                    </a>
+                    <a href="javascript:void(0);" onclick="deleteot('{{projectot.id}}','{{projectot.id}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
+                        <i class="far fa-trash-alt"></i>
+                    </a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script>
+    var dtTable = $("#datatable-buttons").DataTable({
+        // lengthChange:!1,
+        "aaSorting": [[ 0, "desc" ]],
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+        buttons: [
+            
+            
+            {
+                extend: 'colvis',
+                text: "Filter Column",
+                postfixButtons: [ 'colvisRestore' ]
+            },{
+                extend: 'collection',
+                text: "Export",
+                buttons : [
+                    {
+                        extend: 'excelHtml5',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                    {
+                        extend: 'csvHtml5',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                    {
+                        extend: 'pdfHtml5',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                ]
+            },
+        ],
+    }).buttons().container().appendTo(".export_button");
+    $(".dataTables_length select").addClass("form-select form-select-sm");
+    $("#newSearchPlace").html($(".dataTables_filter"));
+</script>

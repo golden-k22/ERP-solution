@@ -1,0 +1,854 @@
+{% extends 'base.html' %}
+{% load jsignature_filters %}
+{% load static %}
+{% block page-title %}Delievery Order Detail{% endblock%}
+{% block css %}
+    <link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" rel="stylesheet">
+    <!-- Sweet Alert-->
+    <link href="{% static 'assets/libs/sweetalert2/sweetalert2.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'assets/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" /> 
+    <link href="{% static 'assets/css/daterangepicker-bs3.css' %}" rel="stylesheet"> 
+    <style>
+        body[data-sidebar=dark].vertical-collpsed {
+                min-height: auto!important;
+            }
+    </style>
+{% endblock %}
+{% block content %}
+<style>
+    #signature {
+		border: 2px dotted black;
+		background-color:lightgrey;
+	}
+    #signatureparent {
+		color:darkblue;
+		background-color:darkgrey;
+		padding:5px;
+	}
+    .datepicker {
+        z-index:1151 !important;
+    }
+    .select2-container .select2-selection--single .select2-selection__rendered {
+        display: block;
+        padding-left: 8px;
+        padding-right: 20px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%!important;
+        white-space: nowrap;
+    }
+    @media screen and (max-width: 480px){
+        canvas.jSignature {
+            width : 100% !important;
+        }
+        .signature-pad-wrapper {
+            width : 100% !important;
+        }
+        .signature-line.signature-wrapper {
+            width : 100% !important;
+        }
+        .pad {
+            width : 100% !important;
+        }
+    }
+</style>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="page-title-box">
+                <h4>Delivery Order Details
+                </h4>
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'all_project_summary' %}"><b>Project Summary</b></a></li>
+                        <li class="breadcrumb-item active">Project Details</li>
+                        <li class="breadcrumb-item active">Do Details</li>
+                    </ol>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link" style="padding-left: 30px;padding-right: 30px;" data-bs-toggle="tab" href="#dodetail" id="dodetailtab" role="tab">
+                                <span class="d-block d-sm-none">DT</span>
+                                <span class="d-none d-sm-block">Details</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" style="padding-left: 30px;padding-right: 30px;" data-bs-toggle="tab" href="#doitem" id="doitemtab" role="tab">
+                                <span class="d-block d-sm-none">IT</span>
+                                <span class="d-none d-sm-block">Items</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" style="padding-left: 30px;padding-right: 30px;" data-bs-toggle="tab" href="#dosignature" id="dosignaturetab" role="tab">
+                                <span class="d-block d-sm-none">CS</span>
+                                <span class="d-none d-sm-block">Customer Signatures</span>
+                            </a>
+                        </li>
+                    </ul>
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        <div class="tab-pane p-3" id="dodetail" role="tabpanel">
+                            <form data-parsley-validate id="DoDetailForm">
+                                <div class="button-items mb-3">
+                                    <a href="{% url 'project_summary_detail' project_pk %}" class="align-middle btn-lg btn-outline-primary"><i class="mdi mdi-arrow-left-bold mr-2"></i></a>
+                                    <a href="javascript:void(0);" id="doupdate" class="align-middle btn-lg btn-outline-primary"><i class="fas fa-pencil-alt mr-2"></i></a>
+                                    <a href="javascript:void(0);" id="docancel" style="display: none;" class="align-middle btn-lg btn-outline-danger"><i class="ion ion-ios-close-circle mr-2"></i></a>
+                                    <button type="button" id="dosave" class="btn btn-outline-primary waves-effect waves-light btn-sm" style="margin-bottom: 0px!important;"> Save</button>
+                                    <!-- button type="button" id="doexport" class="btn btn-outline-secondary waves-effect btn-sm" style="margin-bottom: 0px!important;"> Export</button -->
+                                    <a href="{% url 'export_do_pdf' value=delivery_pk %}" class="btn btn-info waves-effect waves-light btn-sm" style="margin-bottom: 0px!important;"> Print</a>
+                                </div>
+                                <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;">
+                                <div id="text_error_do" style="display: none;" class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+                                </div>
+                                <div class="row p-3" >
+                                    <div class="col-md-7">
+                                        <div class="row pt-2">
+                                            <div class="mb-3">
+                                                <label class="form-label" for="company_nameid">Bill To</label>
+                                                <select class="form-control select2" id="company_nameid" name="company_nameid" required>
+                                                    <option value="">Select the Company</option>
+                                                    {% for company in companies %}
+                                                        <option value="{{company.id}}" {% if company.id == summary.company_nameid.id %}selected{% endif %}>{{company.name}}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="row pt-2">
+                                            <div class="mb-3">
+                                                <label class="form-label" for="address">Address</label>
+                                                <input type="text" class="form-control" id="address" name="address" value="{{quotation.address|default_if_none:''}}" required>
+                                            </div>
+                                        </div>
+                                        <div class="row pt-2">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="attn">Attn</label>
+                                                    <input type="text" class="form-control" id="attn" name="attn" value="{{summary.site_incharge|default_if_none:''}}" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="tel">Tel</label>
+                                                    <input type="text" class="form-control" id="tel" name="tel" value="{{summary.site_tel|default_if_none:''}}" required>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row pt-2">
+                                            <div class="mb-3">
+                                                <label class="form-label" for="shipto">Ship To</label>
+                                                <textarea type="text" class="form-control" id="shipto" name="shipto" required>{{delivery_order.ship_to|default_if_none:''}}</textarea>
+                                            </div>
+                                        </div>
+                                        <div class="row pt-2">
+                                            <div class="mb-3">
+                                                <label class="form-label" for="proj_id">Project No</label>
+                                                <input type="text" class="form-control" id="proj_id" name="proj_id" value="{{summary.proj_id|default_if_none:''}}" required>
+                                            </div>
+                                        </div>
+                                        <div class="row pt-2">
+                                            <div class="mb-3">
+                                                <label class="form-label" for="bremark">Remarks</label>
+                                                <textarea class="form-control" rows="3" type="text" id="bremark" name="bremark" >{{delivery_order.remarks|default_if_none:''}}</textarea>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                    <div class="col-md-1"></div>
+                                    <div class="col-md-4">
+                                        <div class="row pt-2 me-3 ms-3">
+                                            <span class="badge bg-primary pt-3 pb-3 fst-italic" style="font-size: 18px!important;">DELIVERY ORDER</span>
+                                        </div>
+                                        <div class="row mt-3 mb-3 me-5 ms-5">
+                                            <input type="text" class="form-control" style="text-align: center;padding-top: 10px;padding-bottom: 10px;font-size: 20px;" id="do_no" name="do_no" value="{{delivery_order.do_no|default_if_none:''}}" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                            <div class="p-3">
+                                <span class="p-1 fw-bold" style="font-size: 15px;">
+                                    Sales Details
+                                </span>
+                                <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="row p-2">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="saleperson">Sales Person</label>
+                                                    <input type="text" class="form-control" id="saleperson" name="saleperson" value="{{summary.contact_person|default_if_none:''}}" required readonly>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="terms">Terms</label>
+                                                    <input type="text" class="form-control" id="terms" name="terms" value="{{quotation.terms|default_if_none:''}}" required readonly>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row p-2">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="purchase_order">Purchase Order No</label>
+                                                    <input type="text" class="form-control" id="purchase_order" name="purchase_order" value="{{quotation.po_no|default_if_none:''}}" required readonly>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="sdate">Date</label>
+                                                    <input type="text" class="form-control" id="sdate" name="sdate" value="{{quotation.date|date:'d M, Y'|default_if_none:''}}" required readonly>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                            </div>
+<!--                            <div class="p-3">-->
+<!--                                <span class="p-1 fw-bold" style="font-size: 15px;">-->
+<!--                                    Signatures-->
+<!--                                </span>-->
+<!--                                <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;">-->
+
+<!--                                <div class="row mb-3">-->
+<!--                                    <div class="col-md-8">-->
+<!--                                        <div class="row">-->
+<!--                                            <div class="col-md-6">-->
+<!--                                                <div class="mb-3 row">-->
+<!--                                                    <label for="signature" class="form-label">Authorised's Signatures:</label>-->
+<!--                                                    <div class="justify-content-start d-flex">-->
+<!--                                                        <label class="avatar-input">-->
+<!--                                                            {% if request.user.signature %}-->
+<!--                                                            <img src="{{request.user.signature.url}}" alt="..." style="height: 95px;"-->
+<!--                                                                class="img-thumbnail" style="border: 1px solid rgba(0,0,0,.37);">-->
+<!--                                                            {% else %}-->
+<!--&lt;!&ndash;                                                            <img src="{% static 'assets/images/logo.png' %}" alt="..."&ndash;&gt;-->
+<!--&lt;!&ndash;                                                                class="img-thumbnail" style="border: 1px solid rgba(0,0,0,.37);">&ndash;&gt;-->
+<!--                                                            {% endif %}-->
+<!--                                                        </label>-->
+<!--                                                    </div>-->
+<!--                                                </div>-->
+<!--                                            </div>-->
+<!--                                            {% comment %} <div class="col-md-6">-->
+<!--                                                <div class="mb-3 row">-->
+<!--                                                    <label for="companystamp" class="form-label">Company Stamp:</label>-->
+<!--                                                    <div class="justify-content-start d-flex">-->
+<!--                                                        <label class="avatar-input">-->
+<!--                                                            <img src="{% static 'assets/images/logo.png' %}" alt="..."-->
+<!--                                                                    class="img-thumbnail" style="border: 1px solid rgba(0,0,0,.37);">-->
+<!--                                                        </label>-->
+<!--                                                    </div>-->
+<!--                                                </div>-->
+<!--                                            </div>  {% endcomment %}-->
+<!--                                        </div>-->
+<!--                                        <div class="mb-3 row">-->
+<!--                                            <div class="col-md-6">-->
+<!--                                                <label for="sname" class="col-form-label">Name:</label>-->
+<!--                                                <input class="form-control" type="text"  id="sname" name="sname" value="{{request.user.username|default_if_none:''}}"  readonly>-->
+<!--                                            </div>-->
+<!--                                            {% comment %} <div class="col-md-6">-->
+<!--                                                <label for="dodate" class="col-form-label">Date:</label>-->
+<!--                                                <input type="text" class="form-control" id="dodate" name="dodate" data-date-format="dd M yyyy" data-provide="datepicker" data-date-autoclose="true" value="{{delivery_order.date|date:'d M, Y'|default_if_none:''}}" required readonly>-->
+<!--                                            </div> {% endcomment %}-->
+<!--                                        </div>-->
+<!--                                    </div>-->
+<!--                                    -->
+<!--                                </div>-->
+<!--                                -->
+<!--                            </div>-->
+                        </div>
+                        <div class="tab-pane p-3" id="doitem" role="tabpanel">
+                            <div class="row mt-3">
+                                <div class="button-items mb-1">
+                                    <button type="button" id="doitemadd" class="btn btn-outline-primary waves-effect waves-light btn-sm" style="margin-bottom: 0px!important;"> Add </button>
+                                    <button type="button" id="doimport" class="btn btn-outline-secondary waves-effect btn-sm" style="margin-bottom: 0px!important;"> Import </button>
+                                    <a href="{% url 'ajax_export_do_item' projectid=project_pk doid=delivery_pk %}" class="btn btn-info waves-effect waves-light btn-sm" style="white-space: nowrap;margin-bottom: 0px!important;" > Template Export</a>
+                                </div>
+                            </div>
+                            <div class="table-responsive mt-2">
+                                <table id="doitemdt" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                                    <thead>
+                                        <tr>
+                                            <th width="5%">SN</th>
+                                            <th width="65%">Description</th>
+                                            <th width="10%">QTY</th>
+                                            <th width="10%">UOM</th>
+                                            <th width="10%">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in doitems %}
+                                        <tr>
+                                            <td class="align-middle">{{ forloop.counter }}</td>
+                                            <td class="align-middle">{{item.description|wordwrap:80|linebreaksbr|default_if_none:""}}</td>
+                                            <td class="align-middle">{{item.qty|default_if_none:""}}</td>
+                                            <td class="align-middle">{{item.uom|default_if_none:""}}</td>
+                                            <td class="align-middle">
+                                                <a href="javascript:void(0);" onclick="updatedoitem('{{item.id}}')" class="btn btn-outline-primary btn-sm edit"  title="Edit">
+                                                    <i class="fas fa-pencil-alt"></i>
+                                                </a>
+                                                <a href="javascript:void(0);" onclick="deletedeliveryitem('{{item.id}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
+                                                    <i class="far fa-trash-alt"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="tab-pane p-3" id="dosignature" role="tabpanel">
+                            <form data-parsley-validate id="DoSignatureForm">
+                                <div class="button-items mb-3">
+                                    {% if dosignature.signature %}
+                                    <a href="javascript:void(0);" id="deliveryupdate" onclick="updatedeliverysign('{{dosignature.id}}')" class="align-middle btn-lg btn-outline-primary"><i class="fas fa-pencil-alt mr-2"></i></a>
+                                    {% else %}
+                                    <a href="javascript:void(0);" id="deliveryedit" class="align-middle btn-lg btn-outline-primary"><i class="fas fa-pencil-alt mr-2"></i></a>
+                                    {% endif %}
+                                </div>
+                                <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;">
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-8">
+                                        <div class="row">
+                                            <div class="col-md-6 col-sm-12">
+                                                <div class="mb-3 row">
+                                                    <label for="signature" class="form-label">Customer's Signatures:</label>
+                                                    <div class="justify-content-start d-flex" style="border: 1px solid;">
+                                                        {% if dosignature %}
+                                                            <img src="{{ dosignature.signature|signature_base64 }}" style="max-width: 100%;height: auto;"/>
+                                                        {% else %}
+                                                        <div style="height:100px;"></div>
+                                                        {% comment %}
+<!--                                                        <img src="{% static 'assets/images/logo.png' %}" alt="..."-->
+<!--                                                            class="img-thumbnail" style="border: 1px solid rgba(0,0,0,.37);"> -->
+                                                        {% endcomment %}
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3 row">
+                                            <div class="col-md-6">
+                                                <label for="sname" class="col-form-label">Name:</label>
+                                                <input class="form-control" type="text" style="height:38px;" id="sname" name="sname" value="{{dosignature.name|default_if_none:''}}"  readonly>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="dosigndate" class="col-form-label">Date:</label>
+                                                <input type="text" class="form-control" style="height:38px;" id="dosigndate" name="dosigndate" value="{{dosignature.update_date|date:'d M, Y'|default_if_none:''}}" required readonly>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3 row">
+                                            <div class="col-md-6">
+                                                <label for="donric" class="col-form-label">NRIC(Last 4 Digit):</label>
+                                                <input class="form-control" type="text" style="height:38px;" id="donric" name="donric" value="{{dosignature.nric|default_if_none:''}}"  readonly>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Delivery Signature modal content -->
+<div id="deliverysignmodal" class="modal fade" role="dialog" aria-labelledby="deliverysignModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_do_signature">Add New Delivery Signature</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_delivery_sign">
+                <form class="needs-validation p-3" id="DeliverySignForm">
+                    {% csrf_token %}
+
+                    <div id="text_error_delivery_sign" class="alert alert-danger alert-dismissible fade show mb-0" style="display: none;" role="alert">
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="delivery_name" class="col-md-4 col-form-label">Name:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="delivery_name" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="delivery_date" class="col-md-4 col-form-label">Date:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="delivery_date" data-date-format="dd M, yyyy" data-provide="datepicker" data-date-autoclose="true" autocomplete="off" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="delivery_nric" class="col-md-4 col-form-label">NRIC(Last 4 Digits):</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text"  id="delivery_nric" required>
+                        </div>
+                    </div>
+                    <div id="signatureparent">
+                        <div id="signature"></div>
+                    </div>
+                    <div class="pt-3">
+                        <button type="button" class="btn btn-outline-dark waves-effect btn-sm" id="signreset">Reset</button>
+                    </div>
+                    
+                </form>
+                <input type="hidden" id="deliveryid" value="-1" />
+            
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_deliveryadd">Add</button>
+                
+            </div>
+        </div>
+    </div>
+</div>
+<!--Delivery Order Item modal content -->
+<div id="doitemmodal" class="modal fade" role="dialog" aria-labelledby="doitemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_item">Add New Delivery Order Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_delivery_item">
+                <form class="needs-validation p-3" id="DoItemForm">
+                    {% csrf_token %}
+                    <div id="text_error_do_item" style="display: none;" class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+                    </div>
+                    
+                    <div class="mb-3 mt-3 row">
+                        <label for="itemdescription" class="col-md-4 col-form-label">Description:</label>
+                        <div class="col-md-8">
+                            <select class="form-control" id="itemdescription" required>
+                                <option value="">Select Description..</option>
+                                {% for description in projectitemall %}
+                                    <option value="{{description.description}}">{{description.description}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="itemqty" class="col-md-4 col-form-label">QTY:</label>
+                        <div class="col-md-8">
+                            <input type="text" class="form-control" id="itemqty"  name="itemqty" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="itemuom" class="col-md-4 col-form-label">UOM:</label>
+                        <div class="col-md-8">
+                            <input type="text" class="form-control" id="itemuom"  name="itemuom" required readonly="true">
+                            <input type="hidden" class="form-control" id="itemuom_id"  name="itemuom_id" required readonly="true">
+                        </div>
+                    </div>
+                    
+                </form>
+                <input type="hidden" id="doitemid" value="-1" />
+            
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_doitemadd">Add</button>
+                
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- Delete Delivery Item modal content -->
+<div id="itemdeleteModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="itemdelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ItemdelModalLabel">Delete Delivery Order Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5>Are you sure you want to delete this record?</h5>
+                <input type="hidden" id="itemdel_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect" data-bs-dismiss="modal">Cancel</button>
+                <button id="itemdel_confirm" type="button" class="btn btn-primary waves-effect waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'assets/libs/select2/js/select2.full.min.js' %}"></script>
+<script src="{% static 'assets/libs/bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+<!-- Responsive examples -->
+<script src="{% static 'assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+<script src="{% static 'assets/js/jSignature/jSignature.js' %}"></script>
+<script src="{% static 'assets/js/jSignature/plugins/jSignature.CompressorBase30.js' %}"></script>
+<script src="{% static 'assets/js/jSignature/plugins/jSignature.CompressorSVG.js' %}"></script>
+<script src="{% static 'assets/js/jSignature/plugins/jSignature.UndoButton.js' %}"></script>
+<script src="{% static 'assets/js/jSignature/plugins/signhere/jSignature.SignHere.js' %}"></script>
+<script>
+    var $sigdiv = $("#signature").jSignature({'UndoButton':true, height: 150, width: 720, 'decor-color': 'transparent'});
+    $("#DoDetailForm input").prop("disabled", true);
+    $("#DoDetailForm textarea").prop("disabled", true);
+    $('#dosave').prop('disabled', true);
+    $('.select2').prop('disabled', true);
+    $("#doupdate").on('click', function(e){
+        $("#DoDetailForm input").prop("disabled", false);
+        $("#DoDetailForm textarea").prop("disabled", false);
+        $("#doupdate").hide();
+        $("#docancel").show();
+        $('#dosave').prop('disabled', false);
+        $('.select2').prop('disabled', false);
+    });
+    $("#docancel").on('click', function(e){
+        $("#DoDetailForm input").prop("disabled", true);
+        $("#DoDetailForm textarea").prop("disabled", true);
+        $("#doupdate").show();
+        $("#docancel").hide();
+        $('#dosave').prop('disabled', true);
+        $('.select2').prop('disabled', true);
+    });
+    $(".select2").select2({width: '100%'});
+    $("#itemdescription").select2({width: '100%', dropdownParent: $("#manage_delivery_item")});
+    $(".uom-select").select2({width: '100%', dropdownParent: $("#manage_delivery_item")});
+    $("#itemdescription").on('change', function(e){
+        if ($("#itemdescription").val() != ""){
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_get_pro_uom" %}',
+                data: {
+                    itemdescription: $("#itemdescription").val(),
+                    quotationid: `{{quotation.id}}`
+                },
+                type: 'POST',
+                success: function (data) {
+                    up_data = JSON.parse(data);
+                    $("#itemuom").val(up_data.uom);
+                    $("#itemuom_id").val(up_data.uom_id);
+                    $("#itemqty").val(up_data.item_qty);
+                }
+            });
+        }
+    });
+    $("#doitemdt").DataTable({
+        searching: false, 
+        paging: true, 
+        info: true,
+        ordering: false,
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+    $('a[role=tab]').click(function(){
+        if (this.id == "dodetailtab") {
+            localStorage.setItem("dodetailitem", '1');
+        } else if (this.id == "doitemtab") {
+            localStorage.setItem("dodetailitem", '2');
+        } else if (this.id == "dosignaturetab") {
+            localStorage.setItem("dodetailitem", '3');
+        } 
+    });
+    var tabactive = localStorage.getItem("dodetailitem");
+    if (tabactive == null || tabactive == '1') 
+    {
+        $("#dodetailtab").addClass('active');
+        $("#doitemtab").removeClass('active');
+        $("#dosignaturetab").removeClass('active');
+
+        $("#dodetail").addClass('active');
+        $("#doitem").removeClass('active');
+        $("#dosignature").removeClass('active');
+    } 
+    else if (tabactive == '2') 
+    {
+        $("#dodetailtab").removeClass('active');
+        $("#doitemtab").addClass('active');
+        $("#dosignaturetab").removeClass('active');
+
+        $("#dodetail").removeClass('active');
+        $("#doitem").addClass('active');
+        $("#dosignature").removeClass('active');
+    } 
+    else if (tabactive == '3') 
+    {
+        $("#dodetailtab").removeClass('active');
+        $("#doitemtab").removeClass('active');
+        $("#dosignaturetab").addClass('active');
+
+        $("#dodetail").removeClass('active');
+        $("#doitem").removeClass('active');
+        $("#dosignature").addClass('active');
+    } 
+    $("#doitemadd").on('click', function(e){
+        $("#itemdescription").val('');
+        $(".btn_doitemadd").html('Add');
+        $("#itemqty").val('');
+        $("#itemuom").val('');
+        $("#itemuom_id").val('');
+        $("#doitemid").val('-1');
+        $("#doitemmodal").modal('show');
+    });
+    $('#itemqty').keydown(function(event) {
+
+        if(event.shiftKey && ((event.keyCode >=48 && event.keyCode <=57) 
+                || (event.keyCode >=186 &&  event.keyCode <=222))){
+        // Ensure that it is a number and stop the Special chars
+            event.preventDefault();
+        }
+        else if ((event.shiftKey || event.ctrlKey) && (event.keyCode > 34 && event.keyCode < 40)){     
+            // let it happen, don't do anything
+        }      
+        else{
+        // Allow only backspace , delete, numbers               
+        if (event.keyCode == 9 || event.keyCode == 46 || event.keyCode == 8 || event.keyCode == 39 ||event.keyCode == 37 
+                || (event.keyCode >=48 && event.keyCode <=57)) {
+            // let it happen, don't do anything
+        }
+        else {
+            // Ensure that it is a number and stop the key press
+                event.preventDefault();                   
+            }
+        }
+    });
+    
+    function updatedoitem(id){
+        $("#doitemid").val(id);
+        $("#head_title_item").html('Delivery Order Item');
+        $(".btn_doitemadd").html('Update');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_do_item" %}',
+            data: {
+                doitemid: $("#doitemid").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data)
+                is_exist=false;
+                $("#itemdescription option").each(function()
+                {
+                    if($(this).val()==up_data.description){
+                        is_exist=true;
+                    }
+                });
+                if(!is_exist){
+                    $("#itemdescription").append('<option value="'+up_data.description+'">'+up_data.description+'</option>');
+                }
+
+                $("#itemdescription").val(up_data.description);
+                $("#itemdescription").trigger('change');
+                $("#itemqty").val(up_data.qty);
+                $("#itemuom").val(up_data.uom);
+                $("#itemuom_id").val(up_data.uom_id);
+            }
+        });
+        $("#doitemmodal").modal('show');
+    };
+    function deletedeliveryitem(id) {
+        $("#itemdel_id").val(id);
+        $("#itemdeleteModal").modal('show');
+    }
+    $("#itemdel_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_delivery_item" %}',
+            data: {
+                'del_id': $("#itemdel_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload(); 
+                }
+            }
+        });
+        $('#itemdeleteModal').modal('hide')
+    });
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+    $("#deliveryedit").on('click', function(e){
+        $("#deliveryid").val('-1');
+        $("#head_title_do_signature").html('Add New Delivery Signature');
+        $(".btn_deliveryadd").html('Add');
+        $("#delivery_name").val("");
+        $("#delivery_nric").val("");
+        var today = new Date();
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = monthNames[today.getMonth()]; 
+        var yyyy = today.getFullYear();
+        $("#delivery_date").val(dd + " " + mm + ", " + yyyy);
+        $('#delivery_date').datepicker('setDate', dd + " " + mm + ", " + yyyy);
+        $sigdiv.jSignature('reset');
+        $("#deliverysignmodal").modal('show');
+    });
+    $("#signreset").on('click', function(e){
+        $sigdiv.jSignature('reset');
+    });
+    function updatedeliverysign(id) {
+        $("#deliveryid").val(id);
+        $("#head_title_do_signature").html('Update Delivery Signature');
+        $(".btn_deliveryadd").html('Update');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_delivery_sign" %}',
+            data: {
+                deliveryid: $("#deliveryid").val()
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data);
+                $("#delivery_name").val(up_data.name);
+                $('#delivery_nric').val(up_data.nric);
+                $('#delivery_date').val(up_data.date);  
+                $('#delivery_date').datepicker('setDate', up_data.date);
+                $("#signature").jSignature('setData', JSON.parse(up_data.signature), 'native');
+            }
+        });
+        $("#deliverysignmodal").modal('show');
+    }
+    $(".btn_deliveryadd").on('click', function(e){
+        var signature = $sigdiv.jSignature('getData', 'native');
+        $('#DeliverySignForm').parsley().validate();
+        if ($('#DeliverySignForm').parsley().validate() === false) {         
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+        }
+        else {
+            if( signature.length == 0) {
+                alert('Please Enter Signature..');
+            } else {
+                $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_delivery_sign" %}',
+                data: {
+                    name: $("#delivery_name").val(),
+                    nric: $("#delivery_nric").val(),
+                    date: formatDate($("#delivery_date").val()),
+                    doid: `{{delivery_pk}}`,
+                    projectid:`{{project_pk}}`,
+                    signature: JSON.stringify(signature),
+                    default_base64: $sigdiv.jSignature('getData', 'default'),
+                    deliveryid: $("#deliveryid").val()
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_delivery_sign").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_delivery_sign").html(data.messages);
+                        $("#text_error_delivery_sign").show();
+                    }
+                }
+            });
+            }
+            
+        }
+        
+    });
+    $(".btn_doitemadd").on('click', function(e){
+        $('#DoItemForm').parsley().validate();
+        if ($('#DoItemForm').parsley().validate() === false) {       
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_do_item_add" %}',
+                data: {
+                    description: $("#itemdescription").val(),
+                    qty: $("#itemqty").val(),
+                    uom: $("#itemuom_id").val(),
+                    projectid: `{{project_pk}}`,
+                    doid: `{{delivery_pk}}`,
+                    doitemid: $("#doitemid").val()
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_do_item").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_do_item").html(data.messages);
+                        $("#text_error_do_item").show();
+                    }
+                }
+            });
+        }
+    });
+    $("#dosave").on('click', function(e){
+        $('#DoDetailForm').parsley().validate();
+        if ($('#DoDetailForm').parsley().validate() === false) {         
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_update_delivery_order" %}',
+                data: {
+                    company_nameid: $("#company_nameid").val(),
+                    address: $("#address").val(),
+                    attn: $("#attn").val(),
+                    tel: $("#tel").val(),
+                    shipto: $("#shipto").val(),
+                    proj_id: $("#proj_id").val(),
+                    doid: `{{delivery_pk}}`,
+                    remarks : $("#bremark").val(),
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_do").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_do").html(data.messages);
+                        $("#text_error_do").show();
+                    }
+                }
+            });
+        }
+    });
+    /* $("#doprint").on('click', function(e){
+        var printContents = document.getElementById('DoDetailForm').innerHTML;
+        var originalContents = document.body.innerHTML;
+        document.body.innerHTML = printContents;
+        window.print();
+        document.body.innerHTML = originalContents;
+    }); */
+    function formatDate(date) {
+        var d = new Date(date),
+            month = '' + (d.getMonth() + 1),
+            day = '' + d.getDate(),
+            year = d.getFullYear();
+
+        if (month.length < 2) 
+            month = '0' + month;
+        if (day.length < 2) 
+            day = '0' + day;
+
+        return [year, month, day].join('-');
+    }
+</script>
+{% endblock %}

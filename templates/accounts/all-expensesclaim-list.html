@@ -1,0 +1,401 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block page-title %}Expenses Claim{% endblock%}
+{% block css %}
+    <link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'assets/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" /> 
+    <link href="{% static 'assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" rel="stylesheet"> 
+
+{% endblock %}
+{% block content %}
+<style type="text/css">
+    .datepicker {
+        z-index:1151 !important;
+    }
+    #newSearchPlace div.dataTables_filter {
+        text-align: right;
+        padding-top: 5px;
+    }
+    #newSearchPlace div.dataTables_filter label {
+        font-weight: normal;
+        white-space: nowrap;
+        text-align: left;
+    }
+    #newSearchPlace div.dataTables_filter input {
+        margin-left: 0.5em;
+        margin-right: 0;
+        display: inline-block;
+        width: auto;
+    }
+    .dt-button-collection .dropdown-menu {
+        position:relative !important
+    }
+    .dt-button-collection {
+        left: unset !important;
+        right: 10px ;
+    }
+    .dropdown-item.active, .dropdown-item:active {
+        color: #f4f5f7;
+        text-decoration: none;
+        background-color: #7a6fbe;
+    }
+</style>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="page-title-box">
+                <h4>Expenses Claim
+                </h4>
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'all_expenses_claim' %}"><b>Expenses Claim</b></a></li>
+                        <li class="breadcrumb-item active">All Expenses Claim</li>
+                    </ol>
+                    
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card ">
+                <div class="card-body">  
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="row">
+<!--                                <div class="mt-1 col-md-3 space-custom">-->
+<!--                                    <button type="button" id="expenseclaimadd" class="btn btn-primary w-100 p-2" style="height: 38px;white-space: nowrap;"><i class="mdi mdi-calendar-plus mr-2"></i> New</button>-->
+<!--                                </div>-->
+                                <div class="mt-1 col-md-9 space-custom">
+                                    <div class="export_button justify-content-start d-flex"></div>
+                                </div>
+                            </div> 
+                        </div>
+                        <div class="col-md-8">
+                            <div class="row justify-content-end d-flex">
+                                <div class="mt-1 col-md-3">
+                                    <div id="newSearchPlace"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="datatable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th>S/N</th>
+                                    <th>Claim No</th>
+                                    <th>Date</th>
+                                    <th>Emp No</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                             {% for expensesclaim in expensesclaims %}
+                                <tr>
+                                    <td class="align-middle">{{forloop.counter}}</td>
+                                    <td class="align-middle">{{expensesclaim.ec_id|default_if_none:""}}</td>
+                                    <td class="align-middle">{{expensesclaim.submission_date|date:'d M, Y'|default_if_none:""}}</td>
+                                    
+                                    <td class="align-middle">{{expensesclaim.emp_id|default_if_none:""}}</td>
+                                    <td class="align-middle">{{expensesclaim.total|floatformat:2|default_if_none:""}}</td>
+                                    <td class="align-middle">{{expensesclaim.status|default_if_none:""}}</td>
+                                    <td class="align-middle">
+                                        <a href="{% url 'all_expenses_detail' expensesclaim.id %}" class="btn btn-outline-secondary btn-sm" title="View">
+                                            <i class="ion ion-md-eye"></i>
+                                        </a>
+<!--                                        <a href="javascript:void(0);" onclick="updateexpense('{{expensesclaim.id}}')" class="btn btn-outline-primary btn-sm edit com_update" title="Edit">-->
+<!--                                            <i class="fas fa-pencil-alt"></i>-->
+<!--                                        </a>-->
+                                        <a href="javascript:void(0);" onclick="deleteexpense('{{expensesclaim.id}}','{{expensesclaim.ec_id}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
+                                            <i class="far fa-trash-alt"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Expenseclaim modal content -->
+<div id="expensesclaimmodal" class="modal fade" role="dialog" aria-labelledby="expensesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title">Add New Expenses Claim</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_info">
+                <form class="needs-validation p-3" id="ExpensesForm">
+                    {% csrf_token %}
+
+                    <div id="text_error" class="alert alert-danger alert-dismissible fade show mb-2" role="alert">
+                    </div>
+                
+                    <div class="mb-3 mt-3 row">
+                        <label for="claim_no" class="col-md-4 col-form-label">Claim No:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text"  id="claim_no" required disabled>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="submission_date" class="col-md-4 col-form-label">Date:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" autocomplete="off" type="text" data-date-format="dd M yyyy" data-provide="datepicker" data-date-autoclose="true" id="submission_date" required>
+                        </div>
+                    </div>
+            
+                    <div class="mb-3 row">
+                        <label for="emp_id" class="col-md-4 col-form-label">Emp No:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="emp_id" required disabled>
+                        </div>
+                    </div>
+                    {% comment %} <div class="mb-3 row">
+                        <label for="total" class="col-md-4 col-form-label">Total:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="total" required>
+                        </div>
+                    </div> {% endcomment %}
+                </form>
+                <input type="hidden" id="expensesid" value="-1" />
+            
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_expensesadd">Add</button>
+                
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- Delete Expenses Claim modal content -->
+<div id="deleteModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="delModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="delModalLabel">Delete Expenses Claim</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5 id="del_description"></h5>
+                <input type="hidden" id="del_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button id="del_confirm" type="button" class="btn btn-primary waves-effect btn-sm waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'assets/libs/select2/js/select2.full.min.js' %}"></script>
+<script src="{% static 'assets/libs/bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+<!-- Buttons examples -->
+<script src="{% static 'assets/libs/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js' %}"></script>
+<script src="{% static 'assets/libs/jszip/jszip.min.js' %}"></script>
+<script src="{% static 'assets/libs/pdfmake/build/pdfmake.min.js' %}"></script>
+<script src="{% static 'assets/libs/pdfmake/build/vfs_fonts.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.html5.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.print.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.colVis.min.js' %}"></script>
+<!-- Responsive examples -->
+<script src="{% static 'assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+<script>
+    $(document).ready(function(){
+        $("#datatable").DataTable({
+            lengthChange:!1,
+            "aaSorting": [[ 0, "desc" ]],
+            buttons: [
+
+                {
+                    extend: 'colvis',
+                    text: "Filter Column",
+                    postfixButtons: [ 'colvisRestore' ]
+                },
+                {
+                    extend: 'collection',
+                    text: "Export",
+                    buttons : [
+                        {
+                            extend: 'excelHtml5',
+                            exportOptions: {
+                                columns: ':visible'
+                            }
+                        },
+                        {
+                            extend: 'csvHtml5',
+                            exportOptions: {
+                                columns: ':visible'
+                            }
+                        },
+                        {
+                            extend: 'pdfHtml5',
+                            exportOptions: {
+                                columns: ':visible'
+                            }
+                        },
+                    ]
+                },
+            
+            ],
+        }).buttons().container().appendTo(".export_button");
+        $(".dataTables_length select").addClass("form-select form-select-sm");
+        $("#newSearchPlace").html($(".dataTables_filter"));
+        $("#text_error").hide();
+    });
+    function deleteexpense(id, name) {
+        $("#del_id").val(id);
+        $("#del_description").html("Are you sure you want to delete this record "+'"'+name+'"'+"?");
+        $("#deleteModal").modal('show');
+    }
+
+    $("#del_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_expenses_claim" %}',
+            data: {
+                'expensesid': $("#del_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload(); 
+                }
+            }
+        });
+        $('#deletModal').modal('hide');
+    });
+    function updateexpense(id) {
+        $("#expensesid").val(id);
+        $("#head_title").html('Update Expenses Claim');
+        $(".btn_expensesadd").html('Update');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_expenses_claim" %}',
+            data: {
+                expensesid: $("#expensesid").val()
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data);
+                $("#submission_date").val(up_data.submission_date);  
+                $("#emp_id").val(up_data.emp_id);
+                $('#total').val(up_data.total);  
+                $('#claim_no').val(up_data.claim_no); 
+            }
+        });
+        $("#expensesclaimmodal").modal('show');
+
+    }
+    $("#expenseclaimadd").on('click', function(e){
+        $("#head_title").html('Add New Expenses Claim');
+        $(".btn_expensesadd").html('Add');
+        $("#expensesid").val("-1");
+        $("#claim_no").val("");
+        $("#submission_date").val("");
+        if ('{{request.user.empid}}' != "None") {
+            $("#emp_id").val('{{request.user.empid}}');
+        } else {
+            $("#emp_id").val('');
+        }
+        
+        $("#total").val("");
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_check_expenseclaim" %}',
+            data: {},
+            type: 'POST',
+            success: function (data) {
+                var prefix = "CES";
+                if (data['status'] == "exist") {
+                    var ex_value = data.expenses;
+                    var strDate = new Date(); 
+                    var shortYear = strDate.getFullYear(); 
+                    var twoDigitYear = shortYear.toString().substr(-2);
+                    if (ex_value.substring(3,5) == twoDigitYear) {
+                        suffix_val = (parseInt(ex_value.substr(5,8)) + 1).toString();
+                        $("#claim_no").val(prefix+twoDigitYear+suffix_val);
+                    } else {
+
+                        $("#claim_no").val(prefix+twoDigitYear+"1001");
+                    }
+                } else {
+                    var strDate = new Date(); 
+                    var shortYear = strDate.getFullYear(); 
+                    var twoDigitYear = shortYear.toString().substr(-2);
+                
+                    $("#claim_no").val(prefix+twoDigitYear+"1001");
+                }
+            }
+        });
+        
+        $("#expensesclaimmodal").modal('show');
+    });
+    $(".btn_expensesadd").on('click', function(e){
+        $("#ExpensesForm").parsley().validate();
+        if ($('#ExpensesForm').parsley().validate() === false) {         
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_expenses_claim" %}',
+                data: {
+                    claim_no: $("#claim_no").val(),
+                    submission_date: formatDate($("#submission_date").val()),
+                    emp_id: $("#emp_id").val(),
+                    //total: $("#total").val(),
+                    expense_name: `{{request.user.first_name}}`,
+                    expensesid: $("#expensesid").val()
+
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error").hide();
+                        var redirect_url = "{% url 'expenses_claim_detail' 0 %}".replace(0,data.expenseclaimid);
+                        location.href = redirect_url;
+                    } else {
+                        $("#text_error").html(data.messages);
+                        $("#text_error").show();
+                    }
+                }
+            });
+        }
+    });
+    
+    function formatDate(date) {
+        var d = new Date(date),
+            month = '' + (d.getMonth() + 1),
+            day = '' + d.getDate(),
+            year = d.getFullYear();
+
+        if (month.length < 2) 
+            month = '0' + month;
+        if (day.length < 2) 
+            day = '0' + day;
+
+        return [year, month, day].join('-');
+    };
+</script>
+{% endblock %}

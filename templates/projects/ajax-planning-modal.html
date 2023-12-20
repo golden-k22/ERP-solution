@@ -1,0 +1,403 @@
+{% load static %}
+{% load custom_tags %}
+<style>
+    /* QuickReset */ * { margin: 0; box-sizing: border-box; }
+
+    .dropdown-container {
+      position: relative;
+      // width : 130%;
+    }
+
+    .dropdown-label {
+      padding: 4px 10px 4px 0;
+    }
+
+    .dropdown-label:before {
+      content: "\25BC";
+    }
+
+    .dropdown-container.is-active .dropdown-label:before {
+      content: "\25B2";
+    }
+
+    .dropdown-button {
+      cursor: pointer;
+      padding: 3px 10px 3px 10px;
+      border: 1px solid #d5d5d5;
+      background: white;
+      display: flex;
+      flex-flow: row wrap;
+      //width: 120px;
+    }
+
+    .dropdown-sel {
+      display: inline-block;
+      background: #eee;
+      border-radius: 3em;
+      padding: 2px 10px;
+      margin: 0 3px 3px 0;
+    }
+
+    .dropdown-list {
+      position: absolute;
+      overflow-y: auto;
+      z-index: 9999999;
+      top: calc( 100% - 2px);
+      width: 100%;
+      max-height: 80vh;
+      padding: 10px;
+      padding-top: 0;
+      border: 1px solid #d5d5d5;
+      border-top: 0;
+      background: white;
+      display: none;
+    }
+
+    .dropdown-container.is-active .dropdown-list {
+      display: inline-table;
+    }
+
+    .dropdown-list ul {
+      padding: 0px 5px;
+      padding-top: 10px;
+      list-style: none;
+    }
+
+    .dropdown-list li {
+      padding: 0.24em 0;
+    }
+
+    input[type="checkbox"] {
+      margin-right: 5px;
+    }
+
+    /* HELPER CLASSES */
+    .noselect { user-select: none; }
+    .is-hidden { display: none; }
+
+</style>
+<div class="table-responsive">
+    <table id="projplan_modal_table" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 150%;">
+        <thead>
+            <tr>
+                <th width="5%">SN</th>
+                <th width="26%">Description</th>
+                <th width="5%">QTY</th>
+                <th width="8%">{{start_date|date:"d/M" }}</th>
+                {% addDays start_date 1 as next_day %}
+                <th width="8%">{{next_day|date:"d/M"}}</th>
+                {% addDays start_date 2 as next_day %}
+                <th width="8%">{{next_day|date:"d/M"}}</th>
+                {% addDays start_date 3 as next_day %}
+                <th width="8%">{{next_day|date:"d/M"}}</th>
+                {% addDays start_date 4 as next_day %}
+                <th width="8%">{{next_day|date:"d/M"}}</th>
+                {% addDays start_date 5 as next_day %}
+                <th width="8%">{{next_day|date:"d/M"}}</th>
+                {% addDays start_date 6 as next_day %}
+                <th width="8%">{{next_day|date:"d/M"}}</th>
+                {% addDays start_date 7 as next_day %}
+                <th width="8%">{{next_day|date:"d/M"}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for activity in activities %}
+            {% with forloop.counter as outer_counter %}
+            <tr>
+                <td class="align-middle"> {{outer_counter}} </td>
+                <td>{{activity.description|wordwrap:50|linebreaksbr|default_if_none:""}}</td>
+                <td>{{activity.qty|default_if_none:""}}</td>
+                <td class="align-middle">
+                    <input type="text" class="form-control form-expand" id="activity-{{activity.id}}-1" name="activity-{{activity.id}}-1" value="{{0|default_if_none:0}}" style="height: 38px;">
+                </td>
+                <td class="align-middle">
+                    <input type="text" class="form-control form-expand" id="activity-{{activity.id}}-2" name="activity-{{activity.id}}-2" value="{{0|default_if_none:0}}" style="height: 38px;">
+                </td>
+                <td class="align-middle">
+                    <input type="text" class="form-control form-expand" id="activity-{{activity.id}}-3" name="activity-{{activity.id}}-3" value="{{0|default_if_none:0}}" style="height: 38px;">
+                </td>
+                <td class="align-middle">
+                    <input type="text" class="form-control form-expand" id="activity-{{activity.id}}-4" name="activity-{{activity.id}}-4" value="{{0|default_if_none:0}}" style="height: 38px;">
+                </td>
+                <td class="align-middle">
+                    <input type="text" class="form-control form-expand" id="activity-{{activity.id}}-5" name="activity-{{activity.id}}-5" value="{{0|default_if_none:0}}" style="height: 38px;">
+                </td>
+                <td class="align-middle">
+                    <input type="text" class="form-control form-expand" id="activity-{{activity.id}}-6" name="activity-{{activity.id}}-6" value="{{0|default_if_none:0}}" style="height: 38px;">
+                </td>
+                <td class="align-middle">
+                    <input type="text" class="form-control form-expand" id="activity-{{activity.id}}-7" name="activity-{{activity.id}}-7" value="{{0|default_if_none:0}}" style="height: 38px;">
+                </td>
+                <td class="align-middle">
+                    <input type="text" class="form-control form-expand" id="activity-{{activity.id}}-8" name="activity-{{activity.id}}-8" value="{{0|default_if_none:0}}" style="height: 38px;">
+                </td>
+            </tr>
+            {% endwith %}
+            {% endfor %}
+            <tr>
+                <td class="align-middle"></td>
+                <td> Team </td>
+                <td></td>
+                <td class="align-middle">
+                    <div class="dropdown-container" id="team-1">
+                      <div class="dropdown-button noselect">
+                        <div class="dropdown-label"> Select...</div>
+                      </div>
+                      <div class="dropdown-list form-control">
+                        <ul>
+                            {% for team in teams %}
+                              <li>
+                                <label><input value="{{team.user.id}}" data-name="{{team.user.username}}" type="checkbox">{{team.user.username}}</label>
+                              </li>
+                            {% endfor %}
+                        </ul>
+                      </div>
+                    </div>
+                </td>
+                <td class="align-middle">
+                    <div class="dropdown-container" id="team-2">
+                      <div class="dropdown-button noselect">
+                        <div class="dropdown-label"> Select...</div>
+                      </div>
+                      <div class="dropdown-list form-control">
+                        <ul>
+                            {% for team in teams %}
+                              <li>
+                                <label><input value="{{team.user.id}}" data-name="{{team.user.username}}" type="checkbox">{{team.user.username}}</label>
+                              </li>
+                            {% endfor %}
+                        </ul>
+                      </div>
+                    </div>
+                </td>
+                <td class="align-middle">
+                    <div class="dropdown-container" id="team-3">
+                      <div class="dropdown-button noselect">
+                        <div class="dropdown-label"> Select...</div>
+                      </div>
+                      <div class="dropdown-list form-control">
+                        <ul>
+                            {% for team in teams %}
+                              <li>
+                                <label><input value="{{team.user.id}}" data-name="{{team.user.username}}" type="checkbox">{{team.user.username}}</label>
+                              </li>
+                            {% endfor %}
+                        </ul>
+                      </div>
+                    </div>
+                </td>
+                <td class="align-middle">
+                    <div class="dropdown-container" id="team-4">
+                      <div class="dropdown-button noselect">
+                        <div class="dropdown-label"> Select...</div>
+                      </div>
+                      <div class="dropdown-list form-control">
+                        <ul>
+                            {% for team in teams %}
+                              <li>
+                                <label><input value="{{team.user.id}}" data-name="{{team.user.username}}" type="checkbox">{{team.user.username}}</label>
+                              </li>
+                            {% endfor %}
+                        </ul>
+                      </div>
+                    </div>
+                </td>
+                <td class="align-middle">
+                    <div class="dropdown-container" id="team-5">
+                      <div class="dropdown-button noselect">
+                        <div class="dropdown-label"> Select...</div>
+                      </div>
+                      <div class="dropdown-list form-control">
+                        <ul>
+                            {% for team in teams %}
+                              <li>
+                                <label><input value="{{team.user.id}}" data-name="{{team.user.username}}" type="checkbox">{{team.user.username}}</label>
+                              </li>
+                            {% endfor %}
+                        </ul>
+                      </div>
+                    </div>
+                </td>
+                <td class="align-middle">
+                    <div class="dropdown-container" id="team-6">
+                      <div class="dropdown-button noselect">
+                        <div class="dropdown-label"> Select...</div>
+                      </div>
+                      <div class="dropdown-list form-control">
+                        <ul>
+                            {% for team in teams %}
+                              <li>
+                                <label><input value="{{team.user.id}}" data-name="{{team.user.username}}" type="checkbox">{{team.user.username}}</label>
+                              </li>
+                            {% endfor %}
+                        </ul>
+                      </div>
+                    </div>
+                </td>
+                <td class="align-middle">
+                    <div class="dropdown-container" id="team-7">
+                      <div class="dropdown-button noselect">
+                        <div class="dropdown-label"> Select...</div>
+                      </div>
+                      <div class="dropdown-list form-control">
+                        <ul>
+                            {% for team in teams %}
+                              <li>
+                                <label><input value="{{team.user.id}}" data-name="{{team.user.username}}" type="checkbox">{{team.user.username}}</label>
+                              </li>
+                            {% endfor %}
+                        </ul>
+                      </div>
+                    </div>
+                </td>
+                <td class="align-middle">
+                    <div class="dropdown-container" id="team-8">
+                      <div class="dropdown-button noselect">
+                        <div class="dropdown-label"> Select...</div>
+                      </div>
+                      <div class="dropdown-list form-control">
+                        <ul>
+                            {% for team in teams %}
+                              <li>
+                                <label><input value="{{team.user.id}}" data-name="{{team.user.username}}" type="checkbox">{{team.user.username}}</label>
+                              </li>
+                            {% endfor %}
+                        </ul>
+                      </div>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td class="align-middle"></td>
+                <td > Shift </td>
+                <td ></td>
+                <td class="align-middle">
+                    <select class="form-control select2 form-expand" id="shift-1" name="shift-1" required>
+                        <option value="">Select...</option>
+                        <option value="Day">Day</option>
+                        <option value="Night">Night</option>
+                        <option value="Morning">Morning</option>
+                        <option value="Afternoon">Afternoon</option>
+                        <option value="Evening">Evening</option>
+                    </select>
+                </td>
+                <td class="align-middle">
+                    <select class="form-control select2 form-expand" id="shift-2" name="shift-2" required>
+                        <option value="">Select...</option>
+                        <option value="Day">Day</option>
+                        <option value="Night">Night</option>
+                        <option value="Morning">Morning</option>
+                        <option value="Afternoon">Afternoon</option>
+                        <option value="Evening">Evening</option>
+                    </select>
+                </td>
+                <td class="align-middle">
+                    <select class="form-control select2 form-expand" id="shift-3" name="shift-3" required>
+                        <option value="">Select...</option>
+                        <option value="Day">Day</option>
+                        <option value="Night">Night</option>
+                        <option value="Morning">Morning</option>
+                        <option value="Afternoon">Afternoon</option>
+                        <option value="Evening">Evening</option>
+                    </select>
+                </td>
+                <td class="align-middle">
+                    <select class="form-control select2 form-expand" id="shift-4" name="shift-4" required>
+                        <option value="">Select...</option>
+                        <option value="Day">Day</option>
+                        <option value="Night">Night</option>
+                        <option value="Morning">Morning</option>
+                        <option value="Afternoon">Afternoon</option>
+                        <option value="Evening">Evening</option>
+                    </select>
+                </td>
+                <td class="align-middle">
+                    <select class="form-control select2 form-expand" id="shift-5" name="shift-5" required>
+                        <option value="">Select...</option>
+                        <option value="Day">Day</option>
+                        <option value="Night">Night</option>
+                        <option value="Morning">Morning</option>
+                        <option value="Afternoon">Afternoon</option>
+                        <option value="Evening">Evening</option>
+                    </select>
+                </td>
+                <td class="align-middle">
+                    <select class="form-control select2 form-expand" id="shift-6" name="shift-6" required>
+                        <option value="">Select...</option>
+                        <option value="Day">Day</option>
+                        <option value="Night">Night</option>
+                        <option value="Morning">Morning</option>
+                        <option value="Afternoon">Afternoon</option>
+                        <option value="Evening">Evening</option>
+                    </select>
+                </td>
+                <td class="align-middle">
+                    <select class="form-control select2 form-expand" id="shift-7" name="shift-7" required>
+                        <option value="">Select...</option>
+                        <option value="Day">Day</option>
+                        <option value="Night">Night</option>
+                        <option value="Morning">Morning</option>
+                        <option value="Afternoon">Afternoon</option>
+                        <option value="Evening">Evening</option>
+                    </select>
+                </td>
+                <td class="align-middle">
+                    <select class="form-control select2 form-expand" id="shift-8" name="shift-8" required>
+                        <option value="">Select...</option>
+                        <option value="Day">Day</option>
+                        <option value="Night">Night</option>
+                        <option value="Morning">Morning</option>
+                        <option value="Afternoon">Afternoon</option>
+                        <option value="Evening">Evening</option>
+                    </select>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+<script>
+    var dropdown = $('.dropdown-container'); // Cache all;
+    function UI_dropdown() {
+      const $this = $(this);
+      const $btn = $('.dropdown-button', this);
+      const $list = $('.dropdown-list', this);
+      const $li = $('li', this);
+      const $ckb = $(':checkbox', this);
+
+
+      $btn.on('click', function() {
+        dropdown.not($this).removeClass('is-active'); // Close other
+        $this.toggleClass('is-active'); // Toggle this
+      });
+
+      $ckb.on('change', function() {
+        const names = $ckb.get().filter(el => el.checked).map(el => {
+          return el.value;
+        });
+        if($this.attr('id')=="team-1")
+            users[0]=names;
+        else if($this.attr('id')=="team-2")
+            users[1]=names;
+        else if($this.attr('id')=="team-3")
+            users[2]=names;
+        else if($this.attr('id')=="team-4")
+            users[3]=names;
+        else if($this.attr('id')=="team-5")
+            users[4]=names;
+        else if($this.attr('id')=="team-6")
+            users[5]=names;
+        else if($this.attr('id')=="team-7")
+            users[6]=names;
+        else if($this.attr('id')=="team-8")
+            users[7]=names;
+      });
+    }
+
+    dropdown.each(UI_dropdown); // Apply logic to all dropdowns
+
+    // Dropdown - Close opened
+    $(document).on('click', function(ev) {
+      const $targ = $(ev.target).closest('.dropdown-container');
+      if (!$targ.length) dropdown.filter('.is-active').removeClass('is-active');
+    });
+</script>

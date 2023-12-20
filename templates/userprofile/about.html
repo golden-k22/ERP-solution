@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block page-title %}About{% endblock%}
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="card " style="min-height: 800px;">
+                <div class="card-body">
+                    <h2 class="text-secondary"><b>About Software</b></h2>
+                    <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;">
+                    <h3 class="text-center mt-5 mb-4">
+                        <img src="{% static 'assets/images/logo-title.png' %}" draggable="false" alt="ERP Solution" height="100" class="auth-logo-dark">
+                    </h3>
+                    <p>
+                        Here’s another illustration and design that I said before,
+                        you can see the background of space, flying doctors and patients, plants, and other
+                        things.
+                        it's very interesting concept that I ever made, and I really
+                        enjoy the result, I hope you guys enjoy it as well, thanks! ^^
+
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,485 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block page-title %}Scheduling{% endblock%}
+{% block css %}
+    <link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" rel="stylesheet">
+    <!-- DataTables -->
+    <link href="{% static 'assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'assets/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/css/daterangepicker-bs3.css' %}" rel="stylesheet">
+    <style>
+        body[data-sidebar=dark].vertical-collpsed {
+                min-height: auto!important;
+            }
+
+    </style>
+{% endblock %}
+{% block content %}
+<style type="text/css">
+    .datepicker {
+        z-index:1151 !important;
+    }
+    #newSearchPlace div.dataTables_filter {
+        text-align: right;
+        padding-top: 5px;
+    }
+    #newSearchPlace div.dataTables_filter label {
+        font-weight: normal;
+        white-space: nowrap;
+        text-align: left;
+    }
+    #newSearchPlace div.dataTables_filter input {
+        margin-left: 0.5em;
+        margin-right: 0;
+        display: inline-block;
+        width: auto;
+    }
+    .dt-button-collection .dropdown-menu {
+        position:relative !important
+    }
+    .dt-button-collection {
+        left: unset !important;
+        right: 10px ;
+    }
+    .dropdown-item.active, .dropdown-item:active {
+        color: #f4f5f7;
+        text-decoration: none;
+        background-color: #7a6fbe;
+    }
+    @media (max-width: 576px) {
+        .col-xs-3 {
+            -webkit-box-flex: 0;
+            -ms-flex: 0 0 auto;
+            flex: 0 0 auto;
+            width: 25%;
+        }
+        .col-xs-9 {
+            -webkit-box-flex: 0;
+            -ms-flex: 0 0 auto;
+            flex: 0 0 auto;
+            width: 75%;
+        }
+    }
+    .new-button {
+        width: 120px;
+    }
+    @media (max-width: 576px) {
+        .new-button {
+            width: 100px;
+        }
+    }
+    @media (min-width: 1200px) {
+        .new-button {
+            width: 100px;
+        }
+    }
+    .modal-content {
+         //width: 200%;
+         margin: auto;
+    }
+    .align-center {
+         text-align: center;
+    }
+    .plussign::before {
+      content: "\2795";
+    }
+
+
+</style>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="page-title-box">
+                <h4>Scheduling
+                </h4>
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'scheduling' %}"><b>Scheduling</b></a></li>
+                    </ol>
+
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link" style="padding-left: 30px;padding-right: 30px;" data-bs-toggle="tab" href="#planning" id="planningtab" role="tab">
+                                <span class="d-block d-sm-none">PL</span>
+                                <span class="d-none d-sm-block">Planning</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" style="padding-left: 30px;padding-right: 30px;" data-bs-toggle="tab" href="#overview" id="overviewtab" role="tab">
+                                <span class="d-block d-sm-none">OV</span>
+                                <span class="d-none d-sm-block">Overview</span>
+                            </a>
+                        </li>
+                    </ul>
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        <div class="tab-pane p-3" id="planning" role="tabpanel">
+                            <div class="button-items mb-3">
+<!--                                <button type="button" id="new_plan" class="btn btn-primary btn-sm" style="margin-bottom: 0px!important;"><i class="mdi mdi-content-save-move"></i> New</button>-->
+                                <button type="button" id="edit_plan" class="btn btn-primary btn-sm" style="margin-bottom: 0px!important;"><i class="mdi mdi-content-save-move"></i> Edit</button>
+                            </div>
+                            <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;">
+
+                            <div class="button-items mb-3" style="margin-left:10px;">
+                                <div class="mt-1 col-md-3 row">
+                                    <label class="col-md-4 col-form-label" for="projectno">Project : </label>
+                                    <div class="col-md-8">
+                                        <select class="form-control search_filter" id="projectno" required>
+                                            <option value="">Select Project </option>
+                                        {% for proj_no in proj_nos %}
+                                            <option value="{{proj_no.proj_id}}">{{proj_no.proj_name|truncatechars:30}}</option>
+                                        {% endfor %}
+                                    </select>
+                                    </div>
+                                </div>
+
+                                <div class="mt-1 col-md-3 row">
+                                    <label class="col-md-4 col-form-label" for="start_date">Date : </label>
+                                    <div class="col-md-8">
+                                        <input type="text" class="form-control" id="start_date"  name="start_date" value="{{summary.start_date|date:'d M, Y'|default_if_none:''}}" autocomplete="off" data-date-autoclose="true" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="planning_table"></div>
+
+                        </div>
+
+                        <div class="tab-pane p-3" id="overview" role="tabpanel">
+
+                            <div class="button-items mb-3" style="margin-left:10px; display: flex;">
+                                <div class="mt-1 col-md-2 row">
+                                    <label class="col-md-3 col-form-label" for="overview_start_date">Date :</label>
+                                    <div class="col-md-9">
+                                        <input type="text" class="form-control" id="overview_start_date"  name="overview_start_date" value="{{summary.start_date|date:'d M, Y'|default_if_none:''}}" autocomplete="off" data-date-autoclose="true" required>
+                                    </div>
+                                </div>
+                                <div class="mt-1 col-md-2 row" style="margin-left:20px;">
+                                    <label class="col-md-3 col-form-label" for="projectno">View :</label>
+                                    <div class="col-md-9">
+                                        <select class="form-control search_filter" id="view_unit" required>
+                                            <option value="Week">Week</option>
+                                            <option value="Month">Month</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div style="margin-left:20px; margin-top:6px;">
+                                    <a href="{% url 'scheduling'%} " class="btn btn-outline-secondary btn-sm salesdetail" title="Refresh"><i class="ion ion-md-refresh"></i></a>
+                                </div>
+                            </div>
+
+                            <div id="overview_table" style="display: flex;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!--Service Report Signature modal content -->
+<div id="planningmodal" class="modal fade" role="dialog" aria-labelledby="planningModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_planning">Add New Plan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_planning">
+                <form class="needs-validation p-3" id="PlanningForm">
+                    {% csrf_token %}
+
+                    <div id="text_error_planning" class="alert alert-danger alert-dismissible fade show mb-0" style="display: none;" role="alert">
+                    </div>
+                    <div id="planning_modal_table"></div>
+                </form>
+                <input type="hidden" id="is_edit" value="-1" />
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_planadd">Add</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'assets/libs/select2/js/select2.full.min.js' %}"></script>
+<script src="{% static 'assets/libs/bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+<!-- Responsive examples -->
+<script src="{% static 'assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+<!-- <script src="{% static 'assets/libs/moment/min/moment.min.js' %}"></script> -->
+<script src="{% static 'assets/js/daterangepicker.js' %}"></script>
+<script src="{% static 'assets/libs/admin-resources/bootstrap-filestyle/bootstrap-filestyle.min.js' %}"></script>
+
+<script>
+
+
+    $('a[role=tab]').click(function(){
+        if (this.id == "planningtab") {
+            localStorage.setItem("tabitem", '1');
+            refresh();
+        } else if (this.id == "overviewtab") {
+            localStorage.setItem("tabitem", '2');
+            refresh();
+        }
+    });
+    refresh();
+    function refresh(){
+        var tabactive = localStorage.getItem("tabitem");
+        if (tabactive == null || tabactive == '1')
+        {
+            $("#overviewtab").removeClass('active');
+            $("#planningtab").addClass('active');
+            $("#overview").removeClass('active');
+            $("#planning").addClass('active');
+        }
+        else if (tabactive == '2') {
+            $("#overviewtab").addClass('active');
+            $("#planningtab").removeClass('active');
+            $("#overview").addClass('active');
+            $("#planning").removeClass('active');
+        }
+    }
+
+
+    $(".select2").select2({width: '100%', dropdownParent: $("#manage_info")});
+    $(".search_filter").select2({width: '100%'});
+    if($('#projectno').val() == ""){
+        $("#new_plan").prop("disabled", true);
+        $("#edit_plan").prop("disabled", true);
+    }
+    var curdate = new Date();
+    curdate.setDate(curdate.getDate() + 1);
+    curdate=moment(curdate).format("D MMM, YYYY");
+    $("#start_date").val(curdate);
+    $("#overview_start_date").val(curdate);
+    get_planning_table();
+    get_overview_table();
+
+
+    function formatDate(date) {
+        if (date==""){
+            return "None";
+        }
+        var d = new Date(date),
+            month = '' + (d.getMonth() + 1),
+            day = '' + d.getDate(),
+            year = d.getFullYear();
+
+        if (month.length < 2)
+            month = '0' + month;
+        if (day.length < 2)
+            day = '0' + day;
+
+        return [day,month, year].join('/');
+    }
+    function get_planning_table(){
+        let startDate=formatDate($('#start_date').val()) ;
+        let project=$('#projectno').val();
+        if(project != ""){
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_get_planning_table" %}',
+                data: {
+                    project_no: project,
+                    start_date: startDate,
+                },
+                type: 'POST',
+                success: function (data) {
+                    $("#planning_table").empty();
+                    $("#planning_table").append(data);
+                }
+            });
+        }
+    }
+
+    function get_overview_table(){
+        let startDate=formatDate($('#overview_start_date').val()) ;
+        let view_unit=$('#view_unit').val();
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_overview_table" %}',
+            data: {
+                view_unit: view_unit,
+                start_date: startDate,
+            },
+            type: 'POST',
+            success: function (data) {
+                $("#overview_table").empty();
+                $("#overview_table").append(data);
+            }
+        });
+    }
+
+    $("#new_plan").on('click', function(e){
+        let startDate=formatDate($('#start_date').val()) ;
+        let project_no=$('#projectno').val();
+        $("#head_title_planning").text("Add New Plan");
+        $(".btn_planadd").text("Add");
+        $("#is_edit").val("-1");
+        $("#text_error_planning").html("");
+        $("#text_error_planning").hide();
+        if(project_no != ""){
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_get_planning_modal" %}',
+                data: {
+                    project_no: project_no,
+                    start_date: startDate,
+                },
+                type: 'POST',
+                success: function (data) {
+                    $("#planning_modal_table").empty();
+                    $("#planning_modal_table").append(data);
+                }
+            });
+        }
+        $("#planningmodal").modal('show');
+    });
+
+    $("#edit_plan").on('click', function(e){
+        let startDate=formatDate($('#start_date').val()) ;
+        let project_no=$('#projectno').val();
+        $("#head_title_planning").text("Edit Plan");
+        $(".btn_planadd").text("Edit");
+        $("#is_edit").val("1");
+        $("#text_error_planning").html("");
+        $("#text_error_planning").hide();
+        if(project_no != ""){
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_edit_planning_modal" %}',
+                data: {
+                    project_no: project_no,
+                    start_date: startDate,
+                },
+                type: 'POST',
+                success: function (data) {
+                    $("#planning_modal_table").empty();
+                    $("#planning_modal_table").append(data);
+                }
+            });
+        }
+        $("#planningmodal").modal('show');
+    });
+
+
+    let users=[[],[],[],[],[],[],[],[]];
+    $(".btn_planadd").on('click', function(e){
+        let start_date=formatDate($('#start_date').val());
+        let project_no=$('#projectno').val();
+        if(project_no != ""){
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_get_activity_ids" %}',
+                data: {
+                    project_no: project_no,
+                },
+                type: 'POST',
+                success: function (data) {
+                    up_data = JSON.parse(data);
+                    all_input_plans=[];
+
+                    for(date_id=1;date_id<=8;date_id++){
+                        one_day_plans=[];
+                        for(index=0;index<up_data.length;index++){
+                            let activity_id="activity-"+up_data[index].activity_id+"-"+date_id;
+                            one_day_plans.push($("#"+activity_id).val());
+                        }
+                        let shift_id="shift-"+date_id;
+                        one_day_plans.push($("#"+shift_id).val());
+                        all_input_plans.push(one_day_plans);
+                    }
+                    $.ajax({
+                        headers: { "X-CSRFToken": '{{csrf_token}}' },
+                        url: '{% url "ajax_add_activities" %}',
+                        data: {
+                            project_no: project_no,
+                            start_date: start_date,
+                            plans: JSON.stringify(all_input_plans),
+                            team_users: JSON.stringify(users),
+                            is_edit: $("#is_edit").val()
+                        },
+                        type: 'POST',
+                        success: function (data) {
+                            if(data.status=="Success"){
+                                $("#planningmodal").modal('hide');
+                                get_planning_table();
+                            } else {
+                                $("#text_error_planning").html(data.messages);
+                                $("#text_error_planning").show();
+                            }
+                        }
+                    });
+
+                }
+            });
+        }
+    });
+
+
+    $("#projectno").on('change', function(e){
+        if($('#projectno').val() == ""){
+            $("#new_plan").prop("disabled", true);
+            $("#edit_plan").prop("disabled", true);
+        }else{
+            $("#new_plan").prop("disabled", false);
+            $("#edit_plan").prop("disabled", false);
+        }
+        get_planning_table();
+
+        var curdate =new Date();
+        var start_date=new Date($('#start_date').val());
+        if(start_date<=curdate){
+            $("#edit_plan").prop("disabled", true);
+        }else{
+            $("#edit_plan").prop("disabled", false);
+        }
+    });
+
+
+    var start_limit_date = new Date();
+    start_limit_date.setDate(start_limit_date.getDate() + 1);
+    $("#start_date").datepicker({
+        format:"d M, yyyy",
+        startDate: start_limit_date
+    }).on("changeDate", function (e) {
+        get_planning_table();
+
+        var curdate =new Date();
+        var start_date=new Date($('#start_date').val());
+        if(start_date<=curdate){
+            $("#edit_plan").prop("disabled", true);
+        }else{
+            $("#edit_plan").prop("disabled", false);
+        }
+    });
+
+
+    $("#view_unit").on('change', function(e){
+        get_overview_table();
+    });
+
+    $("#overview_start_date").datepicker({
+        format:"d M, yyyy",
+    }).on("changeDate", function (e) {
+        get_overview_table();
+    });
+</script>
+{% endblock %}

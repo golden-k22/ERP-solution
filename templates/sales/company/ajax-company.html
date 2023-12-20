@@ -1,0 +1,89 @@
+{% load static %}
+<div class="table-responsive pt-1">
+    <table id="datatable-buttons" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <!-- <th>Contact Person</th> -->
+                <th>Address</th>
+                <!-- <th>Tel</th> -->
+                <th>Unit</th>
+                <!-- <th>Fax</th> -->
+                <th>Postal Code</th>
+                <!-- <th>Email</th> -->
+                <th>Country</th>
+                <!-- <th>Position</th> -->
+                <th>Associate</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+         {% for company in companys %}
+            <tr>
+                <td class="align-middle">{{company.name|default_if_none:""}}</td>
+                <!-- <td class="align-middle">{{company.contact_person|default_if_none:""}}</td> -->
+                <td class="align-middle">{{company.address|default_if_none:""}}</td>
+                <!-- <td class="align-middle">{{company.tel|default_if_none:""}}</td> -->
+                <td class="align-middle">{{company.unit|default_if_none:""}}</td>
+                <!-- <td class="align-middle">{{company.fax|default_if_none:""}}</td> -->
+                <td class="align-middle">{{company.postal_code|default_if_none:""}}</td>
+                <!-- <td class="align-middle">{{company.email|default_if_none:""}}</td> -->
+                <td class="align-middle">{{company.country|default_if_none:""}}</td>
+                <!-- <td class="align-middle">{{company.role|default_if_none:""}}</td> -->
+                <td class="align-middle">{{company.associate|default_if_none:""}}</td>
+                <td class="align-middle">
+                    <a href="javascript:void(0);" onclick="updatecom('{{company.id}}')" class="btn btn-outline-primary btn-sm edit com_update" title="Edit">
+                        <i class="fas fa-pencil-alt"></i>
+                    </a>
+                    <a href="javascript:void(0);" onclick="deletecom('{{company.id}}', '{{company.name}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
+                        <i class="far fa-trash-alt"></i>
+                    </a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script>
+    $("#datatable-buttons").DataTable({
+        "aaSorting": [[ 0, "desc" ]],
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+        buttons: [
+            {
+                extend: 'colvis',
+                text: "Filter Column",
+                postfixButtons: [ 'colvisRestore' ]
+            },
+            {% comment %} {
+                extend: 'collection',
+                text: "Export",
+                buttons : [
+                    {
+                        extend: 'excelHtml5',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                    {
+                        extend: 'csvHtml5',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                    {
+                        extend: 'pdfHtml5',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                ]
+            }, {% endcomment %}
+            
+         
+        ],
+    }).buttons().container().appendTo(".export_button");
+    $(".dataTables_length select").addClass("form-select form-select-sm");
+    $("#newSearchPlace").html($(".dataTables_filter"));
+</script>

@@ -1,0 +1,20 @@
+.space-custom {
+    padding-right: calc(var(--bs-gutter-x)/ 15)!important;
+    padding-left: calc(var(--bs-gutter-x)/ 15)!important;
+}
+.export-custom {
+    width: 117px!important;
+    height: 38px;
+}
+.btn {
+    padding: 0.475rem 0.75rem!important;
+}
+
+.form-control:disabled, .form-control[readonly] {
+    cursor: not-allowed;
+    background-color: #ffffff!important;
+}
+.select2-container--default.select2-container--disabled .select2-selection--single {
+    background-color: #ffffff!important;
+    cursor: not-allowed!important;
+}

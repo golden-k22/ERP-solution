@@ -1,0 +1,26 @@
+[
+    {
+      "model": "accounts.assetlog",
+      "pk": 1,
+      "fields": {
+	    "emp_no": "AA014",
+        "asset_code": "1000001",
+        "asset_name": "Power Drill",
+        "check_status": "1",
+        "checkin_date": "2021-08-19T08:38:00Z",
+        "checkout_date": "2021-08-19T13:51:00Z"
+      }
+    },
+    {
+      "model": "accounts.assetlog",
+      "pk": 2,
+      "fields": {
+        "emp_no": "AA014",
+        "asset_code": "1000002",
+        "asset_name": "Laser",
+        "check_status": "1",
+        "checkin_date": "2021-08-19T08:38:00Z",
+        "checkout_date": "2021-08-19T13:51:00Z"
+      }
+    }
+]

@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block page-title %}Sale Task List{% endblock%}
+{% block css %}
+    
+    <link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'assets/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" /> 
+    <link href="{% static 'assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" rel="stylesheet">   
+    <link href="{% static 'assets/css/daterangepicker-bs3.css' %}" rel="stylesheet">  
+{% endblock %}
+{% block content %}
+<style type="text/css">
+    .datepicker {
+        z-index:1151 !important;
+    }
+    #newSearchPlace div.dataTables_filter {
+        text-align: right;
+        padding-top: 5px;
+    }
+    #newSearchPlace div.dataTables_filter label {
+        font-weight: normal;
+        white-space: nowrap;
+        text-align: left;
+    }
+    #newSearchPlace div.dataTables_filter input {
+        margin-left: 0.5em;
+        margin-right: 0;
+        display: inline-block;
+        width: auto;
+    }
+    .dt-button-collection .dropdown-menu {
+        position:relative !important
+    }
+    .dt-button-collection {
+        left: unset !important;
+        right: 10px ;
+    }
+    .dropdown-item.active, .dropdown-item:active {
+        color: #f4f5f7;
+        text-decoration: none;
+        background-color: #7a6fbe;
+    }
+</style>
+{% load humanize %}
+<div class="container-fluid">
+    <div id="loading" style="z-index:1151 !important;font-size: 30px; position: absolute; top: 40%; left: 50%;">
+        <img src="{% static 'assets/images/spinning-circles.svg' %}" width="80" alt="" style="background: transparent;">
+    </div>
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="page-title-box">
+                <h4>Sales Task List
+                    <!-- <button type="button" id="reportadd" class="btn btn-primary btn-sm"><i class="mdi mdi-calendar-plus mr-2"></i> New</button> -->
+                </h4>
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'sales_item_list' %}"><b>Sales Task List</b></a></li>
+                        <li class="breadcrumb-item active">All Tasks</li>
+                    </ol>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">   
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="row">
+                                <div class="mb-1 mt-1 col-md-6 space-custom">
+                                    <div class="export_button justify-content-start d-flex"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="row justify-content-end">
+                                <div class="mt-1 col-md-2 space-custom">
+                                    <select class="form-control search_filter" id="search_quotation" required>
+                                        <option value="">Quotation No</option>
+                                        {% for sqtt_id in sqtt_ids %}
+                                            <option value="{{sqtt_id.salereport__qtt_id}}">{{sqtt_id.salereport__qtt_id}}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mt-1 col-md-3">
+                                    <div id="newSearchPlace"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="report_comment_data"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- /.modal -->
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'assets/libs/select2/js/select2.full.min.js' %}"></script>
+<script src="{% static 'assets/libs/bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+<!-- Buttons examples -->
+<script src="{% static 'assets/libs/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js' %}"></script>
+<script src="{% static 'assets/libs/jszip/jszip.min.js' %}"></script>
+<script src="{% static 'assets/libs/pdfmake/build/pdfmake.min.js' %}"></script>
+<script src="{% static 'assets/libs/pdfmake/build/vfs_fonts.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.html5.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.print.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.colVis.min.js' %}"></script>
+<!-- Responsive examples -->
+<script src="{% static 'assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+
+
+<script>
+    $(document).ready(function(){
+        $("#text_error").hide();
+    });
+    $(document).on('click','.reportdetailview', function(e){
+        localStorage.removeItem("reportitem");
+    });
+    $(".select2").select2({width: '100%', dropdownParent: $("#manage_info")});
+    ajax_all_tasks();
+    
+    function ajax_all_tasks() {
+        $('#loading').show();
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_all_tasks" %}',
+            data: {
+                
+            },
+            type: 'POST',
+            success: function (data) {
+                $("#report_comment_data").html(data);
+            },
+            complete: function(){
+                $('#loading').hide();
+            }
+        });
+    };
+    function reportSearch(){
+        if($("#search_quotation").val() == "") {
+            location.reload();
+        } else {
+            $(".export_button").html('');
+            $("#newSearchPlace").html('');
+            $('#loading').show();
+            $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_filter_task" %}',
+            data: {
+                search_quotation: $("#search_quotation").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                $("#report_comment_data").html(data);
+            },
+            complete: function(){
+                $('#loading').hide();
+            }
+        });
+        }
+    };
+
+    $("#search_quotation").on('change', function(e){
+        reportSearch();
+    });
+
+    $(".search_filter").select2({width: '100%'});
+</script>
+{% endblock %}

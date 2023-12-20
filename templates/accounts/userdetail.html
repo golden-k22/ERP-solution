@@ -1,0 +1,1363 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load jsignature_filters %}
+{% block page-title %}User{% endblock%}
+{% block css %}
+<style>
+    .generate-pass {
+        margin: auto;
+        padding: 3px;
+    }
+    .datepicker {
+        z-index:1151 !important;
+    }
+</style>
+<link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css" />
+<link href="{% static 'assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.2.3/flatpickr.css">
+<!-- DataTables -->
+<link href="{% static 'assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+<link href="{% static 'assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+<!-- Responsive datatable examples -->
+<link href="{% static 'assets/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+
+{% endblock %}
+{% block content %}
+<style type="text/css">
+    .datepicker {
+        z-index:1151 !important;
+    }
+</style>
+<div class="container-fluid">
+    <!-- start page title -->
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="page-title-box">
+                <h4>Users</h4>
+                <ol class="breadcrumb m-0 mb-3">
+                    <li class="breadcrumb-item"><a class="text-primary" href="{% url 'all_users' %}"><b>Users</b></a></li>
+                    <li class="breadcrumb-item active">User Details</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link" style="padding-left: 30px;padding-right: 30px;" id="userdetailtab" data-bs-toggle="tab" href="#userdetail" role="tab">
+                                <span class="d-block d-sm-none">DT</span>
+                                <span class="d-none d-sm-block">Details</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" style="padding-left: 30px;padding-right: 30px;" id="usercertificatetab" href="#usercertificate" role="tab">
+                                <span class="d-block d-sm-none">CF</span>
+                                <span class="d-none d-sm-block">Certificates </span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" style="padding-left: 30px;padding-right: 30px;" id="useritemtab" href="#useritem" role="tab">
+                                <span class="d-block d-sm-none">ISS</span>
+                                <span class="d-none d-sm-block">Items issued to Staff</span>
+                            </a>
+                        </li>
+                    </ul>
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        <div class="tab-pane p-3" id="userdetail" role="tabpanel">
+                            <div class="row">
+                                <form data-parsley-validate id="UserDetailForm">
+                                    {% csrf_token %}
+                                    <div class="button-items mb-3">
+                                        <a href="javascript:void(0);" id="userupdate" class="align-middle btn-lg btn-outline-primary"><i class="fas fa-pencil-alt mr-2"></i></a>
+                                        <a href="javascript:void(0);" id="usercancel" class="align-middle btn-lg btn-outline-danger"><i class="ion ion-ios-close-circle mr-2"></i></a>
+                                        <!-- <a href="javascript:void(0);" id="userdelete" class="align-middle btn-lg btn-outline-danger"><i class="far fa-trash-alt mr-2"></i></a> -->
+                                        <button type="button" id="userdetailsave" class="btn btn-primary btn-sm" style="margin-bottom: 0px!important;"><i class="mdi mdi-content-save-move"></i> Save</button>
+                                    </div>
+                                    <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;">
+                                    <div id="text_error" class="alert alert-danger alert-dismissible fade show mb-2" style="display: none;" role="alert">
+                                    </div>
+                                    <div class="row p-3" >
+                                        <div class="col-md-8">
+                                            <h5 class="fst-italic text-primary" style="text-decoration: underline!important;"><b>Paticulars</b></h5>
+                                            <div class="row pt-2">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="firstname">First Name</label>
+                                                        <input type="text" class="form-control" style="height: 38px;" id="firstname" value="{{user.first_name|default_if_none:''}}" required>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="lastname">Last Name</label>
+                                                        <input type="text" class="form-control" style="height: 38px;" id="lastname" value="{{user.last_name|default_if_none:''}}" required>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="empno">EMP No</label>
+                                                        <input type="text" class="form-control" style="height: 38px;" id="empno" value="{{user.empid|default_if_none:''}}" required>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="nric">NRIC/FIN</label>
+                                                        <input type="text" class="form-control" style="height: 38px;" id="nric" value="{{user.nric|default_if_none:''}}" required>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="wp_type">WP Type</label>
+                                                        <input type="text" class="form-control" style="height: 38px;" id="wp_type" value="{{user.wp_type|default_if_none:''}}" required>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="nationality">Nationality</label>
+                                                        <input type="text" class="form-control" style="height: 38px;" id="nationality" value="{{user.nationality|default_if_none:''}}" required>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="wp_no">WP No</label>
+                                                        <input type="text" class="form-control" style="height: 38px;" id="wp_no" value="{{user.wp_no|default_if_none:''}}" required>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="wp_expiry">WP Expiry</label>                                                
+                                                        <div class="input-group">
+                                                            <span class="input-group-text"><i class="mdi mdi-calendar"></i></span>
+                                                            <input type="text" class="form-control" style="height: 38px;" id="wp_expiry" data-date-format="dd M yyyy" data-provide="datepicker" data-date-autoclose="true" value="{{user.wp_expiry|default_if_none:''}}" required>
+                                                            
+                                                            
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="passport_no">Passport No</label>
+                                                        <input type="text" class="form-control" style="height: 38px;" id="passport_no" value="{{user.passport_no|default_if_none:''}}" required>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="passport_expiry">Passport Expiry</label>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text"><i class="mdi mdi-calendar"></i></span>
+                                                            <input type="text" class="form-control" style="height: 38px;" id="passport_expiry" data-date-format="dd M yyyy" data-provide="datepicker" data-date-autoclose="true" value="{{user.passport_expiry|default_if_none:''}}" required>
+                                                            
+                                                            
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="dob">DOB</label>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text"><i class="mdi mdi-calendar"></i></span>
+                                                            <input type="text" class="form-control" style="height: 38px;" id="dob" data-date-format="dd M yyyy" data-provide="datepicker" data-date-autoclose="true" value="{{user.dob|default_if_none:''}}" required>
+                                                            
+                                                            
+                                                        </div>
+                                                        
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="roles">Roles</label>
+                                                        <select class="form-control select2" id="roles" required>
+                                                            <option value="">Select the Role</option>
+                                                            {% for role in roles %}
+                                                                <option value="{{role.name}}"{% if role.name == user.role %} selected{% endif %}>{{role.name}}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="email">Email</label>
+                                                        <input type="text" class="form-control" style="height: 38px;" id="email" value="{{user.email|default_if_none:''}}" required>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="phone">Phone</label>
+                                                        <input type="text" class="form-control" style="height: 38px;" id="phone" value="{{user.phone|default_if_none:''}}" required>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="basic_salary">Basic Salary </label>
+                                                        <input type="text" class="form-control" style="height: 38px;" id="basic_salary" value="{{user.basic_salary|default_if_none:''}}" required>
+                                                    </div>
+                                                </div>
+                                                
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h5 class="fst-italic text-primary" style="text-decoration: underline!important;"><b>Residential Address</b></h5>
+                                            <div class="row pt-2">
+                                                <div class="col-md-12">
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="address">Address</label>
+                                                        <input type="text" class="form-control" style="height: 38px;" id="address" value="{{useraddress.address|default_if_none:''}}" required>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="unit">Unit</label>
+                                                        <input type="text" class="form-control" style="height: 38px;" id="unit" value="{{useraddress.unit|default_if_none:''}}" required>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="postalcode">Postal Code</label>
+                                                        <input type="number" class="form-control" style="height: 38px;" id="postalcode" value="{{useraddress.postal_code|default_if_none:''}}" required>
+                                                    </div>
+                                                </div>
+                                            </div>  
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="country">Country</label>
+                                                        <select class="form-control select2" id="country" required>
+                                                            <option value="">Select the Country</option>
+                                                            {% for country in countrys %}
+                                                                <option value="{{country.id}}"{% if country.id == useraddress.country_id %} selected{% endif %}>{{country.name}}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                
+                                            </div>      
+                                        </div>
+                                        
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="row p-3">
+                                <h5 class="fst-italic text-primary" style="text-decoration: underline!important;"><b>Login Detail</b></h5>
+                                <hr class="my-auto flex-grow-1 mt-1 mb-1" style="height:2px;">
+                                <div class="mt-3">
+                                    <form data-parsley-validate id="UserInfoForm">
+                                        {% csrf_token %}
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3 row">
+                                                    <label for="name" class="col-md-4 col-form-label">UserName:</label>
+                                                    <div class="col-md-8">
+                                                        <input class="form-control" type="text" style="height: 38px;" value="{{user.username|default_if_none:''}}"  id="username" required>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3 row">
+                                                    <label for="name" class="col-md-4 col-form-label">Password:</label>
+                                                    <div class="col-md-8">
+                                                        <input class="form-control" type="text" style="height: 38px;" id="password" value="{{user.password_box|default_if_none:''}}" required>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 generate-pass">
+                                                <button type="button" id="btn_generate_password" class="btn btn-primary btn-sm" style="text-decoration: underline!important;">Generate Temp Password</button>
+                                            </div>
+                                        </div> 
+                                    </form>
+                                </div>
+                            </div>
+                            <div class="row p-3">
+                                <h5 class="fst-italic text-primary" style="text-decoration: underline!important;"><b>App Details</b></h5>
+                                <hr class="my-auto flex-grow-1 mt-1 mb-1" style="height:2px;">
+                                <div class="mt-3">
+                                    <form data-parsley-validate id="UserAppForm">
+                                        {% csrf_token %}
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3 row">
+                                                    <label for="name" class="col-md-4 col-form-label">PinCode:</label>
+                                                    <div class="col-md-8">
+                                                        <input class="form-control" type="text" value="{{user.pincode|default_if_none:''}}"  id="pincode" required>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3 row">
+                                                    <label for="name" class="col-md-4 col-form-label">FCM_TOKEN:</label>
+                                                    <div class="col-md-8">
+                                                        <input class="form-control" type="text" value="{{user.fcm_token|default_if_none:''}}" id="fcm_token" required>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                        </div> 
+                                    </form>
+                                </div>
+                                
+                            </div>
+                            <div class="row p-3">
+                                <h5 class="fst-italic text-primary" style="text-decoration: underline!important;"><b>User Signature</b></h5>
+                                <hr class="my-auto flex-grow-1 mt-1 mb-1" style="height:2px;">
+                                <div class="pt-2">
+                                    <a href="javascript:void(0);" id="signaturechange" class="align-middle btn-sm btn-primary">Change</a>
+                                </div>
+                                <div class="pt-3">
+                                    {% if current_user.signature %}
+                                        <img class="img-thumbnail" style="height: 100px;" src="{{current_user.signature.url}}">
+                                    {% else %}
+                                    {% comment %} <img src="{% static 'assets/images/logo.png' %}" alt="..." style="height: 100px;"
+                                                                class="img-thumbnail" style="border: 1px solid rgba(0,0,0,.37);"> {% endcomment %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane p-3" id="usercertificate" role="tabpanel">
+                            <div class="row">
+                                <div class="mt-1 col-md-3">
+                                    <button type="button" id="usercertsave" class="btn btn-primary btn-sm"><i class="mdi mdi-content-save-move"></i> Add</button>
+                                </div>
+                            </div>
+                            <div class="table-responsive mt-2">
+                                <table id="certifications" class="table table-bordered mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>SN</th>
+                                            <th>Course</th>
+                                            <th>Course No</th>
+                                            <th>School</th>
+                                            <th>Expiry Date</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for cert in certificates %}
+                                        <tr>
+                                            <td>{{forloop.counter}}</td>
+                                            <td>{{cert.course|default_if_none:""}}</td>
+                                            <td>{{cert.course_no|default_if_none:""}}</td>
+                                            <td>{{cert.school|default_if_none:""}}</td>
+                                            <td>{{cert.course_expiry|default_if_none:""}}</td>
+                                            <td class="align-middle">
+                                                <a href="javascript:void(0);" class="btn btn-outline-primary btn-sm edit" onclick="updateCertificates('{{cert.id}}')" title="Edit">
+                                                    <i class="fas fa-pencil-alt"></i>
+                                                </a>
+                                                <a href="javascript:void(0);" onclick="deleteCertificates('{{cert.id}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
+                                                    <i class="far fa-trash-alt"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>  
+                            
+                             
+                        </div>
+                        <div class="tab-pane" id="useritem" role="tabpanel">
+                            <div id="flush-litemstaff" class="accordion-collapse collapse show" aria-labelledby="flush-itemstaff" data-bs-parent="#userdetailaccordion">
+                                <div class="accordion-body">
+                                    <ul class="nav nav-tabs" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <a class="nav-link active" data-bs-toggle="tab" href="#ppeid" role="tab">
+                                                <span class="d-block d-sm-none">PPE</span>
+                                                <span class="d-none d-sm-block">PPE</span>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <a class="nav-link" data-bs-toggle="tab" href="#tools" role="tab">
+                                                <span class="d-block d-sm-none">TLS</span>
+                                                <span class="d-none d-sm-block">Tools</span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                    <!-- Tab panes -->
+                                    <div class="tab-content">
+                                        <div class="tab-pane active p-3" id="ppeid" role="tabpanel">
+                                            <div class="row">
+                                                <div class="mt-1 col-md-3">
+                                                    <button type="button" id="ppesave" class="btn btn-primary btn-sm"><i class="mdi mdi-content-save-move"></i> Add</button> 
+                                                </div>
+                                            </div>
+                                            <div class="table-responsive mb-2">
+                                                <table id="ppetable" class="table table-bordered mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>SN</th>
+                                                            <th>Description</th>
+                                                            <th>Qty</th>
+                                                            <th>UOM</th>
+                                                            <th>Issued Date</th>
+                                                            <th>Issued By</th>
+                                                            <th>Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for issueditem in issueditems %}
+                                                        <tr>
+                                                            <td>{{forloop.counter}}</th>
+                                                            <td>{{issueditem.description|default_if_none:""}}</td>
+                                                            <td>{{issueditem.qty|default_if_none:""}}</td>
+                                                            <td>{{issueditem.uom|default_if_none:""}}</td>
+                                                            <td>{{issueditem.issue_date|date:'d M, Y'|default_if_none:""}}</td>
+                                                            <td>{{issueditem.issued_by|default_if_none:""}}</td>
+                                                            <td class="align-middle">
+                                                                <a href="javascript:void(0);" class="btn btn-outline-primary btn-sm edit" onclick="updateUserIssuedItems('{{issueditem.id}}')" title="Edit">
+                                                                    <i class="fas fa-pencil-alt"></i>
+                                                                </a>
+                                                                <a href="javascript:void(0);" onclick="deleteUserIssuedItems('{{issueditem.id}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
+                                                                    <i class="far fa-trash-alt"></i>
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div> 
+                                                 
+                                        </div>
+                                        <div class="tab-pane p-3" id="tools" role="tabpanel">
+                                            <div class="row">
+                                                <div class="mt-1 col-md-3">
+                                                    <button type="button" id="toolssave" class="btn btn-primary btn-sm"><i class="mdi mdi-content-save-move"></i> Add</button> 
+                                                </div>
+                                            </div>
+                                            <div class="table-responsive mb-2">
+                                                <table id="tooltable" class="table table-bordered mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>SN</th>
+                                                            <th>Description</th>
+                                                            <th>Qty</th>
+                                                            <th>UOM</th>
+                                                            <th>Issued Date</th>
+                                                            <th>Issued By</th>
+                                                            <th>Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for issuedtool in issuedtools %}
+                                                        <tr>
+                                                            <td>{{forloop.counter}}</th>
+                                                            <td>{{issuedtool.description|default_if_none:""}}</td>
+                                                            <td>{{issuedtool.qty|default_if_none:""}}</td>
+                                                            <td>{{issuedtool.uom|default_if_none:""}}</td>
+                                                            <td>{{issuedtool.issue_date|date:'d M, Y'|default_if_none:""}}</td>
+                                                            <td>{{issuedtool.issued_by|default_if_none:""}}</td>
+                                                            <td class="align-middle">
+                                                                <a href="javascript:void(0);" class="btn btn-outline-primary btn-sm edit" onclick="updateUserToolItems('{{issuedtool.id}}')" title="Edit">
+                                                                    <i class="fas fa-pencil-alt"></i>
+                                                                </a>
+                                                                <a href="javascript:void(0);" onclick="deleteUserToolItems('{{issuedtool.id}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
+                                                                    <i class="far fa-trash-alt"></i>
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div> 
+                                                  
+                                        </div>
+                                    </div>
+                                     
+                                                            
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!--Change User Signature modal content -->
+<div id="signaturemodal" class="modal fade" role="dialog" aria-labelledby="signatureModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="sign_head_title_signature">Change User Signature</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_signature">
+                <form class="needs-validation p-3" id="UserSignatureForm">
+                    {% csrf_token %}
+                    <div id="text_error_signature" class="alert alert-danger alert-dismissible fade show mb-2" style="display: none;" role="alert">
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="signature" class="col-md-4 col-form-label">Signature:</label>
+                        <div class="col-md-8">
+                            <input class="filestyle" data-buttonname="btn-secondary" type="file" id="signature">
+                        </div>
+                    </div>
+                </form>
+            
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_signatureadd">Add</button>
+                
+            </div>
+        </div>
+    </div>
+</div>
+<!--Cert modal content -->
+<div id="certmodal" class="modal fade" role="dialog" aria-labelledby="otModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title">Add New Cert</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_info">
+                <form class="needs-validation p-3" id="CertForm">
+                    {% csrf_token %}
+
+                    <div id="text_error_cert" class="alert alert-danger alert-dismissible fade show mb-2" role="alert">
+                    </div>
+                    
+                    <div class="mb-3 row">
+                        <label for="course" class="col-md-4 col-form-label">Course:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="course" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="course_no" class="col-md-4 col-form-label">Course No:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="course_no" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="school" class="col-md-4 col-form-label">School:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="school" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="course_expiry" class="col-md-4 col-form-label">Course Expiry:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" data-date-format="dd M yyyy" data-provide="datepicker" data-date-autoclose="true" id="course_expiry" required>
+                        </div>
+                    </div>
+                    
+                </form>
+                <input type="hidden" id="certid" value="-1" />
+            
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_certadd">Add</button>
+                
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+
+<!-- Delete Cert modal content -->
+<div id="certdeleteModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="certdelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="certdelModalLabel">Delete Certificates</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5>Are you sure you want to delete this record?</h5>
+                <input type="hidden" id="certdel_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button id="certdel_confirm" type="button" class="btn btn-primary waves-effect btn-sm waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+
+<!--Issued modal content -->
+<div id="issuemodal" class="modal fade" role="dialog" aria-labelledby="ppeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="issue_head_title">Add New Issued</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_info_issue">
+                <form class="needs-validation p-3" id="IssueForm">
+                    {% csrf_token %}
+
+                    <div id="text_error_issue" class="alert alert-danger alert-dismissible fade show mb-2" role="alert">
+                    </div>
+                    
+                    <div class="mb-3 row">
+                        <label for="idescription" class="col-md-4 col-form-label">Description:</label>
+                        <div class="col-md-8">
+                            <textarea class="form-control" type="text" id="idescription" rows="4" required></textarea>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="iqty" class="col-md-4 col-form-label">Qty:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="number" id="iqty" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="iuom" class="col-md-4 col-form-label">UOM:</label>
+                        <div class="col-md-8">
+                            <select class="form-control select2" id="iuom" required>
+                                <option value="">Select the Uom</option>
+                                {% for uom in uoms %}
+                                    <option value="{{uom.name}}">{{uom.name}}</option>
+                                {% endfor %}
+                            </select>
+<!--                            <input class="form-control" type="text" id="iuom" required>-->
+                        </div>
+
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="issued_date" class="col-md-4 col-form-label">Issued Date:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" data-date-format="dd M yyyy" data-provide="datepicker" data-date-autoclose="true" id="issued_date" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="issued_by" class="col-md-4 col-form-label">Issued By:</label>
+                        <div class="col-md-8">
+                            <select class="form-control select2" id="issued_by" required>
+                                <option value="">Select the Issued By</option>
+                                {% for issueusers in issueusers %}
+                                    <option value="{{issueusers.username}}">{{issueusers.username}}</option>
+                                {% endfor %}
+                                
+                            </select>
+                        </div>
+                    </div>
+                </form>
+                <input type="hidden" id="issueid" value="-1" />
+            
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_issueadd">Add</button>
+                
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+
+
+<!-- Delete Issued modal content -->
+<div id="issueddeleteModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="issueddelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="issueddelModalLabel">Delete Items issued to Staff</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5>Are you sure you want to delete this record?</h5>
+                <input type="hidden" id="issueddel_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button id="issueddel_confirm" type="button" class="btn btn-primary waves-effect btn-sm waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+
+<!--Tools modal content -->
+<div id="toolmodal" class="modal fade" role="dialog" aria-labelledby="toolModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="tool_head_title">Add New Issued Tool</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_info_tool">
+                <form class="needs-validation p-3" id="ToolForm">
+                    {% csrf_token %}
+
+                    <div id="text_error_tool" style="display: none;" class="alert alert-danger alert-dismissible fade show mb-2" role="alert">
+                    </div>
+                    
+                    <div class="mb-3 row">
+                        <label for="tdescription" class="col-md-4 col-form-label">Description:</label>
+                        <div class="col-md-8">
+                            <textarea class="form-control" type="text" id="tdescription" rows="4" required></textarea>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="tqty" class="col-md-4 col-form-label">Qty:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="number" id="tqty" required>
+                        </div>
+                    </div>
+
+
+                    <div class="mb-3 row">
+                        <label for="tuom" class="col-md-4 col-form-label">UOM:</label>
+                        <div class="col-md-8">
+                            <select class="form-control select2" id="tuom" required>
+                                <option value="">Select the Uom</option>
+                                {% for uom in uoms %}
+                                    <option value="{{uom.name}}">{{uom.name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 row">
+                        <label for="tissued_date" class="col-md-4 col-form-label">Issued Date:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" data-date-format="dd M yyyy" data-provide="datepicker" data-date-autoclose="true" id="tissued_date" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="tissued_by" class="col-md-4 col-form-label">Issued By:</label>
+                        <div class="col-md-8">
+                            <select class="form-control tissued_by" id="tissued_by" required>
+                                <option value="">Select the Issued By</option>
+                                {% for issueusers in issueusers %}
+                                    <option value="{{issueusers.username}}">{{issueusers.username}}</option>
+                                {% endfor %}
+                                
+                            </select>
+                        </div>
+                    </div>
+                </form>
+                <input type="hidden" id="toolid" value="-1" />
+            
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_tooladd">Add</button>
+                
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+
+<!-- Delete tools modal content -->
+<div id="tooldeleteModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="tooldelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="tooldelModalLabel">Delete Issued Tool to Staff</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5>Are you sure you want to delete this record?</h5>
+                <input type="hidden" id="tooldel_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button id="tooldel_confirm" type="button" class="btn btn-primary waves-effect btn-sm waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'assets/libs/select2/js/select2.full.min.js' %}"></script>
+<script src="{% static 'assets/libs/bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.2.3/flatpickr.js"></script>
+<!-- Required datatable js -->
+<script src="{% static 'assets/libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+<!-- Responsive examples -->
+<script src="{% static 'assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+<script src="{% static 'assets/js/jSignature/jSignature.js' %}"></script>
+<script src="{% static 'assets/js/jSignature/plugins/jSignature.CompressorBase30.js' %}"></script>
+<script src="{% static 'assets/js/jSignature/plugins/jSignature.CompressorSVG.js' %}"></script>
+<script src="{% static 'assets/js/jSignature/plugins/jSignature.UndoButton.js' %}"></script>
+<script src="{% static 'assets/js/jSignature/plugins/signhere/jSignature.SignHere.js' %}"></script>
+<script src="{% static 'assets/libs/admin-resources/bootstrap-filestyle/bootstrap-filestyle.min.js' %}"></script>
+<script>
+    $(document).ready(function(){
+        
+        $("#text_error").hide();
+        $("#text_error_cert").hide();
+        $("#text_error_issue").hide();
+    });
+    $("#certifications").DataTable({
+        searching: false, 
+        paging: true, 
+        info: true,
+        ordering: false,
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+    $("#ppetable").DataTable({
+        searching: false, 
+        paging: true, 
+        info: true,
+        ordering: false,
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+    $("#tooltable").DataTable({
+        searching: false, 
+        paging: true, 
+        info: true,
+        ordering: false,
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+    $("#UserDetailForm input").prop("disabled", true);
+    $("#UserAppForm input").prop("disabled", true);
+    $("#UserInfoForm input").prop("disabled", true);
+    $("#UserInfoForm select2").prop("disabled", true);
+    $('#userdetailsave').prop('disabled', true);
+    $('#btn_generate_password').prop('disabled', true);
+    
+    $("#usercancel").hide();
+    $(".select2").select2({width: '100%'});
+    $('#issued_by').prop('disabled', false);
+    $(".tissued_by").select2({width: '100%', dropdownParent: $("#manage_info_tool")});
+    $("#tuom").select2({width: '100%', dropdownParent: $("#manage_info_tool")});
+    function generatepassword(length) {
+        var result           = '';
+        var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        var charactersLength = characters.length;
+        for ( var i = 0; i < length; i++ ) {
+            result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        }
+        return result;
+    }
+    $("#btn_generate_password").on('click', function(e){
+        $("#password").val(generatepassword(8));
+        var copyPass = $("#password");
+        copyPass.select();
+        navigator.clipboard.writeText($("#password").val());
+    });
+    $("#usercertsave").on("click", function(e){
+        $("#head_title").html('Add New Certificate');
+        $(".btn_certadd").html('Add');
+        $("#certid").val("-1");
+        $("#course").val("");
+        $("#course_no").val("");
+        $("#school").val("");
+        $("#course_expiry").val("");
+        
+        $("#certmodal").modal('show');
+    });
+    $("#ppesave").on("click", function(e){
+        var today = new Date();
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = monthNames[today.getMonth()];
+        var yyyy = today.getFullYear();
+        $("#issued_date").val(dd + " " + mm + ", " + yyyy);
+        $('#issued_date').datepicker('setDate', dd + " " + mm + ", " + yyyy);
+
+        $("#issue_head_title").html('Add New Issued');
+        $(".btn_issueadd").html('Add');
+        $("#issueid").val("-1");
+        $("#idescription").val("");
+        $("#iqty").val("");
+        
+        $("#issuemodal").modal('show');
+    });
+
+    $("#toolssave").on("click", function(e){
+        var today = new Date();
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = monthNames[today.getMonth()];
+        var yyyy = today.getFullYear();
+        $("#tissued_date").val(dd + " " + mm + ", " + yyyy);
+        $('#tissued_date').datepicker('setDate', dd + " " + mm + ", " + yyyy);
+
+        $("#tool_head_title").html('Add New Issued');
+        $(".btn_issueadd").html('Add');
+        $("#toolid").val("-1");
+        $("#tdescription").val("");
+        $("#tqty").val("");
+        
+        $("#toolmodal").modal('show');
+    });
+    $(".btn_tooladd").on('click', function(e){
+        $("#ToolForm").parsley().validate();
+        if ($('#ToolForm').parsley().validate() === false) {         
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_issuetool" %}',
+                data: {
+                    description: $("#tdescription").val(),
+                    issued_date: formatDate($("#tissued_date").val()),
+                    qty: $("#tqty").val(),
+                    uom: $("#tuom").val(),
+                    issued_by: $("#tissued_by").val(),
+                    toolid: $("#toolid").val(),
+                    selected_user: `{{selected_user}}`
+
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_tool").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_tool").html(data.messages);
+                        $("#text_error_tool").show();
+                    }
+                }
+            });
+        }
+    });
+    $(".btn_certadd").on('click', function(e){
+        $("#CertForm").parsley().validate();
+        if ($('#CertForm').parsley().validate() === false) {         
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_cert" %}',
+                data: {
+                    course: $("#course").val(),
+                    course_expiry: formatDate($("#course_expiry").val()),
+                    course_no: $("#course_no").val(),
+                    school: $("#school").val(),
+                    certid: $("#certid").val(),
+                    selected_user: `{{selected_user}}`
+
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_cert").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_cert").html(data.messages);
+                        $("#text_error_cert").show();
+                    }
+                }
+            });
+        }
+    });
+    $(".btn_issueadd").on('click', function(e){
+        $("#IssueForm").parsley().validate();
+        if ($('#IssueForm').parsley().validate() === false) {         
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_issue_ppe" %}',
+                data: {
+                    idescription: $("#idescription").val(),
+                    issued_date: formatDate($("#issued_date").val()),
+                    iuom: $("#iuom").val(),
+                    iqty: $("#iqty").val(),
+                    issueid: $("#issueid").val(),
+                    issued_by: $("#issued_by").val(),
+                    selected_user: `{{selected_user}}`
+
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_issue").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_issue").html(data.messages);
+                        $("#text_error_issue").show();
+                    }
+                }
+            });
+        }
+    });
+    $("#userdetailsave").on('click', function(e){
+        $('#UserDetailForm').parsley().validate();
+        $('#UserInfoForm').parsley().validate();
+        $('#UserAppForm').parsley().validate();
+        if ($('#UserDetailForm').parsley().validate() === false || $('#UserInfoForm').parsley().validate() === false || $('#UserAppForm').parsley().validate() == false) {         
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        }
+        else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_detail_add_user" %}',
+                data: {
+                    empno: $("#empno").val(),
+                    firstname: $("#firstname").val(),
+                    lastname: $("#lastname").val(),
+                    nationality: $("#nationality").val(),
+                    nric: $("#nric").val(),
+                    role: $("#roles").val(),
+                    phone: $("#phone").val(),
+                    wp_type: $("#wp_type").val(),
+                    wp_no: $("#wp_no").val(),
+                    wp_expiry: formatDate($("#wp_expiry").val()),
+                    passport_no: $("#passport_no").val(),
+                    passport_expiry: formatDate($("#passport_expiry").val()),
+                    email: $("#email").val(),
+                    dob: formatDate($("#dob").val()),
+                    address: $("#address").val(),
+                    unit: $("#unit").val(),
+                    postalcode: $("#postalcode").val(),
+                    basic_salary: $("#basic_salary").val(),
+                    country: $("#country").val(),
+                    userid: `{{selected_user}}`,
+                    username: $("#username").val(),
+                    password: $("#password").val(),
+                    pincode: $("#pincode").val(),
+                    fcm_token: $("#fcm_token").val()
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error").html(data.messages);
+                        $("#text_error").show();
+                    }
+                }
+            });
+        }
+    });
+    $("#userupdate").on('click', function(e){
+        $("#UserDetailForm input").prop("disabled", false);
+        $("#UserAppForm input").prop("disabled", false);
+        $("#UserInfoForm input").prop("disabled", false);
+        $('select').prop('disabled', false);
+        $('#userdetailsave').prop('disabled', false);
+        $('#btn_generate_password').prop('disabled', false);
+        $('#issued_by').prop('disabled', false);
+        $("#usercancel").show();
+        $("#userupdate").hide();
+    });
+    $("#usercancel").on('click', function(e){
+        $("#UserDetailForm input").prop("disabled", true);
+        $("#UserAppForm input").prop("disabled", true);
+        $("#UserInfoForm input").prop("disabled", true);
+        $('#issued_by').prop('disabled', false);
+        $('select').prop('disabled', true);
+        $('#userdetailsave').prop('disabled', true);
+        $('#btn_generate_password').prop('disabled', true);
+        $("#usercancel").hide();
+        $("#userupdate").show();
+    });
+    $("#issued_by").select2({width: '100%', dropdownParent: $("#manage_info_issue")});
+    $("#iuom").select2({width: '100%', dropdownParent: $("#manage_info_issue")});
+    function formatDate(date) {
+        var d = new Date(date),
+            month = '' + (d.getMonth() + 1),
+            day = '' + d.getDate(),
+            year = d.getFullYear();
+
+        if (month.length < 2) 
+            month = '0' + month;
+        if (day.length < 2) 
+            day = '0' + day;
+
+        return [year, month, day].join('-');
+    }
+    function formatDateTime(date) {
+        var d = new Date(date),
+            month = '' + (d.getMonth() + 1),
+            day = '' + d.getDate(),
+            year = d.getFullYear();
+
+        if (month.length < 2) {
+            month = '0' + month;
+        }
+           
+        if (day.length < 2) {
+            day = '0' + day;
+        }
+        var hour =  ("0" + (d.getHours())).slice(-2);
+        var min =  ("0" + (d.getMinutes())).slice(-2);
+
+        return year + "-" + month + "-" + day + " " + hour + ":" +  min
+    }
+    $( document ).ready(function() {
+        $("#text_error").hide();
+    });
+    $('a[role=tab]').click(function(){
+        if (this.id == "userdetailtab") {
+            localStorage.setItem("useritem", '1');
+        } else if (this.id == "usercertificatetab") {
+            localStorage.setItem("useritem", '2');
+        } else if (this.id == "useritemtab") {
+            localStorage.setItem("useritem", '3');
+        } 
+    });
+    var tabactive = localStorage.getItem("useritem");
+    if (tabactive == null || tabactive == '1') {
+        $("#userdetailtab").addClass('active');
+        $("#usercertificatetab").removeClass('active');
+        $("#useritemtab").removeClass('active');
+
+        $("#userdetail").addClass('active');
+        $("#usercertificate").removeClass('active');
+        $("#useritem").removeClass('active');
+
+    } else if (tabactive == '2') {
+        $("#userdetailtab").removeClass('active');
+        $("#usercertificatetab").addClass('active');
+        $("#useritemtab").removeClass('active');
+
+        $("#userdetail").removeClass('active');
+        $("#usercertificate").addClass('active');
+        $("#useritem").removeClass('active');
+    } else if (tabactive == '3'){
+        $("#userdetailtab").removeClass('active');
+        $("#usercertificatetab").removeClass('active');
+        $("#useritemtab").addClass('active');
+
+        $("#userdetail").removeClass('active');
+        $("#usercertificate").removeClass('active');
+        $("#useritem").addClass('active');
+    }
+    $("#signaturechange").on('click', function(e){
+        $("#sign_head_title_signature").html('Change User Signature');
+        $(".btn_signatureadd").html('Change');
+        $("#signaturemodal").modal('show');
+    });
+    
+    $(".btn_signatureadd").on('click', function(e){
+        
+        $('#UserSignatureForm').parsley().validate();
+        if ($('#UserSignatureForm').parsley().validate() === false) {         
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        }
+        else {
+            var sign_data = $("#signature").prop('files')[0];
+            var form_data = new FormData();
+            form_data.append('userid', `{{selected_user}}`);
+            form_data.append('signature', sign_data);
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_update_user_signature" %}',
+                data: form_data,
+                cache: false,
+                contentType: false,
+                processData: false,
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_signature").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_signature").html(data.messages);
+                        $("#text_error_signature").show();
+                    }
+                }
+            });
+        }
+        
+    });
+
+    function updateCertificates(id){
+        $("#certid").val(id);
+        $("#head_title").html('Update Certificate');
+        $(".btn_certadd").html('Update');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_cert" %}',
+            data: {
+                'certid': $("#certid").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data);
+                flag = false;
+
+                $("#course").val(up_data.course);
+                $('#course_no').trigger('change');
+                $("#course_no").val(up_data.course_no);
+                $('#course_no').trigger('change');
+                $("#school").val(up_data.school);
+                $('#school').trigger('change');
+                $("#course_expiry").val(up_data.course_expiry);
+                $('#course_expiry').trigger('change');
+
+            }
+        });
+        $("#certmodal").modal('show');
+
+    };
+    function deleteCertificates(id) {
+        $("#certdel_id").val(id);
+        $("#certdeleteModal").modal('show');
+    }
+    $("#certdel_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_cert" %}',
+            data: {
+                'certdel_id': $("#certdel_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload();
+                }
+            }
+        });
+        $('#certdeleteModal').modal('hide');
+    });
+
+
+    function updateUserIssuedItems(id){
+        $("#issueid").val(id);
+        $("#issue_head_title").html('Update Issued Item');
+        $(".btn_issueadd").html('Update');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_issued_item" %}',
+            data: {
+                'issueId': $("#issueid").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data);
+                flag = false;
+                $("#issueid").val(up_data.issueid);
+                $("#idescription").val(up_data.idescription);
+                $("#iqty").val(up_data.iqty);
+
+                $("#iuom").val(up_data.uom);
+                $('#iuom').trigger('change');
+                $("#issued_by").val(up_data.issued_by);
+                $('#issued_by').trigger('change');
+                $("#issued_date").val(up_data.issued_date);
+                $('#issued_date').trigger('change');
+
+            }
+        });
+        $("#issuemodal").modal('show');
+
+    };
+    function deleteUserIssuedItems(id) {
+        $("#issueddel_id").val(id);
+        $("#issueddeleteModal").modal('show');
+    }
+    $("#issueddel_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_issued" %}',
+            data: {
+                'issueddel_id': $("#issueddel_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload();
+                }
+            }
+        });
+        $('#issueddeleteModal').modal('hide');
+    });
+
+
+
+    function updateUserToolItems(id){
+        $("#toolid").val(id);
+        $("#tool_head_title").html('Update Issued Tool Item');
+        $(".btn_tooladd").html('Update');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_tool_item" %}',
+            data: {
+                'toolId': $("#toolid").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data);
+                console.log(up_data)
+                flag = false;
+                $("#toolid").val(up_data.toolid);
+                $("#tdescription").val(up_data.tdescription);
+                $("#tqty").val(up_data.tqty);
+                $("#tuom").val(up_data.tuom);
+                $('#tuom').trigger('change');
+                $("#tissued_by").val(up_data.tissued_by);
+                $('#tissued_by').trigger('change');
+                $("#tissued_date").val(up_data.tissued_date);
+                $('#tissued_date').trigger('change');
+            }
+        });
+        $("#toolmodal").modal('show');
+
+    };
+
+    function deleteUserToolItems(id) {
+        $("#tooldel_id").val(id);
+        $("#tooldeleteModal").modal('show');
+    }
+    $("#tooldel_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_toolItem" %}',
+            data: {
+                'tooldel_id': $("#tooldel_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload();
+                }
+            }
+        });
+        $('#tooldeleteModal').modal('hide');
+    });
+</script>
+{% endblock %}

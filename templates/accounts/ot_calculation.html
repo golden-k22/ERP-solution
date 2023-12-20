@@ -1,0 +1,476 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block page-title %}OT Calculation{% endblock%}
+{% block css %}
+    <link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'assets/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" /> 
+    <link rel="stylesheet" href="{% static 'assets/css/flatpicker.css' %}">
+    <!-- Sweet Alert-->
+    <link href="{% static 'assets/libs/sweetalert2/sweetalert2.min.css' %}" rel="stylesheet" type="text/css" />
+{% endblock %}
+{% block content %}
+<style type="text/css">
+    .datepicker {
+        z-index:1151 !important;
+    }
+    .bootstrap-datetimepicker-widgets {
+        z-index:1151 !important;
+    }
+    .select-search {
+        width: 60%;
+        padding: .375rem .75rem;
+        font-size: .8125rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #5b626b;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #ced4da;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        border-radius: .25rem;
+        -webkit-transition: border-color .15s ease-in-out,-webkit-box-shadow .15s ease-in-out;
+        transition: border-color .15s ease-in-out,-webkit-box-shadow .15s ease-in-out;
+        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out,-webkit-box-shadow .15s ease-in-out;
+    }
+    .daterangepicker {
+        padding: 15px!important;
+    }
+    #newSearchPlace div.dataTables_filter {
+        text-align: right;
+        padding-top: 5px;
+    }
+    #newSearchPlace div.dataTables_filter label {
+        font-weight: normal;
+        white-space: nowrap;
+        text-align: left;
+    }
+    #newSearchPlace div.dataTables_filter input {
+        margin-left: 0.5em;
+        margin-right: 0;
+        display: inline-block;
+        width: auto;
+    }
+    .dt-button-collection .dropdown-menu {
+        position:relative !important
+    }
+    .dt-button-collection {
+        left: unset !important;
+        right: 10px ;
+    }
+    .dropdown-item.active, .dropdown-item:active {
+        color: #f4f5f7;
+        text-decoration: none;
+        background-color: #7a6fbe;
+    }
+</style>
+<div class="container-fluid">
+    <div id="loading" style="z-index:1151 !important;font-size: 30px; position: absolute; top: 40%; left: 50%;">
+        <img src="{% static 'assets/images/spinning-circles.svg' %}" width="80" alt="" style="background: transparent;">
+    </div>
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="page-title-box">
+                <h4>OT Calculation
+<!--                     <button type="button" id="otcalculateadd" class="btn btn-primary btn-sm"><i class="mdi mdi-calendar-plus mr-2"></i> New</button>-->
+                </h4>
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'all_otcalculation' %}"><b>OT Calculation</b></a></li>
+                        <li class="breadcrumb-item active">All OT Calculation</li>
+                    </ol>
+                    
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="row">
+                                <div class="mt-1 col-md-3 space-custom">
+                                    <a href="javascript:void(0);" id="ot_redirect" class="btn btn-primary p-2 w-100" style="height: 38px;white-space: nowrap;">Summary</a>
+                                </div>
+                                <div class="mt-1 col-md-9 space-custom">
+                                    <div class="export_button justify-content-start d-flex"></div>
+                                </div>
+                            </div> 
+                        </div>
+                        <div class="col-md-8">
+                            <div class="row justify-content-end d-flex">
+                                <div class="mt-1 col-md-4">
+                                    <div class="justify-content-start d-flex">
+                                        <label for="checkin_time" class="col-form-label">Checkin Time:</label>
+                                        <input class="select-search" type="text" autocomplete="off" id="checkin_time" required> 
+                                    </div>
+                                    
+                                </div>
+                                <div class="mt-1 col-md-4">
+                                    <label for="checkout_time" class="col-form-label">Checkout Time:</label>
+                                    <input class="select-search" type="text" autocomplete="off" id="checkout_time" required> 
+                                </div>
+                                <div class="col-md-1 space-custom">
+                                    <a href="javascript:void(0);" id="otcalculatesearch" class="btn btn-primary m-1"><i class="dripicons-search align-middle"></i></a>
+                                </div>
+                                <div class="mt-1 col-md-3">
+                                    <div id="newSearchPlace"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                    <div id="otcalculate_data"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--otcalculate modal content -->
+<div id="otcalculatemodal" class="modal fade" role="dialog" aria-labelledby="otcalculateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title">Add New OT Calculation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_info">
+                <form class="needs-validation p-3" id="OtcalculateForm">
+                    {% csrf_token %}
+
+                    <div id="text_error" class="alert alert-danger alert-dismissible fade show mb-2" role="alert">
+                    </div>
+                    
+                    <div class="mb-3 mt-3 row">
+                        <label for="emp_no" class="col-md-4 col-form-label">Emp No:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text"  id="emp_no" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="project_no" class="col-md-4 col-form-label">Project No:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text"  id="project_no" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="time_in" class="col-md-4 col-form-label">Time-In:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text"  id="time_in" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="time_out" class="col-md-4 col-form-label">Time-Out:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="time_out" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="approved_ot_hr" class="col-md-4 col-form-label">Approved OT HR:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : (event.charCode >= 48 && event.charCode <= 57) || event.charCode == 46" type="text"  id="approved_ot_hr" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="firsthr" class="col-md-4 col-form-label">1.5HR:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : (event.charCode >= 48 && event.charCode <= 57) || event.charCode == 46" type="text"  id="firsthr" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="secondhr" class="col-md-4 col-form-label">2.0HR:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" onkeypress="return (event.charCode == 8 || event.charCode == 0 || event.charCode == 13) ? null : (event.charCode >= 48 && event.charCode <= 57) || event.charCode == 46" type="text"  id="secondhr" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="meal_allowance" class="col-md-4 col-form-label">Meal Allowance:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text"  id="meal_allowance" required>
+                            <p>Note: if OT> 4 HRS, Meal Allowance is provided.</p>
+                            
+                        </div>
+                    </div>
+                    <input type="hidden" id="otcalculationid" value="-1" />
+                </form>
+            
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_otcalculateadd">Add</button>
+                
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- Delete otcalculate modal content -->
+<div id="deleteModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="delModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="delModalLabel">Delete OT Calculation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5>Are you sure you want to delete this record?</h5>
+                <input type="hidden" id="del_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button id="del_confirm" type="button" class="btn btn-primary waves-effect btn-sm waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'assets/libs/select2/js/select2.full.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+<!-- Buttons examples -->
+<script src="{% static 'assets/libs/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js' %}"></script>
+<script src="{% static 'assets/libs/jszip/jszip.min.js' %}"></script>
+<script src="{% static 'assets/libs/pdfmake/build/pdfmake.min.js' %}"></script>
+<script src="{% static 'assets/libs/pdfmake/build/vfs_fonts.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.html5.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.print.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.colVis.min.js' %}"></script>
+<!-- Responsive examples -->
+<script src="{% static 'assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+<!-- <script src="{% static 'assets/libs/moment/min/moment.min.js' %}"></script> -->
+<script src="{% static 'assets/js/flatpicker.js' %}"></script>
+<!-- Sweet Alerts js -->
+<script src="{% static 'assets/libs/sweetalert2/sweetalert2.min.js' %}"></script>
+<script>
+    $('#loading').hide();
+    $(document).ready(function(){
+        $("#datatable").DataTable();
+        $("#text_error").hide();
+    });
+    /* Datetimepicker Init*/
+	$("#checkout_time").flatpickr({
+        enableTime: true,
+        dateFormat: "d M, Y H:i",
+        allowInput: true,
+    });
+    $("#checkin_time").flatpickr({
+        enableTime: true,
+        dateFormat: "d M, Y H:i",
+        allowInput: true,
+    });
+    ajax_all_otcalculate();
+    
+    function ajax_all_otcalculate() {
+        $.ajax({
+			headers: { "X-CSRFToken": '{{csrf_token}}' },
+			url: '{% url "ajax_all_otcalculate" %}',
+			data: {},
+			type: 'POST',
+			success: function (data) {
+				$("#otcalculate_data").html(data)
+			}
+		});
+    };
+    // $("#time_in").flatpickr({
+    //     enableTime: true,
+    //     dateFormat: "d M, Y H:i"
+    // });
+    // $("#time_out").flatpickr({
+    //     enableTime: true,
+    //     dateFormat: "d M, Y H:i"
+    // });
+    function deleteotcalculate(id) {
+        $("#del_id").val(id);
+        $("#deleteModal").modal('show');
+    }
+    $("#del_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_otcalculate" %}',
+            data: {
+                'otcalculationid': $("#del_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload(); 
+                }
+            }
+        });
+        $('#deletModal').modal('hide');
+    });
+    $("#otcalculatesearch").on("click", function(){
+        if($("#checkin_time").val() =="" || $("#checkout_time").val() == ""){
+            location.reload();
+        } else {
+            if ($("#checkin_time").val() > $("#checkout_time").val()) {
+                Swal.fire(
+                    {
+                        title:"Invalid Checkout Time!",
+                        text:"Checkout has to be bigger than Checkin!",
+                        icon:"warning",
+                        confirmButtonColor:"#34c38f",
+                    }
+                );
+            } else {
+                $(".export_button").html('');
+                $("#newSearchPlace").html('');
+                $('#loading').show();
+                $.ajax({
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                    url: '{% url "ajax_filter_otcalculate" %}',
+                    data: {
+                        checkin_time: formatDateTime($("#checkin_time").val()),
+                        checkout_time: formatDateTime($("#checkout_time").val())
+                    },
+                    type: 'POST',
+                    success: function (data) {
+                        $("#otcalculate_data").html(data)
+                    },
+                    complete: function(){
+                        $('#loading').hide();
+                    }
+                });
+            }
+            
+        }
+    });
+    $("#otcalculateadd").on('click', function(e){
+        $("#head_title").html('Add New OT Calculation');
+        $(".btn_otcalculateadd").html('Add');
+        $("#otcalculationid").val("-1");
+        $("#emp_no").val("");
+        $("#project_no").val("");
+        $("#time_in").val("");
+        $("#time_out").val("");
+        $("#approved_ot_hr").val("");
+        $("#firsthr").val("");
+        $("#secondhr").val("");
+        $("#meal_allowance").val("");
+        
+        $("#otcalculatemodal").modal('show');
+    });
+    $(".select2").select2({width: '100%', dropdownParent: $("#manage_info")});
+    $(".btn_otcalculateadd").on('click', function(e){
+        $("#OtcalculateForm").parsley().validate();
+        if ($('#OtcalculateForm').parsley().validate() === false) {         
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_otcalculate" %}',
+                data: {
+                    emp_no: $("#emp_no").val(),
+                    time_in: formatDateTime($("#time_in").val()),
+                    time_out: formatDateTime($("#time_out").val()),
+                    project_no: $("#project_no").val(),
+                    approved_ot_hr: $("#approved_ot_hr").val(),
+                    firsthr: $("#firsthr").val(),
+                    secondhr: $("#secondhr").val(),
+                    meal_allowance: $("#meal_allowance").val(),
+                    
+                    otcalculationid: $("#otcalculationid").val()
+
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error").html(data.messages);
+                        $("#text_error").show();
+                    }
+                }
+            });
+        }
+    });
+    function updateotcalculate(id) {
+        $("#otcalculationid").val(id);
+        $("#head_title").html('Update OT Calculation');
+        $(".btn_otcalculateadd").html('Update');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_otcalculate" %}',
+            data: {
+                otcalculationid: $("#otcalculationid").val()
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data);
+                $("#emp_no").val(up_data.emp_no);
+                $("#project_no").val(up_data.project_no);
+                $("#time_in").val(up_data.time_in);   
+                $("#time_out").val(up_data.time_out);
+                $('#approved_ot_hr').val(up_data.approved_ot_hr);
+                $("#firsthr").val(up_data.firsthr);   
+                $("#secondhr").val(up_data.secondhr);
+                $('#meal_allowance').val(up_data.meal_allowance);
+            }
+        });
+        $("#otcalculatemodal").modal('show');
+
+    }
+    function formatDate(date) {
+        var d = new Date(date),
+            month = '' + (d.getMonth() + 1),
+            day = '' + d.getDate(),
+            year = d.getFullYear();
+
+        if (month.length < 2) 
+            month = '0' + month;
+        if (day.length < 2) 
+            day = '0' + day;
+
+        return [year, month, day].join('-');
+    }
+    
+    function formatDateTime(date) {
+        var d = new Date(date),
+            month = '' + (d.getMonth() + 1),
+            day = '' + d.getDate(),
+            year = d.getFullYear();
+
+        if (month.length < 2) {
+            month = '0' + month;
+        }
+           
+        if (day.length < 2) {
+            day = '0' + day;
+        }
+        var hour =  ("0" + (d.getHours())).slice(-2);
+        var min =  ("0" + (d.getMinutes())).slice(-2);
+
+        return year + "-" + month + "-" + day + " " + hour + ":" +  min
+    }
+    var redirect_url = ""
+    $("#ot_redirect").on('click', function(e){
+        if ($("#checkin_time").val() != "" && $("#checkout_time").val() != "") {
+            redirect_url = "{% url 'ot_calculation_filter_summary' 111 222 %}".replace(111,formatDate($("#checkin_time").val())).replace(222,formatDate($("#checkout_time").val()));
+            location.href = redirect_url;
+        } else {
+            redirect_url = "{% url 'ot_calculation_summary' %}";
+            location.href = redirect_url;
+        }
+        
+    });
+</script>
+{% endblock %}
+
+

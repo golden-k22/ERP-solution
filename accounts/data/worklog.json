@@ -1,0 +1,42 @@
+[
+    {
+      "model": "accounts.worklog",
+      "pk": 1,
+      "fields": {
+	    "emp_no": "AA014",
+        "project_name": "CPJ200001 The ABC",
+        "projectcode": "CPJ200001",
+        "checkin_time": "2021-08-19T09:08:00Z",
+        "worker_id": "AA014",
+        "checkin_comments": "",
+        "checkin_address": "",
+        "checkin_lat": "1.3042765",
+        "checkin_lng": "103.7858267",
+        "checkout_time": "2021-08-19T17:08:00Z",
+        "checkout_worker_id": "AA014",
+        "checkout_address": "",
+        "checkout_lat": "1.3042765",
+        "checkout_lng": "103.7858267"
+      }
+    },
+    {
+      "model": "accounts.worklog",
+      "pk": 2,
+      "fields": {
+        "emp_no": "AA015",
+        "project_name": "CPJ200001 The ABC",
+        "projectcode": "CPJ200001",
+        "checkin_time": "2021-08-19T09:13:00Z",
+        "worker_id": "AA015",
+        "checkin_comments": "",
+        "checkin_address": "",
+        "checkin_lat": "1.3007627",
+        "checkin_lng": "103.7874039",
+        "checkout_time": "2021-08-19T17:18:00Z",
+        "checkout_worker_id": "AA015",
+        "checkout_address": "",
+        "checkout_lat": "1.3007627",
+        "checkout_lng": "103.7874039"
+      }
+    }
+]

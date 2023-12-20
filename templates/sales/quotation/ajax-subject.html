@@ -1,0 +1,105 @@
+{% load static %}
+<div class="table-responsive">
+
+    <div class="accordion" >
+        <div class="col-md-1">
+            <button class="plussign" type="button" id="scopeadd{{sub_id}}"></button>
+        </div>
+        <div class="mt-1 col-md-3">
+            <div>{{title}}</div>
+        </div>
+        <div class="mt-1 col-md-7">
+        </div>
+        <div class="mt-1 col-md-1">
+            <a href="javascript:void(0);" onclick="updatesubject('{{sub_id}}')" class="btn btn-outline-primary btn-sm edit" title="Edit">
+                <i class="fas fa-pencil-alt"></i>
+            </a>
+            <a href="javascript:void(0);" onclick="deletesubject('{{sub_id}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
+                <i class="far fa-trash-alt"></i>
+            </a>
+        </div>
+    </div>
+<!--    <input type="hidden" id="subjectid" value={{sub_id}} />-->
+    <table id="scopedatatable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+
+        {% if scope_list %}
+        <thead>
+            <tr>
+                <th width="5%">SN</th>
+                <th width="29%">Description</th>
+                <th width="8%">QTY</th>
+                <th width="8%">UOM</th>
+                <th width="8%">UNIT PRICE(S$)</th>
+                <th width="8%">AMT(S$)</th>
+                <th width="8%">UNIT COST(S$)</th>
+                <th width="8%">COST(S$)</th>
+                <th width="8%">GP</th>
+                <th width="15%">Action</th>
+            </tr>
+        </thead>
+        {% endif %}
+        <tbody>
+            {% for scope in scope_list %}
+            <tr>
+                <td class="align-middle">{{scope.sn|default_if_none:""}}</td>
+                <td class="align-middle">{{scope.description|wordwrap:80|linebreaksbr|default_if_none:""}}</td>
+                <!-- {% if scope.qty == "0" %} -->
+                <!-- {% else %}
+                <td class="align-middle"></td>
+                {% endif %} -->
+                <td class="align-middle">{{scope.qty|default_if_none:""}}</td>
+                <td class="align-middle">{{scope.uom|default_if_none:""}}</td>
+                {% if scope.unitprice == 0.00 %}
+                <td class="align-middle">{{""}}</td>
+                {% else %}
+                <td class="align-middle">{{scope.unitprice|default_if_none:""}}</td>
+                {% endif %}
+
+                {% if scope.amount == 0.00 %}
+                <td class="align-middle">{{""}}</td>
+                {% else %}
+                <td class="align-middle">{{scope.amount|default_if_none:""}}</td>
+                {% endif %}
+                <td class="align-middle">{{scope.unitcost|default_if_none:"--"}}</td>
+                <td class="align-middle">{{scope.cost|default_if_none:"--"}}</td>
+                <td class="align-middle">{{scope.gp|default_if_none:"--"}} %</td>
+<!--                                            <td class="align-middle">{{scope.allocation_perc|floatformat:2|default_if_none:"&#45;&#45;"}} %</td>-->
+                <td class="align-middle">
+                    {% if quotation.flag %}
+                    {% if quotation.qtt_status == "Open" %}
+
+                    <a href="javascript:void(0);" onclick="updatescope('{{scope.id}}')" class="btn btn-outline-primary btn-sm edit" title="Edit">
+                        <i class="fas fa-pencil-alt"></i>
+                    </a>
+                    <a href="javascript:void(0);" onclick="deletescope('{{scope.id}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
+                        <i class="far fa-trash-alt"></i>
+                    </a>
+                    {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+
+
+        </tbody>
+    </table>
+</div>
+<script>
+
+    $("#scopeadd"+{{sub_id}}).on('click', function(e) {
+        $("#scopeFormContent").empty();
+        $('#multicnt').val(1);
+        $('#multicnt_container').show();
+        ajax_add_qtt_items(1);
+        $("#head_title_item").html('Add Item');
+<!--        $("#qty").val('');-->
+<!--        $("#uom").val('');-->
+<!--        $("#sn").val('');-->
+<!--        $("#unitprice").val('');-->
+<!--        $("#description").val('');-->
+        $("#scopeid").val('-1');
+        $("#subject_id").val({{sub_id}});
+        $("#scopemodal").modal('show')
+    });
+
+</script>

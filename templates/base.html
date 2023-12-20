@@ -1,0 +1,410 @@
+{% load static %}
+{% load notifications_tags %}
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>{% block page-title %}Dashboard{% endblock %} | ERP Solutions</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta content="ERP Solutions" name="description" />
+        <meta content="Themesbrand" name="author" />
+        <!-- App favicon -->
+        <link rel="shortcut icon" href="{% static 'assets/images/favicon.ico' %}">
+        {% block css %} {% endblock css %}
+        <!-- Bootstrap Css -->
+        <link href="{% static 'assets/css/bootstrap.min.css' %}" id="bootstrap-style" rel="stylesheet" type="text/css" />
+        <!-- Icons Css -->
+        <link href="{% static 'assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
+        <!-- App Css-->
+        <link href="{% static 'assets/css/app.min.css' %}" id="app-style" rel="stylesheet" type="text/css" />
+<!--        <link href="{% static 'assets/css/custom.css' %}" rel="stylesheet" type="text/css" />-->
+    </head>
+    
+    <body data-sidebar="dark" class="sidebar-enable">
+        <!-- Begin page -->
+        <div id="layout-wrapper">
+            <header id="page-topbar">
+                <div class="navbar-header">
+                    <div class="d-flex">
+                        <!-- LOGO -->
+                        <div class="navbar-brand-box">
+                            
+                            <a href="/" class="logo">
+                                <span class="logo-sm">
+                                    <img src="{% static 'assets/images/logo-sm.png' %}" alt="" height="35">
+                                </span>
+                                <span class="logo-lg">
+                                    <img src="{% static 'assets/images/logo-title-sm.png' %}" alt="" height="45">
+                                </span>
+                            </a>
+                        </div>
+
+                        <button type="button" class="btn btn-sm px-3 font-size-24 header-item waves-effect vertical-menu-btn">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+                    </div>
+
+                    <div class="d-flex">
+
+                        <!-- App Search-->
+                        <form class="app-search d-none d-lg-block">
+                            <div class="position-relative">
+                                <input type="text" class="form-control" placeholder="Search...">
+                                <span class="fa fa-search"></span>
+                            </div>
+                        </form>
+
+                        <div class="dropdown d-inline-block d-lg-none ms-2">
+                            <button type="button" class="btn header-item noti-icon waves-effect" id="page-header-search-dropdown"
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="mdi mdi-magnify"></i>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right p-0"
+                                aria-labelledby="page-header-search-dropdown">
+                                
+                                <form class="p-3">
+                                    <div class="form-group m-0">
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" placeholder="Search ..." aria-label="Recipient's username">
+                                            <div class="input-group-append">
+                                                <button class="btn btn-primary" type="submit"><i class="mdi mdi-magnify"></i></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="dropdown d-none d-lg-inline-block">
+                            <button type="button" class="btn header-item noti-icon waves-effect" data-toggle="fullscreen">
+                                <i class="mdi mdi-fullscreen font-size-24"></i>
+                            </button>
+                        </div>
+                        <div class="dropdown d-inline-block ms-1">
+                            <button type="button" class="btn header-item noti-icon waves-effect" id="page-header-notifications-dropdown"
+                                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="ti-bell"></i>
+                                {% live_notify_badge badge_class="badge rounded-pill badge-notification bg-danger live_notify_badge" %}
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-0" aria-labelledby="page-header-notifications-dropdown">
+                                <div style="padding: 15px 22px;">
+                                    <div class="row align-items-center">
+                                        <div class="col d-flex justify-content-between">
+                                            <span class="m-0 fw-bold"> Notifications</span>
+                                            <span class="text-end">
+                                                <a class="font-size-14 m-0 fw-bold" href="{% url 'notification_information' %}">
+                                                    View All
+                                                </a>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div data-simplebar style="max-height: 230px;">
+                                    <div id="notify_container">
+                                    </div>
+                                </div>
+                                
+                                <div class="border-top" style="padding: 3px 12px;">
+                                    <a class="btn btn-sm btn-link font-size-14 w-100 text-center" id="allmarkasread" href="javascript:void(0);">
+                                        Mark all as read
+                                    </a>
+                                    
+                                </div>
+                            </div>
+                        </div>
+                        <div class="dropdown d-inline-block">
+                            <button type="button" class="btn header-item waves-effect" id="page-header-user-dropdown"
+                                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <img class="rounded-circle header-profile-user" src="{% static 'assets/images/users/user-9.jpg' %}" height="35" alt="Header">
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end">
+                                <!-- item-->
+                                <a class="dropdown-item d-block" href="javascript:void(0);">{{request.user.username|default_if_none:request.user.first_name}}</a>
+                                <a class="dropdown-item" href="{% url 'change_password' %}"><i class="mdi mdi-tooltip-edit font-size-17 text-muted align-middle me-1"></i> Change Password</a>
+                                <a class="dropdown-item" href="{% url 'all_expenses_claim' %}"><i class="mdi mdi-wallet font-size-17 text-muted align-middle me-1"></i> EXPENSES CLAIM</a>
+                                <a class="dropdown-item d-block" href="{% url 'about' %}"><i class="mdi mdi-cog font-size-17 text-muted align-middle me-1"></i> ABOUT</a>
+                                <a class="dropdown-item d-block" href="{% url 'notification_information' %}"><i class="ti-bell font-size-17 text-muted align-middle me-1"></i> NOTIFICATION</a>                               
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-danger" href="{% url 'view_logout' %}"><i class="mdi mdi-power font-size-17 text-muted align-middle me-1 text-danger"></i> LOGOUT</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            <!-- ========== Left Sidebar Start ========== -->
+            <div class="vertical-menu" style="position:fixed;">
+
+                <div data-simplebar class="h-100">
+
+                    <!--- Sidemenu -->
+                    <div id="sidebar-menu">
+                        <!-- Left Menu Start -->
+                        <ul class="metismenu list-unstyled" id="side-menu">
+                            <li class="menu-title">ERP Solution v1.0.0</li>
+                            <li>
+                                <a href="javascript: void(0);" class="has-arrow waves-effect">
+                                    <i class="mdi mdi-sale"></i>
+                                    <span>Sales</span>
+                                </a>
+                                <ul class="sub-menu" aria-expanded="false">
+                                    {% if request.user.role == "Managers" or request.user.role == "Sales" or request.user.role == "Admins" or request.user.privilege.quotation == "Full Access" %}
+                                    <li><a href="{% url 'all_company' %}">Company</a></li>
+                                    <li><a href="{% url 'all_contact' %}">Contact</a></li>
+                                    {% endif %}
+                                    {% if request.user.role == "Managers" or request.user.role == "Sales" or request.user.privilege.quotation == "Full Access" %}
+                                    <li class=' {% if "quotation-detail" in request.path %}mm-active{% else %}{% endif %}'><a href="{% url 'all_quotation' %}">Quotation</a></li>
+<!--                                    <li class=' {% if "report-detail" in request.path %}mm-active{% else %}{% endif %}'><a href="{% url 'all_reports' %}">Sales Report</a></li>-->
+                                    <li><a href="{% url 'all_reports' %}">Sales Report</a></li>
+                                    <li><a href="{% url 'sales_item_list' %}">Sales Item List</a></li>
+                                    <li><a href="{% url 'sales_task_list' %}">Sales Task List</a></li>
+                                    {% endif %}
+                                </ul>
+                            </li>
+
+                            {% if request.user.role == "Managers" or request.user.role == "Engineers" or request.user.role == "Admins"%}
+                            <li>
+                                <a href="javascript: void(0);" class="has-arrow waves-effect">
+                                    <i class="mdi mdi-chart-areaspline-variant"></i>
+                                    <span>Product Sales</span>
+                                </a>
+                                <ul class="sub-menu" aria-expanded="false">
+                                    <li><a href="{% url 'sales_summary' %}">Sales Summary</a></li>
+                                </ul>
+                            </li>
+
+                            <li>
+                                <a href="javascript: void(0);" class="has-arrow waves-effect">
+                                    <i class="mdi mdi-chart-line"></i>
+                                    <span>Maintenance</span>
+                                </a>
+                                <ul class="sub-menu" aria-expanded="false">
+                                    <li class=' {% if "main-detail" in request.path %}mm-active{% else %}{% endif %}'><a href="{% url 'all_maintenance' %}">Maintenance Summary</a></li>
+                                </ul>
+                            </li>
+                            {% endif %}
+                            
+                            <li>
+                                <a href="javascript: void(0);" class="has-arrow waves-effect">
+                                    <i class="mdi mdi-buffer"></i>
+                                    <span>Project</span>
+                                </a>
+                                <ul class="sub-menu" aria-expanded="false">
+                                    {% if request.user.role == "Managers" or request.user.role == "Engineers" or request.user.role == "Admins"%}
+                                    <li class=' {% if "project-summary-detail" in request.path %}mm-active{% else %}{% endif %}'><a href="{% url 'all_project_summary' %}">Summary</a></li>
+                                    {% endif %}
+
+                                    {% if request.user.role != "Workers" and request.user.role != "Sales" %}
+                                    <li class=' {% if "toolbox-detail" in request.path %}mm-active{% else %}{% endif %}'><a href="{% url 'all_toolbox' %}">TBM</a></li>
+                                    <li><a href="{% url 'siteprogress' %}">Site Progress</a></li>
+                                    <li ><a href="{% url 'scheduling' %}">Schedule</a></li>
+                                    {% endif %}
+                                    {% if request.user.role == "Managers" or request.user.role == "Engineers" or request.user.role == "Admins"%}
+                                    <li ><a href="{% url 'all_worklog' %}">Work Log</a></li>
+                                    <li><a href="{% url 'all_project_ot' %}">OT</a></li>
+                                    <li><a href="{% url 'all_projects_list' %}">All Projects List</a></li>
+                                    <li ><a href="{% url 'do_summary' %}">Do Summary</a></li>
+                                    <li ><a href="{% url 'sr_summary' %}">Sr Summary</a></li>
+                                    <li ><a href="{% url 'pc_summary' %}">Pc Summary</a></li>
+                                    {% endif %}
+                                </ul>
+                            </li>
+                            {% if request.user.role != "Workers"%}
+                            <li>
+                                <a href="javascript: void(0);" class="has-arrow waves-effect">
+                                    <i class="mdi mdi-store"></i>
+                                    <span>Inventory</span>
+                                </a>
+                                <ul class="sub-menu" aria-expanded="false">
+                                    <li><a href="{% url 'all_inventory_materials' %}">Materials</a></li>
+                                    <li><a href="{% url 'all_inventory_assets' %}">Assets</a></li>
+                                    <li><a href="{% url 'all_inventory_stationarys' %}">Stationary</a></li>
+                                    <li><a href="{% url 'all_inventory_ppes' %}">PPE</a></li>
+                                    <li><a href="{% url 'all_inventory_hardwares' %}">Hardware</a></li>
+                                    <li><a href="{% url 'customer-hardware' %}">Customer's Hardware</a></li>
+                                    <li><a href="{% url 'all_materiallog' %}">Material Log</a></li>
+                                    <li><a href="{% url 'all_assetlog' %}">Asset Log</a></li>
+                                    <li><a href="{% url 'all_stationarylog' %}">Stationary Log</a></li>
+                                    <li><a href="{% url 'all_ppelog' %}">PPE Log</a></li>
+                                </ul>
+                            </li>
+                            {% endif %}
+                            <li>
+                                <a href="javascript: void(0);" class="has-arrow waves-effect">
+                                    <i class="mdi mdi-store"></i>
+                                    <span>Calendar</span>
+                                </a>
+                                <ul class="sub-menu" aria-expanded="false">
+                                    <li ><a href="{% url 'calendar' %}">Calendar</a></li>
+                                    <li ><a href="{% url 'event_list' %}">Event List</a></li>
+                                </ul>
+                            </li>
+                            {% if request.user.role == "Managers" or request.user.role == "Admins" %}
+                            <li>
+                                <a href="javascript: void(0);" class="has-arrow waves-effect">
+                                    <i class="mdi mdi-account-box"></i>
+                                    <span>Admin</span>
+                                </a>
+                                <ul class="sub-menu" aria-expanded="false">
+                                    <li class=' {% if "user-detail" in request.path %}mm-active{% else %}{% endif %}'><a href="{% url 'all_users' %}">Users</a></li>
+                                    {% if request.user.is_staff == True %}
+                                    <li><a href="{% url 'user_configuration' %}">User Configuration</a></li>
+                                    {% endif %}
+                                    <li  class=' {% if "all-expenses-detail" in request.path %}mm-active{% else %}{% endif %}'><a href="{% url 'all_expenses_claim_summary' %}">Claim Summary</a></li>
+                                    <li><a href="{% url 'all_otcalculation' %}">Project OT Calculation</a></li>
+                                    <li ><a href="{% url 'notification_configuration' %}">Notification Configration</a></li>
+                                    <li ><a href="{% url 'activity_logs' %}">Activity Logs</a></li>
+                                </ul>
+                            </li>
+                            {% endif %}
+                            <!-- <li>
+                                <a href="javascript: void(0);" class="has-arrow waves-effect">
+                                    <i class="ion ion-md-list-box"></i>
+                                    
+                                    <span>My Account</span>
+                                </a>
+                                <ul class="sub-menu" aria-expanded="false">
+                                    <li><a href="{% url 'change_password' %}"><i class="mdi mdi-tooltip-edit font-size-17 text-muted align-middle me-1"></i> Change Password</a></li>                                   
+                                    <li><a href="{% url 'all_expenses_claim' %}"><i class="mdi mdi-wallet font-size-17 text-muted align-middle me-1"></i> EXPENSES CLAIM</a></li>
+                                    <li><a href="{% url 'about' %}"><i class="mdi mdi-cog font-size-17 text-muted align-middle me-1"></i> ABOUT</a></li>
+                                    <li ><a href="{% url 'notification_information' %}"><i class="ti-bell font-size-17 text-muted align-middle me-1"></i> NOTIFICATION</a></li>
+                                    <li><a href="{% url 'view_logout' %}"><i class="mdi mdi-power font-size-17 text-muted align-middle me-1 text-danger"></i> LOGOUT</a></li>
+                                </ul>
+                            </li> -->
+                            
+
+                        </ul>
+                    </div>
+                    <!-- Sidebar -->
+                </div>
+            </div>
+            <!-- Left Sidebar End -->
+            <!-- ============================================================== -->
+            <!-- Start right Content here -->
+            <!-- ============================================================== -->
+            <div class="main-content">
+                <div class="page-content">
+                    <!-- content goes here -->
+                    {% block content %}
+                    {% endblock %}
+                </div>
+                <!-- End Page-content -->
+            
+                <footer class="footer">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col-sm-12">
+                                © {% now 'Y' %} <span class="d-none d-sm-inline-block"> - Crafted with <i class="mdi mdi-heart text-danger"></i> by <b class="text-danger">ERP Solutions Team.</b></span>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
+            </div>            
+            <!-- end main content-->
+
+        </div>
+        <!-- END layout-wrapper -->
+        <!-- JAVASCRIPT -->
+        <script src="{% static 'assets/libs/jquery/jquery.min.js' %}"></script>
+        <script src="{% static 'assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+        <script src="{% static 'assets/libs/metismenu/metisMenu.min.js' %}"></script>
+        <script src="{% static 'assets/libs/simplebar/simplebar.min.js' %}"></script>
+        <script src="{% static 'assets/libs/node-waves/waves.min.js' %}"></script>
+        <script src="{% static 'assets/libs/jquery-sparkline/jquery.sparkline.min.js' %}"></script>
+        <script src="{% static 'assets/libs/parsleyjs/parsley.min.js' %}"></script>
+        <script src="{% static 'assets/js/pages/form-validation.init.js' %}"></script>
+        <script src="{% static 'assets/libs/moment/min/moment.min.js' %}"></script>
+        {% block scripts %}
+        {% endblock %}
+        <script src="{% static 'assets/js/app.js' %}"></script>
+        <script src="{% static 'assets/notifications/notify.js' %}" type="text/javascript"></script>
+
+        <script>
+            function my_special_notification_callback(data) {
+                notification_html= ''
+                for (var i=0; i < data.unread_list.length; i++) {
+                    msg = data.unread_list[i];
+                    if (data.unread_list[i]['level'] == 'success') {
+                        icon = 'fa-check-circle'
+                    }
+                    else if (data.unread_list[i]['level'] == 'error') {
+                        icon = 'fa-exclamation-triangle'
+                    }
+                    else if (data.unread_list[i]['level'] == 'warning') {
+                        icon = 'fa-check-circle'
+                    }
+                    else if (data.unread_list[i]['level'] == 'info') {
+                        icon = 'fa-info'
+                    }
+                    notification_html +=
+                        '<a href="javascript:void(0);" class="text-reset notification-item notify-read" data-id="' + msg['id'] + '">' +
+                            '<div class="d-flex bg-light border">' +
+                                '<div class="flex-shrink-0 me-3">' +
+                                    '<div class="avatar-xs">' +
+                                        '<span class="avatar-title border-' +  msg["level"]  + ' rounded-circle ">' +
+                                            '<i class="fas ' +  icon  + '"></i>' +
+                                        '</span>' +
+                                    '</div>' +
+                                '</div>' +
+                                '<div class="flex-grow-1">' +
+                                    '<h6 class="mb-1 fw-bold">New Notification From ' +  msg["actor"]  + '</h6>' +
+                                    '<div class="text-muted">' +
+                                        '<p class="mb-1" style="font-style: italic;">' +  msg["description"]  + '</p>' +
+                                    '</div>' +
+                                    '<div class="text-muted">' +
+                                        '<p class="mb-1 text-danger">' + moment(msg['timestamp']).fromNow() + '</p>' +
+                                    '</div>' +
+                                '</div>' +
+                            '</div>' +
+                        '</a>'
+                }
+                if (i==0) {
+                    $('.live_notify_badge').hide();
+                }
+                else {
+                    $('.live_notify_badge').show();
+                    $('#notify_container').html(notification_html);
+                }
+
+            }
+        </script>
+        {% register_notify_callbacks callbacks='fill_notification_badge, my_special_notification_callback' %}
+        <script>
+            {% comment %} $('input').bind("cut copy paste", function(e) {
+                e.preventDefault();
+                $('#input').bind("contextmenu", function(e) {
+                    e.preventDefault();
+                });
+            }); {% endcomment %}
+            $(document).on('click', '.notify-read', function(e){
+                $.ajax({
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                    url: '{% url "ajax_read_notify" %}',
+                    data: {
+                        notifyid: $(this).data('id'),
+                    },
+                    type: 'POST',
+                    success: function (data) {
+                        if(data.status=="ok"){
+                            location.reload();
+                        }
+                    }
+                });
+            });
+            $(document).on('click', '#allmarkasread', function(e){
+                $.ajax({
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                    url: '{% url "ajax_all_read_notify" %}',
+                    data: {
+                        user_id: '{{ user.id }}',
+                    },
+                    type: 'POST',
+                    success: function (data) {
+                        if(data.status=="ok"){
+                            location.reload();
+                        }
+                    }
+                });
+            });
+        </script>
+        {% block extra_media %}{% endblock %}
+    </body>
+</html>

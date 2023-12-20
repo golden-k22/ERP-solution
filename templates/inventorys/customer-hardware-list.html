@@ -1,0 +1,692 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block page-title %}Customer's HardWare{% endblock%}
+{% block css %}
+    <link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- DataTables -->
+    <link href="{% static 'assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'assets/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/css/avatar.css' %}" id="app-style" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" rel="stylesheet">
+{% endblock %}
+{% block content %}
+<style type="text/css">
+    .datepicker {
+        z-index:1151 !important;
+    }
+    #newSearchPlace div.dataTables_filter {
+        text-align: right;
+        padding-top: 5px;
+    }
+    #newSearchPlace div.dataTables_filter label {
+        font-weight: normal;
+        white-space: nowrap;
+        text-align: left;
+    }
+    #newSearchPlace div.dataTables_filter input {
+        margin-left: 0.5em;
+        margin-right: 0;
+        display: inline-block;
+        width: auto;
+    }
+    .dt-button-collection .dropdown-menu {
+        position:relative !important
+    }
+    .dt-button-collection {
+        left: unset !important;
+        right: 10px ;
+    }
+    .dropdown-item.active, .dropdown-item:active {
+        color: #f4f5f7;
+        text-decoration: none;
+        background-color: #7a6fbe;
+    }
+    .btn {
+        padding: 0.475rem 0.75rem;
+    }
+</style>
+<div class="container-fluid">
+    <div id="loading" style="z-index:1151 !important;font-size: 30px; position: absolute; top: 40%; left: 50%;">
+        <img src="{% static 'assets/images/spinning-circles.svg' %}" width="80" alt="" style="background: transparent;">
+    </div>
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="page-title-box">
+                <h4>Customer's Hardware
+                </h4>
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a class="text-primary" href="{% url 'customer-hardware' %}"><b>Customer's Hardware</b></a></li>
+                        <li class="breadcrumb-item active">All Customer's HardWare</li>
+                    </ol>
+
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="row">
+                                <div class="mt-1 col-md-2 space-custom">
+                                    <button type="button" id="hardwareadd" class="btn btn-primary w-100" style="height: 38px;white-space: nowrap;" ><i class="mdi mdi-calendar-plus me-2"></i> New</button>
+                                </div>
+
+                                <div class="mt-1 col-md-2 space-custom">
+                                    <div class="export_button justify-content-center d-flex"></div>
+                                </div>
+<!--                                <div class="mt-1 col-md-2 space-custom">-->
+<!--                                    <button type="button" id="btn_import" class="btn btn-primary w-100" style="height: 38px;white-space: nowrap;" > Import</button>-->
+<!--                                </div>-->
+<!--                                <div class="mt-1 col-md-2 space-custom">-->
+<!--                                    <a href="{% url 'ajax-export-customer-hardwares' %}" class="btn btn-info" style="height: 38px;white-space: nowrap;" > Template Export</a>-->
+<!--                                </div>-->
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="row">
+                                <div class="mt-1 col-md-2 space-custom">
+
+                                    <select class="form-control search_filter" id="search_customer" required>
+                                        <option value="">Customer</option>
+                                        {% for customer in customers %}
+                                            <option value="{{customer.id}}">{{customer.name}}</option>
+                                        {% endfor %}
+                                    </select>
+
+                                </div>
+                                <div class="mt-1 col-md-2 space-custom">
+                                    <select class="form-control search_filter" id="search_project" required>
+                                        <option value="">Project</option>
+                                        {% for project in projects %}
+                                            <option value="{{project.id}}">{{project.proj_id}}</option>
+                                        {% endfor %}
+                                    </select>
+
+                                </div>
+                                <div class="col-md-1 space-custom">
+<!--                                    <a href="javascript:void(0);" id="hardwaresearch" class="btn btn-primary m-1"><i class="dripicons-search align-middle"></i></a>-->
+                                </div>
+                                <div class="mt-1 col-md-3 space-custom">
+                                    <div id="newSearchPlace"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="row">
+
+                                <div class="mt-1 col-md-2 space-custom">
+                                    <select class="form-control search_filter" id="action_sel" required>
+                                        <option value="edit">Edit</option>
+                                        <option value="clone">Clone</option>
+                                        <option value="delete">Delete</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-1 space-custom">
+                                    <button type="button" id="action_go" class="btn btn-secondary w-100 mt-1" style="height: 38px; margin-left:10px; white-space: nowrap;" > Go</button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div id="hardware_data"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--hardware inventory modal content -->
+<div id="hardwaremodal" class="modal fade" role="dialog" aria-labelledby="hardwareModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title">Add New Hardware</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_info">
+                <form class="needs-validation p-3" id="HardwareForm">
+                    {% csrf_token %}
+                    <div id="hardwareFormContent">
+                    </div>
+                </form>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_hardwareadd">Add</button>
+
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- Delete Hardware modal content -->
+<div id="deleteModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="delModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="delModalLabel">Delete Hardware</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5 id="del_description"></h5>
+                <input type="hidden" id="del_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button id="del_confirm" type="button" class="btn btn-primary waves-effect btn-sm waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
+<!--material hardware import modal content -->
+<div id="importModal" class="modal fade" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="import_head_title">Import CSV</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+        			<div class="col-12 p-0 text-center">
+        				<p>
+        					CSV file should have Hardware Code, Model Name, Serial Number, Brand, UOM, Expiry Date, Stock Qty, Remark.<br>
+        				</p>
+        			</div>
+        		</div>
+                <div class="form-group text-center mb-0">
+                    <div id="text_import_error" class="alert alert-danger alert-dismissible fade show mb-2" role="alert" style="display:none;font-size: 14px;"></div>
+        		</div>
+                <div class="form-group row m-0">
+    				<div class="col-3 p-0 justify-content-center d-flex">
+        				<a href="javascript:void(0);"><i class="fas fa-3x fa-file-csv"></i></a>
+        				<input type="file" name="csv_file" id="csv_file" style="display: none;" >
+
+        			</div>
+        			<div class="col-9 p-1">
+        				<h4 id="csv_file_name" style="line-height: 2rem;">please click csv icon</h4>
+        				<input type="hidden" id="file_upload_exist" value="-1">
+        			</div>
+        		</div>
+	        	<div class="form-group text-center mt-2 mb-0" id="div_result">
+	        		<h4 class="text-primary">Result</h4>
+	        		<label id="p_result"></label>
+	        	</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btn_cancel" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="btn_import_save" class="btn btn-primary waves-effect waves-light btn-sm">Add</button>
+                <button id="btn_import_close" type="button" class="btn btn-secondary">Close</button>
+
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'assets/libs/select2/js/select2.full.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+<!-- Buttons examples -->
+<script src="{% static 'assets/libs/datatables.net-buttons/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js' %}"></script>
+<script src="{% static 'assets/libs/jszip/jszip.min.js' %}"></script>
+<script src="{% static 'assets/libs/pdfmake/build/pdfmake.min.js' %}"></script>
+<script src="{% static 'assets/libs/pdfmake/build/vfs_fonts.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.html5.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.print.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-buttons/js/buttons.colVis.min.js' %}"></script>
+<!-- Responsive examples -->
+<script src="{% static 'assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+<script src="{% static 'assets/libs/bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+<script>
+    var checked_ids=[];
+
+    function updateCheckedList(id) {
+        if($('#'+id)[0].checked){
+            checked_ids.push(id)
+        }else{
+            checked_ids.pop(id)
+        }
+    }
+
+
+    $("#action_go").on('click', function(e){
+
+        if(checked_ids.length){
+            if($("#action_sel").val()=="edit"){
+                $("#hardwareFormContent").empty();
+                for(let i=0;i<checked_ids.length;i++){
+                    let id=checked_ids[i];
+                    ajax_add_edit_items(id);
+                }
+                $("#hardwaremodal").modal('show');
+            }
+            else if($("#action_sel").val()=="clone"){
+                for(let i=0;i<checked_ids.length;i++){
+                    let id=checked_ids[i];
+                    ajax_clone_items(id);
+                }
+            }
+            else{
+                $("#del_description").html("Are you sure you want to delete selected Hardwares?");
+                $("#deleteModal").modal('show');
+            }
+        }
+    });
+
+
+    $("#del_confirm").on('click', function(event){
+        for(let i=0;i<checked_ids.length;i++){
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_delete_customer_hardware" %}',
+                data: {
+                    'hardwareid': checked_ids[i],
+                },
+                type: 'POST',
+                success: function (data) {
+                    if (data.status == "ok") {
+                        location.reload();
+                    }
+                }
+            });
+            $('#deletModal').modal('hide');
+        }
+    });
+
+
+
+    function ajax_add_edit_items(id) {
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_hardware_items" %}',
+            data: {id: id},
+            type: 'POST',
+            success: function (data) {
+                $("#hardwareFormContent").append(data);
+                $(".item_text_error").hide();
+                $("#hardwareid"+id).val(id);
+                $("#head_title").html('Update Hardware');
+                $(".btn_hardwareadd").html('Update');
+                $.ajax({
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                    url: '{% url "ajax_get_customer_hardware" %}',
+                    data: {
+                        hardwareid: id,
+                    },
+                    type: 'POST',
+                    success: function (data) {
+                        up_data = JSON.parse(data);
+                        $("#serial_number"+id).val(up_data.serial_number);
+                        $("#hardware_desc"+id).val(up_data.hardware_desc);
+                        $("#stock_qty"+id).val(up_data.stock_qty);
+                        $("#remark"+id).val(up_data.remark);
+                        $("#expiry_date"+id).val(up_data.expiry_date);
+                        $("#licensing_date"+id).val(up_data.licensing_date);
+                        $('#uom'+id).val(up_data.uom);
+                        $('#uom'+id).trigger('change');
+                        $('#brand'+id).val(up_data.brand);
+                        $('#customer'+id).val(up_data.customer);
+                        $('#customer'+id).trigger('change');
+                        $('#project'+id).val(up_data.project);
+                        $('#project'+id).trigger('change');
+                        $('#status'+id).val(up_data.status);
+                        $('#status'+id).trigger('change');
+                    }
+                });
+            }
+        });
+    };
+
+    function ajax_clone_items(id) {
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_customer_hardware_clone" %}',
+            data: {hardwareid: id},
+            type: 'POST',
+            success: function (data) {
+                if(data.status=="Success"){
+                    location.reload();
+                } else {
+                    console.log("Clone failed---", id);
+                }
+            }
+        });
+    };
+
+
+    $(document).ready(function(){
+        $(".text_error").hide();
+        $(".item_text_error").hide();
+    })
+
+    function formatDate(date) {
+        if (date==""){
+            return "None";
+        }
+        var d = new Date(date),
+            month = '' + (d.getMonth() + 1),
+            day = '' + d.getDate(),
+            year = d.getFullYear();
+
+        if (month.length < 2)
+            month = '0' + month;
+        if (day.length < 2)
+            day = '0' + day;
+
+        return [year, month, day].join('-');
+    }
+    ajax_all_hardware();
+
+    function ajax_all_hardware() {
+        $('#loading').show();
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_all_customer_hardware" %}',
+            data: {
+
+            },
+            type: 'POST',
+            success: function (data) {
+                $("#hardware_data").html(data);
+            },
+            complete: function(){
+                $('#loading').hide();
+            }
+        });
+    };
+    $(".select2").select2({width: '100%', dropdownParent: $("#manage_info")});
+    $(".uom-select").select2({width: '100%', dropdownParent: $("#manage_info")});
+    $(".search_filter").select2({width: '100%'});
+
+    function hardwareSearch(){
+        if($("#search_customer").val() == "" &&  $("#search_project").val() == "") {
+            location.reload();
+        } else {
+            $('#loading').show();
+            $(".export_button").html('');
+            $("#newSearchPlace").html('');
+            $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_filter_customer_hardware" %}',
+            data: {
+                search_customer: $("#search_customer").val(),
+                search_project: $("#search_project").val(),
+
+            },
+            type: 'POST',
+            success: function (data) {
+                $("#hardware_data").html(data);
+
+            },
+            complete: function(){
+                $('#loading').hide();
+            }
+        });
+        }
+    };
+
+    $("#search_customer").on('change', function(e){
+        hardwareSearch();
+    });
+    $("#search_project").on('change', function(e){
+        hardwareSearch();
+    });
+    function valor(){
+        if($("#stock_qty").val() != "" && $("#restock_qty").val() != "") {
+            if (parseInt($("#stock_qty").val()) <= parseInt($("#restock_qty").val())) {
+                $("#stock_valid").css("display", "block");
+                $('.btn_hardwareadd').prop('disabled', true);
+            } else {
+                $("#stock_valid").css("display", "none");
+                $('.btn_hardwareadd').prop('disabled', false);
+            }
+        } else {
+            $("#stock_valid").css("display", "none");
+            $('.btn_hardwareadd').prop('disabled', false);
+        }
+    };
+    function updatehardware(id) {
+        $("#hardwareid").val(id);
+        $("#head_title").html('Update Hardware');
+        $(".btn_hardwareadd").html('Update');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_customer_hardware" %}',
+            data: {
+                hardwareid: $("#hardwareid").val()
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data);
+                $("#serial_number").val(up_data.serial_number);
+                $("#hardware_desc").val(up_data.hardware_desc);
+                $("#stock_qty").val(up_data.stock_qty);
+                $("#remark").val(up_data.remark);
+                $("#expiry_date").val(up_data.expiry_date);
+                $("#licensing_date").val(up_data.licensing_date);
+                $('#uom').val(up_data.uom);
+                $('#uom').trigger('change');
+                $('#brand').val(up_data.brand);
+                $('#customer').val(up_data.customer);
+                $('#customer').trigger('change');
+                $('#project').val(up_data.project);
+                $('#project').trigger('change');
+                $('#status').val(up_data.status);
+                $('#status').trigger('change');
+                if (up_data.photo != "") {
+                    $('.avatar-input').find('.avatar-img').attr('src', up_data.photo);
+                }
+            }
+        });
+        $("#hardwaremodal").modal('show');
+
+    }
+    function readFile(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+
+            reader.onload = function (e) {
+                $(input).parents('.avatar-input').find('.avatar-img').attr('src', e.target.result);
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    $('.avatar-file-picker').on('change', function () {
+         readFile(this);
+    });
+    $("#hardwareadd").on('click', function(e){
+        $("#hardwareFormContent").empty();
+        $("#head_title").html('Add New Hardware');
+        $(".btn_hardwareadd").html('Add');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_hardware_items" %}',
+            data: {id: 1},
+            type: 'POST',
+            success: function (data) {
+                $("#hardwareFormContent").append(data);
+                $(".item_text_error").hide();
+                $("#hardwareid1").val(-1);
+            }
+        });
+
+        $("#hardwaremodal").modal('show');
+    });
+    $(".btn_hardwareadd").on('click', function(e){
+        $("#HardwareForm").parsley().validate();
+        if ($('#HardwareForm').parsley().validate() === false) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            if($("#hardwareid1").val() == "-1"){
+                if($("#hardware_desc1").val().includes("-")){
+
+                    $(".item_text_error").html('Name should not contain "-".');
+                    $(".item_text_error").show();
+                    return;
+                }
+                var form_data = new FormData();
+                form_data.append('hardwareid', $("#hardwareid1").val());
+                form_data.append('hardware_desc', $("#hardware_desc1").val());
+                form_data.append('serial_number', $("#serial_number1").val());
+                form_data.append('uom', $("#uom1").val());
+                form_data.append('expiry_date', formatDate($("#expiry_date1").val()));
+                form_data.append('licensing_date', formatDate($("#licensing_date1").val()));
+                form_data.append('remark', $("#remark1").val());
+                form_data.append('stock_qty', $("#stock_qty1").val());
+                form_data.append('brand', $("#brand1").val());
+                form_data.append('customer', $("#customer1").val());
+                form_data.append('project', $("#project1").val());
+                form_data.append('status', $("#status1").val());
+                $.ajax({
+                    headers:{ 'X-CSRFToken': "{{csrf_token}}" },
+                    url: "{% url 'ajax_add_customer_hardware' %}",
+                    type: 'POST',
+                    data: form_data,
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    success: function (data) {
+                        if(data.status=="Success"){
+                            $("#HardwareForm").modal('hide');
+                            $(".item_text_error").hide();
+                            location.reload();
+                        } else {
+                            $(".item_text_error").html(data.messages);
+                            $(".item_text_error").show();
+                        }
+                    }
+                });
+            }
+            else{
+                for(let i=0;i<checked_ids.length;i++){
+                    let id=checked_ids[i];
+                    var form_data = new FormData();
+                    form_data.append('hardwareid', $("#hardwareid"+id).val());
+                    form_data.append('hardware_desc', $("#hardware_desc"+id).val());
+                    form_data.append('serial_number', $("#serial_number"+id).val());
+                    form_data.append('uom', $("#uom"+id).val());
+                    form_data.append('expiry_date', formatDate($("#expiry_date"+id).val()));
+                    form_data.append('licensing_date', formatDate($("#licensing_date"+id).val()));
+                    form_data.append('remark', $("#remark"+id).val());
+                    form_data.append('stock_qty', $("#stock_qty"+id).val());
+                    form_data.append('brand', $("#brand"+id).val());
+                    form_data.append('customer', $("#customer"+id).val());
+                    form_data.append('project', $("#project"+id).val());
+                    form_data.append('status', $("#status"+id).val());
+                    $.ajax({
+                        headers:{ 'X-CSRFToken': "{{csrf_token}}" },
+                        url: "{% url 'ajax_add_customer_hardware' %}",
+                        type: 'POST',
+                        data: form_data,
+                        cache: false,
+                        contentType: false,
+                        processData: false,
+                        success: function (data) {
+                            if(data.status=="Success"){
+                                $("#HardwareForm").modal('hide');
+                                $(".item_text_error").hide();
+                                location.reload();
+                            } else {
+                                $(".item_text_error").html(data.messages);
+                                $(".item_text_error").show();
+                            }
+                        }
+                    });
+                }
+            }
+
+        }
+    });
+    // import process start
+	$("#btn_import").on('click', function(){
+		$("#div_result").hide();
+		$("#btn_import_save").show();
+        $("#btn_cancel").show();
+        $("#btn_import_close").hide();
+		$("#importModal").modal('show');
+	});
+    $(".fa-file-csv").on('click', function(){
+		$("#csv_file").click();
+	});
+    $('#csv_file').on('change', function(event) {
+		var inputFile = event.currentTarget;
+		var file_name = inputFile.files[0].name;
+		var arr_file_name = file_name.split(".");
+		var file_extension = arr_file_name[arr_file_name.length - 1];
+
+		if (file_extension != "csv"){
+			$("#file_upload_exist").val("-1");
+			$("#text_import_error").html("Should be CSV file");
+			$("#text_import_error").show();
+			$('#csv_file').empty();
+		}else{
+			$("#text_import_error").hide();
+			$("#file_upload_exist").val("1");
+			if(file_name.length <= 30) {
+	            $('#csv_file_name')
+	                .html(file_name.substring(0,30));
+	        }
+	        else {
+	            $('#csv_file_name')
+	                .html(file_name.substring(0,30)+'...');
+	        }
+		}
+    });
+    $("#btn_import_close").on('click', function(){
+    	$("#importModal").modal("hide");
+    	location.reload();
+    });
+    $("#btn_import_save").on('click', function(){
+    	if($("#file_upload_exist").val() == "-1"){
+    		$("#text_import_error").html("You must select csv file");
+			$("#text_import_error").show();
+    	}else{
+    		var file_data = $('#csv_file').prop('files')[0];
+            var form_data = new FormData();
+            form_data.append('file', file_data);
+            $.ajax({
+                headers:{ 'X-CSRFToken': "{{csrf_token}}" },
+                url: "{% url 'ajax-import-customer-hardwares' %}",
+                type: 'POST',
+                data: form_data,
+                cache: false,
+                contentType: false,
+                processData: false,
+                success: function (data) {
+                    if(data.error_code == "1"){
+                    	$("#text_import_error").html("Your csv file must have Hardware Code, Model Name, Serial Number, Brand, UOM, Expiry Date, Stock Qty, Remark.");
+						$("#text_import_error").show();
+						$("#file_upload_exist").val("-1");
+						$('#csv_file').empty();
+						$('#csv_file_name').html("");
+                    }else{
+                    	$("#p_result").html("Total Record: " + data.total + "&nbsp;&nbsp;&nbsp;&nbsp;Success: " + data.success + "&nbsp;&nbsp;&nbsp;&nbsp;Failed: " + data.failed + "&nbsp;&nbsp;&nbsp;&nbsp;Update: " + data.exist);
+                    	$("#div_result").show();
+                    	$("#btn_import_save").hide();
+                    	$("#btn_cancel").hide();
+                        $("#btn_import_close").show();
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

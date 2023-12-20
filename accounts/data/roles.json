@@ -1,0 +1,30 @@
+[
+    {
+      "model": "accounts.role",
+      "pk": 1,
+      "fields": {
+        "name": "Managers"
+      }
+    },
+    {
+        "model": "accounts.role",
+        "pk": 2,
+        "fields": {
+          "name": "Engineers"
+        }
+    },
+    {
+        "model": "accounts.role",
+        "pk": 3,
+        "fields": {
+          "name": "Supervisors"
+        }
+    },
+    {
+        "model": "accounts.role",
+        "pk": 4,
+        "fields": {
+          "name": "Workers"
+        }
+    }
+]

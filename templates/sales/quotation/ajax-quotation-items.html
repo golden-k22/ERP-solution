@@ -1,0 +1,82 @@
+{% load static %}
+<div>
+        <div id="text_error_detail" style="display: none;" class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+        </div>
+        <div class="mb-3 mt-3 row">
+            <label for="sn{{item_cnt}}" class="col-md-4 col-form-label">SN:</label>
+            <div class="col-md-8">
+                <input type="text" class="form-control" id="sn{{item_cnt}}" name="sn">
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label for="description{{item_cnt}}" class="col-md-4 col-form-label">Description:</label>
+            <div class="col-md-8">
+<!--                <textarea class="form-control" rows="4" type="text" id="description{{item_cnt}}" list="list__desc-list" required></textarea>-->
+
+                <input class="form-control" type="text" list="list__desc-list" id="description{{item_cnt}}">
+
+                <datalist id="list__desc-list">
+                    {% for description in descriptions %}
+                        <option value="{{description.description}}" data-value={{description.id}}></option>
+                    {% endfor %}
+                </datalist>
+            </div>
+        </div>
+        <div class="mb-3 mt-3 row">
+            <label for="qty{{item_cnt}}" class="col-md-4 col-form-label">QTY:</label>
+            <div class="col-md-8">
+                <input type="text" class="form-control integer" id="qty{{item_cnt}}"  name="qty" required>
+                <div id="qty_error_detail{{item_cnt}}" style="display: none;" class="alert alert-danger alert-dismissible fade show mb-0" role="alert"></div>
+            </div>
+        </div>
+
+        <div class="mb-3 row">
+            <label for="uom{{item_cnt}}" class="col-md-4 col-form-label">UOM:</label>
+            <div class="col-md-8">
+                <select class="form-control uom-select" id="uom{{item_cnt}}" name="uom" >
+                    <option value="">Select UOM</option>
+                    {% for uom in uoms %}
+                        <option value="{{uom.id}}">{{uom.name}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="mb-3 row">
+            <label for="unitprice{{item_cnt}}" class="col-md-4 col-form-label">Unit Price:</label>
+            <div class="col-md-8">
+                <input class="form-control js-number" type="text" id="unitprice{{item_cnt}}" >
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label for="unitcost{{item_cnt}}" class="col-md-4 col-form-label">Unit Cost:</label>
+            <div class="col-md-8">
+                <input class="form-control js-number" type="text" id="unitcost{{item_cnt}}" >
+            </div>
+        </div>
+        <div style="margin-top: 25px;background: #cccccc;height: 3px;"></div>
+</div>
+<script>
+    $(".select2").select2({width: '0%'});
+    $(".uom-select").select2({width: '100%', dropdownParent: $("#manage_info")});
+
+    $("#description"+{{item_cnt}}).on('change', function(e){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_scope_by_description" %}',
+            data: {
+                description: $("#description"+{{item_cnt}}).val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                scope_data=JSON.parse(data);
+                if (scope_data.status=="success"){
+                    $("#unitprice"+{{item_cnt}}).val(scope_data.unit_price);
+                    $("#unitcost"+{{item_cnt}}).val(scope_data.unit_cost);
+                    $("#uom"+{{item_cnt}}).val(scope_data.uom_id);
+                    $("#uom"+{{item_cnt}}).trigger("change");
+                }
+            }
+        });
+    });
+</script>
