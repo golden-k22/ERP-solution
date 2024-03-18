@@ -418,6 +418,17 @@ def newUser(request):
                             invent_material="Only View",
                             quotation="Not Allowed"
                         )
+                    else:
+                        Privilege.objects.create(
+                            user=user,
+                            sales_summary="Not Allowed",
+                            sales_report="Not Allowed",
+                            proj_summary="Not Allowed",
+                            proj_ot="Not Allowed",
+                            prof_summary="Not Allowed",
+                            invent_material="Only View",
+                            quotation="Not Allowed"
+                        )
 
                     NotificationPrivilege.objects.create(
                         user=user,

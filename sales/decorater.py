@@ -15,10 +15,14 @@ def ajax_login_required(view_func):
 def sale_report_privilege_required(view_func):
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
-        if request.user.privilege.sales_report == "Full Access":
-            return view_func(request, *args, **kwargs)
-        else:
+        try:
+            if request.user.privilege.sales_report == "Full Access":
+                return view_func(request, *args, **kwargs)
+            else:
+                return render(request, 'not_allowed.html')
+        except BaseException :
             return render(request, 'not_allowed.html')
+
     return wrapper
 
 def admin_required(view_func):
@@ -27,6 +31,5 @@ def admin_required(view_func):
         if request.user.is_staff == True:
             return view_func(request, *args, **kwargs)
         else:
-
             return render(request, 'not_allowed.html')
     return wrapper
