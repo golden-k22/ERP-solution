@@ -71,6 +71,7 @@ urlpatterns = [
     url(r'^ajax_add_qfile/$', views.qfileadd, name='ajax_add_qfile'),
     url(r'^ajax_filter_person/$', views.ajax_filter_person, name='ajax_filter_person'),
     url(r'^ajax_add_subject/$', views.ajax_add_subject, name='ajax_add_subject'),
+    url(r'^ajax_add_optional/$', views.ajax_add_optional, name='ajax_add_optional'),
     url(r'^ajax_add_discount/$', views.ajax_add_discount, name='ajax_add_discount'),
     url(r'^ajax_get_subjects/$', views.ajax_get_subjects, name='ajax_get_subjects'),
     url(r'^ajax_get_scope_by_description/$', views.ajax_get_scopedata, name='ajax_get_scope_by_description'),

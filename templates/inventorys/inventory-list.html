@@ -669,49 +669,49 @@
             return;
         } else {
             var pic_data = $("#photo").prop('files')[0];
-            if (pic_data.size>20971520){
-                $("#text_error").html("File size should be less than 20Mbyte.");
-                $("#text_error").show();
-                return;
+            if (pic_data!==undefined){
+                if (pic_data.size>20971520){
+                    $("#text_error").html("File size should be less than 20Mbyte.");
+                    $("#text_error").show();
+                    return;
+                }
             }
-            else{
-                var form_data = new FormData();
-                form_data.append('picture', pic_data);
-                form_data.append('materialid', $("#materialid").val());
-                form_data.append('material_code', $("#material_code").val());
-                form_data.append('product_desc', $("#product_desc").val());
-                form_data.append('part_number', $("#part_number").val());
-                form_data.append('color', $("#color").val());
-                form_data.append('uom', $("#uom").val());
-                form_data.append('location', $("#location").val());
-                form_data.append('remark', $("#remark").val());
-                form_data.append('replenish_qty', $("#replenish_qty").val());
-                form_data.append('restock_qty', $("#restock_qty").val());
-                form_data.append('stock_qty', $("#stock_qty").val());
-                form_data.append('brand', $("#brand").val());
-                form_data.append('supplier', $("#supplier").val());
-                $.ajax({
-                    headers:{ 'X-CSRFToken': "{{csrf_token}}" },
-                    url: "{% url 'ajax_add_material' %}",
-                    type: 'POST',
-                    data: form_data,
-                    cache: false,
-                    contentType: false,
-                    processData: false,
-                    success: function (data) {
-                        if(data.status=="Success"){
-                            $("#MaterialForm").modal('hide');
-                            $("#text_error").hide();
-                            location.reload();
-                        } else {
-                            $("#text_error").html(data.messages);
-                            $("#text_error").show();
-                        }
-
-
+            var form_data = new FormData();
+            form_data.append('picture', pic_data);
+            form_data.append('materialid', $("#materialid").val());
+            form_data.append('material_code', $("#material_code").val());
+            form_data.append('product_desc', $("#product_desc").val());
+            form_data.append('part_number', $("#part_number").val());
+            form_data.append('color', $("#color").val());
+            form_data.append('uom', $("#uom").val());
+            form_data.append('location', $("#location").val());
+            form_data.append('remark', $("#remark").val());
+            form_data.append('replenish_qty', $("#replenish_qty").val());
+            form_data.append('restock_qty', $("#restock_qty").val());
+            form_data.append('stock_qty', $("#stock_qty").val());
+            form_data.append('brand', $("#brand").val());
+            form_data.append('supplier', $("#supplier").val());
+            $.ajax({
+                headers:{ 'X-CSRFToken': "{{csrf_token}}" },
+                url: "{% url 'ajax_add_material' %}",
+                type: 'POST',
+                data: form_data,
+                cache: false,
+                contentType: false,
+                processData: false,
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#MaterialForm").modal('hide');
+                        $("#text_error").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error").html(data.messages);
+                        $("#text_error").show();
                     }
-                });
-            }
+
+
+                }
+            });
         }
     });
 

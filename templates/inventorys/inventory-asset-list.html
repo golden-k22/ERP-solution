@@ -200,7 +200,7 @@
                     <div class="mb-3 mt-3 row">
                         <label for="supplier" class="col-md-4 col-form-label">Supplier:</label>
                         <div class="col-md-8">
-                            <select class="form-control select2" id="supplier" required>
+                            <select class="form-control select2" id="supplier">
                                 <option value="">Select Supplier..</option>
                                 {% for supplier in suppliers %}
                                     <option value="{{supplier.name}}">{{supplier.name}}</option>
@@ -511,7 +511,6 @@
             type: 'POST',
             success: function (data) {
                 up_data = JSON.parse(data);
-                console.log(up_data)
                 $("#asset_code").val(up_data.asset_code);
                 $("#part_number").val(up_data.part_number);
                 $("#asset_desc").val(up_data.asset_desc);
@@ -577,45 +576,48 @@
             return;
         } else {
             var pic_data = $("#photo").prop('files')[0];
-            if (pic_data.size>20971520){
-                $("#text_error").html("File size should be less than 20Mbyte.");
-                $("#text_error").show();
-                return;
+            if (pic_data!==undefined){
+                if (pic_data.size>20971520){
+                    $("#text_error").html("File size should be less than 20Mbyte.");
+                    $("#text_error").show();
+                    return;
+                }
             }
-            else{
-                var form_data = new FormData();
-                form_data.append('picture', pic_data);
-                form_data.append('assetid', $("#assetid").val());
-                form_data.append('asset_code', $("#asset_code").val());
-                form_data.append('asset_desc', $("#asset_desc").val());
-                form_data.append('part_number', $("#part_number").val());
-                form_data.append('type', $("#type").val());
-                form_data.append('warranty_expiry_date', formatDate($("#warranty_expiry_date").val()));
-                form_data.append('remark', $("#remark").val());
-                form_data.append('brand', $("#brand").val());
-                form_data.append('supplier', $("#supplier").val());
-                $.ajax({
-                    headers:{ 'X-CSRFToken': "{{csrf_token}}" },
-                    url: "{% url 'ajax_add_asset' %}",
-                    type: 'POST',
-                    data: form_data,
-                    cache: false,
-                    contentType: false,
-                    processData: false,
-                    success: function (data) {
-                        if(data.status=="Success"){
-                            $("#AssetForm").modal('hide');
-                            $("#text_error").hide();
-                            location.reload();
-                        } else {
-                            $("#text_error").html(data.messages);
-                            $("#text_error").show();
-                        }
-
-
+            var form_data = new FormData();
+            form_data.append('picture', pic_data);
+            form_data.append('assetid', $("#assetid").val());
+            form_data.append('asset_code', $("#asset_code").val());
+            form_data.append('asset_desc', $("#asset_desc").val());
+            form_data.append('part_number', $("#part_number").val());
+            form_data.append('type', $("#type").val());
+            form_data.append('warranty_expiry_date', formatDate($("#warranty_expiry_date").val()));
+            form_data.append('remark', $("#remark").val());
+            form_data.append('brand', $("#brand").val());
+            form_data.append('supplier', $("#supplier").val());
+            $.ajax({
+                headers:{ 'X-CSRFToken': "{{csrf_token}}" },
+                url: "{% url 'ajax_add_asset' %}",
+                type: 'POST',
+                data: form_data,
+                cache: false,
+                contentType: false,
+                processData: false,
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#AssetForm").modal('hide');
+                        $("#text_error").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error").html(data.messages);
+                        $("#text_error").show();
                     }
-                });
-            }
+
+
+                }
+            });
+
+
+
         }
     });
     function formatDate(date) {

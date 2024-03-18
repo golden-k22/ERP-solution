@@ -116,4 +116,6 @@ urlpatterns = [
 
     url(r'^all-projects-list/$', views.AllProjectListView.as_view(), name='all_projects_list'),
     url(r'^ajax_all_projects/$', views.ajax_all_projects, name='ajax_all_projects'),
+    url(r'^ajax_do_items/$', views.ajax_do_items, name='ajax_do_items'),
+    url(r'^ajax_sr_items/$', views.ajax_sr_items, name='ajax_sr_items'),
 ]

@@ -1,0 +1,56 @@
+{% load static %}
+<div>
+
+        <div id="text_error_do_item" style="display: none;" class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+        </div>
+
+        <div class="mb-3 mt-3 row">
+            <label for="itemdescription{{item_cnt}}" class="col-md-4 col-form-label">Description:</label>
+            <div class="col-md-8">
+                <select class="form-control" id="itemdescription{{item_cnt}}" required>
+                    <option value="">Select Description..</option>
+                    {% for description in project_item_all %}
+                        <option value="{{description.description}}">{{description.description}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label for="itemqty{{item_cnt}}" class="col-md-4 col-form-label">QTY:</label>
+            <div class="col-md-8">
+                <input type="text" class="form-control" id="itemqty{{item_cnt}}"  name="itemqty" required>
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label for="itemuom{{item_cnt}}" class="col-md-4 col-form-label">UOM:</label>
+            <div class="col-md-8">
+                <input type="text" class="form-control" id="itemuom{{item_cnt}}"  name="itemuom" required readonly="true">
+                <input type="hidden" class="form-control" id="itemuom_id{{item_cnt}}"  name="itemuom_id" required readonly="true">
+            </div>
+        </div>
+
+        <div style="margin-top: 25px;background: #cccccc;height: 3px;"></div>
+</div>
+<script>
+    $(".select2").select2({width: '0%'});
+
+    $("#itemdescription"+{{item_cnt}}).on('change', function(e){
+        if ($("#itemdescription"+{{item_cnt}}).val() != ""){
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_get_pro_uom" %}',
+                data: {
+                    itemdescription: $("#itemdescription"+{{item_cnt}}).val(),
+                    quotationid: `{{quotation_id}}`
+                },
+                type: 'POST',
+                success: function (data) {
+                    up_data = JSON.parse(data);
+                    $("#itemuom"+{{item_cnt}}).val(up_data.uom);
+                    $("#itemuom_id"+{{item_cnt}}).val(up_data.uom_id);
+                    $("#itemqty"+{{item_cnt}}).val(up_data.item_qty);
+                }
+            });
+        }
+    });
+</script>

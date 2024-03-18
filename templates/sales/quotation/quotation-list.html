@@ -201,13 +201,13 @@
                     <div class="mb-3 row">
                         <label for="tel" class="col-md-4 col-form-label">Tel:</label>
                         <div class="col-md-8">
-                            <input class="form-control" type="text" id="tel" required>
+                            <input class="form-control" type="text" maxlength="8" pattern="\d{8}" id="tel" required>
                         </div>
                     </div>
                     <div class="mb-3 row">
                         <label for="fax" class="col-md-4 col-form-label">Fax:</label>
                         <div class="col-md-8">
-                            <input class="form-control" type="text" id="fax">
+                            <input class="form-control" type="text" maxlength="8" pattern="\d{8}" id="fax">
                         </div>
                     </div>
                     <div class="mb-3 row">
@@ -378,7 +378,7 @@
                     <div class="mb-3 row">
                         <label for="ctel" class="col-md-4 col-form-label">Tel:</label>
                         <div class="col-md-8">
-                            <input class="form-control" type="text" id="ctel" required>
+                            <input class="form-control" type="text" maxlength="8" pattern="\d{8}" id="ctel" required>
                         </div>
                     </div>
 
@@ -559,11 +559,11 @@
             });
         }
     });
-<!--    function deletequot(id, quot_id) {-->
-<!--        $("#del_id").val(quot_id);-->
-<!--        $("#del_description").html("Are you sure you want to delete this record "+'"'+quot_id+'"'+"?");-->
-<!--        $("#deleteModal").modal('show');-->
-<!--    }-->
+    function deletequot(id, quot_id) {
+        $("#del_id").val(quot_id);
+        $("#del_description").html("Are you sure you want to delete this record "+'"'+quot_id+'"'+"?");
+        $("#deleteModal").modal('show');
+    }
     ajax_all_quotation();
     
     function ajax_all_quotation() {

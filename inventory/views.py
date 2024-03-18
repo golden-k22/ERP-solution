@@ -310,7 +310,7 @@ def materialinventoryadd(request):
                 if request.FILES.get('picture') is not None:
                     materialinventory.photo = request.FILES.get('picture')
                 else:
-                    materialinventory.photo = ""
+                    print("Didn't update picture.")
                 materialinventory.save()
 
                 return JsonResponse({
@@ -502,7 +502,7 @@ def assetinventoryadd(request):
                 if request.FILES.get('picture') is not None:
                     assetinventory.photo = request.FILES.get('picture')
                 else:
-                    assetinventory.photo = ""
+                    print("Didn't update the picture.")
                 assetinventory.save()
 
                 return JsonResponse({

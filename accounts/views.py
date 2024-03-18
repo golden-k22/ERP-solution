@@ -1,3 +1,4 @@
+import base64
 import datetime
 import json
 import os
@@ -47,6 +48,7 @@ from project.models import Project, Sr, Do, Pc
 from sales.decorater import ajax_login_required, admin_required
 # Create your views here.
 from sales.models import ProductSalesDo
+from django.core.files.base import ContentFile
 
 
 class LoginView(FormView):
@@ -878,14 +880,20 @@ def getWorklog(request):
     if request.method == "POST":
         worklogid = request.POST.get('worklogid')
         worklog = WorkLog.objects.get(id=worklogid)
+        checkout_time=""
+        if worklog.checkout_time is not None:
+            checkout_time=worklog.checkout_time.strftime('%d %b, %Y %H:%M')
+        checkin_time=""
+        if worklog.checkin_time is not None:
+            checkin_time=worklog.checkin_time.strftime('%d %b, %Y %H:%M')
         data = {
             'emp_no': worklog.emp_no,
             'project_name': worklog.project_name,
             'project_code': worklog.projectcode,
-            'checkin_time': worklog.checkin_time.strftime('%d %b, %Y %H:%M'),
+            'checkin_time': checkin_time,
             'checkin_lat': worklog.checkin_lat,
             'checkin_lng': worklog.checkin_lng,
-            'checkout_time': worklog.checkout_time.strftime('%d %b, %Y %H:%M'),
+            'checkout_time': checkout_time,
             'checkout_lat': worklog.checkout_lat,
             'checkout_lng': worklog.checkout_lng,
             'shift': worklog.shift_type,
@@ -2510,6 +2518,32 @@ def updateUserSignature(request):
         try:
             usersignature = User.objects.get(id=userid)
             usersignature.signature = request.FILES.get('signature')
+            usersignature.save()
+
+            return JsonResponse({
+                "status": "Success",
+                "messages": "User Signature updated!"
+            })
+
+        except IntegrityError as e:
+            return JsonResponse({
+                "status": "Error",
+                "messages": "Error is existed!"
+            })
+
+@ajax_login_required
+def addUserWrittenSignature(request):
+    if request.method == "POST":
+        userid = request.POST.get('userid')
+        default_base64 = request.POST.get("default_base64")
+        format, imgstr = default_base64.split(';base64,')
+        ext = format.split('/')[-1]
+        signature_image = ContentFile(base64.b64decode(imgstr),
+                                      name='delivery-sign-' + datetime.date.today().strftime("%d-%m-%Y") + "." + ext)
+
+        try:
+            usersignature = User.objects.get(id=userid)
+            usersignature.signature = signature_image
             usersignature.save()
 
             return JsonResponse({

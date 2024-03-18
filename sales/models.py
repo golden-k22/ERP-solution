@@ -175,6 +175,7 @@ class Quotation(models.Model):
     discount = models.DecimalField(max_digits=20, decimal_places=2, default=0, null=True)
     margin = models.DecimalField(max_digits=20, decimal_places=2, default=0, null=True)
     totalgp = models.DecimalField(max_digits=20, decimal_places=2, default=0, null=True)
+    ref_quot= models.CharField(unique=True, max_length=100, blank=True, null=True)
     def __str__(self):
         return self.qtt_id
     class Meta:
@@ -243,9 +244,10 @@ class SaleReportComment(models.Model):
 
 
 class ParentSubject(models.Model):
-    subject = models.CharField(max_length=100, blank=True, null=True)
+    subject = models.CharField(max_length=256, blank=True, null=True)
     quotation = quotation = models.ForeignKey(Quotation, on_delete=models.SET_NULL, blank=True, null=True)
-
+    revision_sub_id=models.CharField(max_length=100, blank=True, null=True)
+    is_optional=models.BooleanField(null=True, blank=True)
     def __str__(self):
         return self.subject
 

@@ -200,13 +200,13 @@
                                             <div class="col-md-6">
                                                 <div class="mb-3">
                                                     <label class="form-label" for="tel">Tel</label>
-                                                    <input type="text" class="form-control" id="tel"  name="tel" value="{{maintenance.tel|default_if_none:''}}" required>
+                                                    <input type="text" class="form-control" maxlength="8" pattern="\d{8}" id="tel"  name="tel" value="{{maintenance.tel|default_if_none:''}}" required>
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="mb-3">
                                                     <label class="form-label" for="fax">Fax</label>
-                                                    <input type="text" class="form-control" id="fax" name="fax" value="{{maintenance.fax|default_if_none:''}}">
+                                                    <input type="text" class="form-control" maxlength="8" pattern="\d{8}" id="fax" name="fax" value="{{maintenance.fax|default_if_none:''}}">
                                                 </div>
                                             </div>
                                         </div>
@@ -220,7 +220,7 @@
                                             <div class="col-md-6">
                                                 <div class="mb-3">
                                                     <label class="form-label" for="site_tel">Site Tel</label>
-                                                    <input type="text" class="form-control" id="site_tel" name="site_tel" value="{{maintenance.site_tel|default_if_none:maintenance.tel|default_if_none:''}}" required>
+                                                    <input type="text" class="form-control" maxlength="8" pattern="\d{8}" id="site_tel" name="site_tel" value="{{maintenance.site_tel|default_if_none:maintenance.tel|default_if_none:''}}" required>
                                                 </div>
                                             </div>
                                         </div>

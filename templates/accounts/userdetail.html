@@ -4,6 +4,16 @@
 {% block page-title %}User{% endblock%}
 {% block css %}
 <style>
+
+    #user_signature {
+		border: 2px dotted black;
+		background-color:lightgrey;
+	}
+    #signatureparent {
+		color:darkblue;
+		background-color:darkgrey;
+		padding:5px;
+	}
     .generate-pass {
         margin: auto;
         padding: 3px;
@@ -322,8 +332,17 @@
                             <div class="row p-3">
                                 <h5 class="fst-italic text-primary" style="text-decoration: underline!important;"><b>User Signature</b></h5>
                                 <hr class="my-auto flex-grow-1 mt-1 mb-1" style="height:2px;">
-                                <div class="pt-2">
+                                <div class="pt-2 col-md-1">
                                     <a href="javascript:void(0);" id="signaturechange" class="align-middle btn-sm btn-primary">Change</a>
+                                </div>
+                                <div class="pt-2 col-md-1">
+                                    <a href="javascript:void(0);" id="user_sign_add" class="align-middle btn-lg btn-outline-primary"><i class="fas fa-pencil-alt mr-2"></i></a>
+
+<!--                                    {% if current_user.signature  %}-->
+<!--                                    <a href="javascript:void(0);" id="user_sign_update" class="align-middle btn-lg btn-outline-primary"><i class="fas fa-pencil-alt mr-2"></i></a>-->
+<!--                                    {% else %}-->
+<!--                                    <a href="javascript:void(0);" id="user_sign_add" class="align-middle btn-lg btn-outline-primary"><i class="fas fa-pencil-alt mr-2"></i></a>-->
+<!--                                    {% endif %}-->
                                 </div>
                                 <div class="pt-3">
                                     {% if current_user.signature %}
@@ -333,6 +352,7 @@
                                                                 class="img-thumbnail" style="border: 1px solid rgba(0,0,0,.37);"> {% endcomment %}
                                     {% endif %}
                                 </div>
+
                             </div>
                         </div>
                         <div class="tab-pane p-3" id="usercertificate" role="tabpanel">
@@ -495,6 +515,38 @@
     </div>
 </div>
 
+<div id="usersignmodal" class="modal fade" role="dialog" aria-labelledby="usersignModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_user_signature">Add New User Signature</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_user_sign">
+                <form class="needs-validation p-3" id="UserSignForm">
+                    {% csrf_token %}
+
+                    <div id="text_error_user_sign" class="alert alert-danger alert-dismissible fade show mb-0" style="display: none;" role="alert">
+                    </div>
+                    <div id="signatureparent">
+                        <div id="user_signature"></div>
+                    </div>
+                    <div class="pt-3">
+                        <button type="button" class="btn btn-outline-dark waves-effect btn-sm" id="signreset">Reset</button>
+                    </div>
+
+                </form>
+                <input type="hidden" id="user_sign_id" value="-1" />
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_user_sign_add">Add</button>
+
+            </div>
+        </div>
+    </div>
+</div>
 
 <!--Change User Signature modal content -->
 <div id="signaturemodal" class="modal fade" role="dialog" aria-labelledby="signatureModalLabel" aria-hidden="true">
@@ -1359,5 +1411,73 @@
         });
         $('#tooldeleteModal').modal('hide');
     });
+
+    var $sigdiv = $("#user_signature").jSignature({'UndoButton':true, height: 150, width: 720, 'decor-color': 'transparent'});
+    $("#signreset").on('click', function(e){
+        $sigdiv.jSignature('reset');
+    });
+
+    $("#user_sign_add").on('click', function(e){
+        $("#user_sign_id").val('-1');
+        $("#head_title_user_signature").html('Add New User Signature');
+        $(".btn_user_sign_add").html('Add');
+        $sigdiv.jSignature('reset');
+        $("#usersignmodal").modal('show');
+    });
+
+    $(".btn_user_sign_add").on('click', function(e){
+        var signature = $sigdiv.jSignature('getData', 'native');
+        $('#UserSignForm').parsley().validate();
+        if ($('#UserSignForm').parsley().validate() === false) {
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+        }
+        else {
+            if( signature.length == 0) {
+                alert('Please Enter Signature..');
+            } else {
+                $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_user_written_signature" %}',
+                data: {
+                    userid:`{{selected_user}}`,
+                    default_base64: $sigdiv.jSignature('getData', 'default')
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_user_sign").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_user_sign").html(data.messages);
+                        $("#text_error_user_sign").show();
+                    }
+                }
+            });
+            }
+
+        }
+
+    });
+
+
+    $(".user_sign_update").on('click', function(e){
+        $("#head_title_user_signature").html('Update User Signature');
+        $(".btn_user_sign_add").html('Update');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_delivery_sign" %}',
+            data: {
+                userid:`{{selected_user}}`
+            },
+            type: 'POST',
+            success: function (data) {
+            }
+        });
+        $("#usersignmodal").modal('show');
+
+    });
+
 </script>
 {% endblock %}

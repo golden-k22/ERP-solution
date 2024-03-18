@@ -94,6 +94,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'activity_log.middleware.ActivityLogMiddleware',
+
+    'erpSolution.SessionMiddleware.SessionMiddleware'
 ]
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
@@ -153,3 +155,7 @@ TEMPLATES = [
         },
     },
 ]
+
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False     # opional, as this will log you out when browser is closed
+SESSION_COOKIE_AGE = 1800                   # 0r 30 * 60, same thing
+SESSION_SAVE_EVERY_REQUEST = True          # Will prevent from logging you out after 300 seconds

@@ -11,15 +11,17 @@
         <div class="mt-1 col-md-7">
         </div>
         <div class="mt-1 col-md-1">
+            {% if not is_optional %}
             <a href="javascript:void(0);" onclick="updatesubject('{{sub_id}}')" class="btn btn-outline-primary btn-sm edit" title="Edit">
                 <i class="fas fa-pencil-alt"></i>
             </a>
+            {% endif %}
             <a href="javascript:void(0);" onclick="deletesubject('{{sub_id}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
                 <i class="far fa-trash-alt"></i>
             </a>
         </div>
     </div>
-<!--    <input type="hidden" id="subjectid" value={{sub_id}} />-->
+<!--    <input type="hidden" id="optional_subject" value={{is_optional}} />-->
     <table id="scopedatatable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
 
         {% if scope_list %}
@@ -85,7 +87,9 @@
     </table>
 </div>
 <script>
-
+     if ('{{is_optional}}'==='true'){
+            $("#poptionaladd").hide();
+        }
     $("#scopeadd"+{{sub_id}}).on('click', function(e) {
         $("#scopeFormContent").empty();
         $('#multicnt').val(1);
@@ -99,6 +103,11 @@
 <!--        $("#description").val('');-->
         $("#scopeid").val('-1');
         $("#subject_id").val({{sub_id}});
+        let optional='{{is_optional}}';
+        if (optional==='true'){
+            $("#is_optional").val(1);
+        }
+
         $("#scopemodal").modal('show')
     });
 

@@ -6,6 +6,7 @@
                 <th>Sales ID</th>
                 <th>Customer</th>
                 <th>Subject</th>
+                <th>Status</th>
                 <th>Action</th>
             </tr>
         </thead>
@@ -15,6 +16,7 @@
                 <td class="align-middle">{{sale.prod_sale_id|default_if_none:""}}</td>
                 <td class="align-middle">{{sale.company_nameid|default_if_none:""}}</td>
                 <td class="align-middle">{{sale.RE|default_if_none:""|truncatechars:51}}</td>
+                <td class="align-middle">{{sale.sales_status|default_if_none:""}}</td>
                 <td class="align-middle">
 <!--                    {% if project.proj_status != "Old Record" %}-->
                     <a href="{% url 'sales_summary_detail' sale.id %}" class="btn btn-outline-secondary btn-sm salesdetail" title="View">

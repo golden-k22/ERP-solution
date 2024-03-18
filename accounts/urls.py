@@ -40,6 +40,7 @@ urlpatterns = [
     url(r'^ajax_add_issuetool/$', views.userissuetooladd, name='ajax_add_issuetool'),
     url(r'^ajax_add_issue_ppe/$', views.userissueppeadd, name='ajax_add_issue_ppe'),
     url(r'^ajax_update_user_signature/$', views.updateUserSignature, name='ajax_update_user_signature'),
+    url(r'^ajax_add_user_written_signature/$', views.addUserWrittenSignature, name='ajax_add_user_written_signature'),
 
     url(r'^ajax-add-role/$', views.ajaxaddRole, name='ajax_add_role'),
     url(r'^ajax_add_user/$', views.newUser, name='ajax_add_user'),

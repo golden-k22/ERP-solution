@@ -189,13 +189,13 @@
                     <div class="mb-3 row">
                         <label for="mobile" class="col-md-4 col-form-label">Mobile:</label>
                         <div class="col-md-8">
-                            <input class="form-control" type="text" maxlength="8" pattern="\d{8}" id="mobile">
+                            <input class="form-control" type="text" pattern="\d*" id="mobile">
                         </div>
                     </div>
                     <div class="mb-3 row">
                         <label for="fax" class="col-md-4 col-form-label">Fax:</label>
                         <div class="col-md-8">
-                            <input class="form-control" type="text" id="fax">
+                            <input class="form-control" type="text"  maxlength="8" pattern="\d{8}" id="fax">
                         </div>
                     </div>
                     <div class="mb-3 row">
@@ -464,6 +464,8 @@
                 $('#salutation').trigger('change');
                 $("#tel").val(up_data.tel);
                 $("#fax").val(up_data.fax);
+                $("#did").val(up_data.did);
+                $("#mobile").val(up_data.mobile);
                 $("#email").val(up_data.email);
                 $("#role").val(up_data.role);
                 $('#role').trigger('change');

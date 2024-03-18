@@ -150,8 +150,11 @@
                                     <li><a href="{% url 'all_company' %}">Company</a></li>
                                     <li><a href="{% url 'all_contact' %}">Contact</a></li>
                                     {% endif %}
-                                    {% if request.user.role == "Managers" or request.user.role == "Sales" or request.user.privilege.quotation == "Full Access" %}
+                                    {% if request.user.role == "Managers" or request.user.role == "Sales" or request.user.privilege.sales_summary == "Full Access" %}
                                     <li class=' {% if "quotation-detail" in request.path %}mm-active{% else %}{% endif %}'><a href="{% url 'all_quotation' %}">Quotation</a></li>
+                                    {% endif %}
+
+                                    {% if request.user.role == "Managers" or request.user.role == "Sales" or request.user.privilege.sales_report == "Full Access" %}
 <!--                                    <li class=' {% if "report-detail" in request.path %}mm-active{% else %}{% endif %}'><a href="{% url 'all_reports' %}">Sales Report</a></li>-->
                                     <li><a href="{% url 'all_reports' %}">Sales Report</a></li>
                                     <li><a href="{% url 'sales_item_list' %}">Sales Item List</a></li>

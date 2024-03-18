@@ -761,51 +761,67 @@ class ProjectDetailView(DetailView):
         if PcDetail.objects.filter(project_id=content_pk).exists():
             context['pc_detail'] = PcDetail.objects.get(project_id=content_pk)
         quotation = summary.quotation
-        projectitems = Scope.objects.filter(quotation_id=quotation.id, parent=None)
-        subtotal = 0
-        for obj in projectitems:
-            obj.childs = Scope.objects.filter(quotation_id=quotation.id, parent_id=obj.id)
-            obj.cumulativeqty = \
-                SiteProgress.objects.filter(project_id=content_pk, description__iexact=obj.description).aggregate(
-                    Sum('qty'))['qty__sum']
+        projectitems = Scope.objects.filter(quotation_id=quotation.id, parent=None, subject__is_optional=None)
 
-            # if obj.allocation_perc and obj.cumulativeqty:
-            #     obj.cumulativeperc = float(obj.cumulativeqty / obj.qty) * float(obj.allocation_perc)
-            # else:
-            #     obj.cumulativeperc = 0
-            # obj.cumulativeqty = 0
-            obj.cumulativeperc = 0
-            if obj.childs.count() != 0:
-                tempObjperc = float(obj.allocation_perc) / obj.childs.count()
-            for subobj in obj.childs:
-                subobj.cumulativeqty = \
-                    SiteProgress.objects.filter(project_id=content_pk,
-                                                description__iexact=subobj.description).aggregate(
-                        Sum('qty'))['qty__sum']
 
-                if subobj.allocation_perc and subobj.cumulativeqty:
-                    subobj.cumulativeperc = float(subobj.cumulativeqty / subobj.qty) * float(subobj.allocation_perc)
+        if Scope.objects.filter(quotation_id=quotation.id, parent=None, subject__is_optional=None).exists():
+            subtotal = Scope.objects.filter(quotation_id=quotation.id, parent=None, subject__is_optional=None).aggregate(Sum('amount'))[
+                'amount__sum']
+            total_gp = 0.0
+            total_cost = 0.0
+            for scope in projectitems:
+                total_gp += float(scope.gp)
+                total_cost += float(scope.cost)
+                if subtotal == 0:
+                    scope.allocation_perc = 0
                 else:
-                    subobj.cumulativeperc = 0
-                obj.cumulativeperc += tempObjperc * subobj.cumulativeperc / 100
-
-            subtotal += obj.cumulativeperc
+                    scope.allocation_perc = 100 * scope.amount / subtotal
+                scope.save()
+            gst = (float(subtotal) - float(quotation.discount)) * 0.09
+            context['subtotal'] = subtotal
+            context['gst'] = gst
+            final_total = float(subtotal) - float(quotation.discount) + gst
+            context['final_total'] = final_total
+            quotation.total = subtotal
+            quotation.gst = gst
+            quotation.finaltotal = final_total
+            if total_cost == 0:
+                margin = 0
+            else:
+                margin = (float(quotation.total) - total_cost - float(quotation.discount)) * 100 / (
+                        float(quotation.total) - float(quotation.discount))
+            quotation.totalgp = total_gp
+            quotation.margin = margin
+            # quotation.save()
 
         # subtotal = 0
-        # for allobj in Scope.objects.filter(quotation_id=quotation.id):
-        #     allobj.cumulativeqty = \
-        #         SiteProgress.objects.filter(project_id=content_pk, description__iexact=allobj.description).aggregate(
+        # for obj in projectitems:
+        #     obj.childs = Scope.objects.filter(quotation_id=quotation.id, parent_id=obj.id)
+        #     obj.cumulativeqty = \
+        #         SiteProgress.objects.filter(project_id=content_pk, description__iexact=obj.description).aggregate(
         #             Sum('qty'))['qty__sum']
-        #     if allobj.allocation_perc and allobj.cumulativeqty:
-        #         allobj.cumulativeperc = float(allobj.cumulativeqty / allobj.qty) * float(allobj.allocation_perc)
-        #     else:
-        #         allobj.cumulativeperc = 0
-        #     subtotal = subtotal + allobj.cumulativeperc
+        #
+        #     obj.cumulativeperc = 0
+        #     if obj.childs.count() != 0:
+        #         tempObjperc = float(obj.allocation_perc) / obj.childs.count()
+        #     for subobj in obj.childs:
+        #         subobj.cumulativeqty = \
+        #             SiteProgress.objects.filter(project_id=content_pk,
+        #                                         description__iexact=subobj.description).aggregate(
+        #                 Sum('qty'))['qty__sum']
+        #
+        #         if subobj.allocation_perc and subobj.cumulativeqty:
+        #             subobj.cumulativeperc = float(subobj.cumulativeqty / subobj.qty) * float(subobj.allocation_perc)
+        #         else:
+        #             subobj.cumulativeperc = 0
+        #         obj.cumulativeperc += tempObjperc * subobj.cumulativeperc / 100
+        #
+        #     subtotal += obj.cumulativeperc
+
 
         context['projectitems'] = projectitems
         context['projectitemall'] = Scope.objects.filter(quotation_id=quotation.id)
         context['quotation_pk'] = quotation.id
-        context['subtotal'] = subtotal
         site_progress = SiteProgress.objects.filter(project_id=content_pk)
         context['site_progress'] = site_progress
         projectitemactivitys = Scope.objects.filter(quotation_id=quotation.id)
@@ -893,6 +909,11 @@ def ajax_all_mandays(request):
             temp_emp_no = ""
             temp_checkin = ""
         for q in query_ots:
+
+            q.firsthr = 0
+            q.meal_allowance = 0
+            q.secondhr = 0
+            q.ph = holiday_cnt
             if q.checkout_time is not None and q.checkin_time is not None:
                 modetime = datetime.timedelta(hours=17)
 
@@ -908,10 +929,6 @@ def ajax_all_mandays(request):
 
                 check_weekday = q.checkin_time.weekday()
 
-                q.firsthr = 0
-                q.meal_allowance = 0
-                q.secondhr = 0
-                q.ph = holiday_cnt
 
                 # For Sunday
                 if check_weekday == 6:
@@ -1097,8 +1114,8 @@ def UpdateSummary(request):
         qtt_id = request.POST.get('qtt_id')
         start_date = request.POST.get('start_date')
         end_date = request.POST.get('end_date')
-        # latitude = request.POST.get('latitude')
-        # longitude = request.POST.get('longitude')
+        latitude = request.POST.get('latitude')
+        longitude = request.POST.get('longitude')
         proj_status = request.POST.get('proj_status')
         variation_order = request.POST.get('variation_order')
         note = request.POST.get('note')
@@ -1110,18 +1127,21 @@ def UpdateSummary(request):
             'getAddrDetails': 'Y',
             'pageNum': '1'
         }
-
+        print(latitude)
+        print(longitude)
         # get long and lat data using postal code
-        mapinfo = requests.get('https://developers.onemap.sg/commonapi/search',
-                               headers={"content-type": "application/json"}, params=payload)
-        lat_lon_data = mapinfo.json()["results"]
-        # lat_lon_data=[]
-        if (len(lat_lon_data) != 0):
-            latitude = lat_lon_data[0]["LATITUDE"]
-            longitude = lat_lon_data[0]["LONGITUDE"]
-        else:
-            latitude = ""
-            longitude = ""
+        # mapinfo = requests.get('https://developers.onemap.sg/commonapi/search',
+        try:
+            mapinfo = requests.get('https://www.onemap.gov.sg/api/common/elastic/search',
+                                   headers={"content-type": "application/json"}, params=payload)
+            lat_lon_data = mapinfo.json()["results"]
+            # lat_lon_data=[]
+            if (len(lat_lon_data) != 0):
+                latitude = lat_lon_data[0]["LATITUDE"]
+                longitude = lat_lon_data[0]["LONGITUDE"]
+        except OSError as e:
+            print(e)
+
         try:
             summary = Project.objects.get(id=summaryid)
             prev_status=summary.proj_status
@@ -2594,129 +2614,133 @@ def deleteDOItem(request):
 @ajax_login_required
 def srItemAdd(request):
     if request.method == "POST":
-        description = request.POST.get('description')
-        qty = request.POST.get('qty')
-        uom = request.POST.get('uom')
-        sritemid = request.POST.get('sritemid')
         projectid = request.POST.get('projectid')
+        items = json.loads(request.POST.get('items'))
         srid = request.POST.get('srid')
+        for item in items:
+            description = item.get('description')
+            qty = item.get('qty')
+            uom = item.get('uom')
+            sritemid = item.get('sritemid')
+            if sritemid == "-1":
+                try:
+                    SrItem.objects.create(
+                        description=description,
+                        qty=qty,
+                        uom_id=uom,
+                        project_id=projectid,
+                        sr_id=srid
+                    )
+                except IntegrityError as e:
+                    return JsonResponse({
+                        "status": "Error",
+                        "messages": "Already SR Item is existed!"
+                    })
+            else:
+                try:
+                    sritem = SrItem.objects.get(id=sritemid)
+                    sritem.description = description
+                    sritem.qty = qty
+                    sritem.uom_id = uom
+                    sritem.project_id = projectid
+                    sritem.sr_id = srid
+                    sritem.save()
 
-        if sritemid == "-1":
-            try:
-                SrItem.objects.create(
-                    description=description,
-                    qty=qty,
-                    uom_id=uom,
-                    project_id=projectid,
-                    sr_id=srid
-                )
-                return JsonResponse({
-                    "status": "Success",
-                    "messages": "Service Report Item information added!"
-                })
-            except IntegrityError as e:
-                return JsonResponse({
-                    "status": "Error",
-                    "messages": "Already SR Item is existed!"
-                })
-        else:
-            try:
-                sritem = SrItem.objects.get(id=sritemid)
-                sritem.description = description
-                sritem.qty = qty
-                sritem.uom_id = uom
-                sritem.project_id = projectid
-                sritem.sr_id = srid
-                sritem.save()
+                    return JsonResponse({
+                        "status": "Success",
+                        "messages": "Service Report Item information updated!"
+                    })
 
-                return JsonResponse({
-                    "status": "Success",
-                    "messages": "Service Report Item information updated!"
-                })
+                except IntegrityError as e:
+                    return JsonResponse({
+                        "status": "Error",
+                        "messages": "Already SR Item is existed!"
+                    })
 
-            except IntegrityError as e:
-                return JsonResponse({
-                    "status": "Error",
-                    "messages": "Already SR Item is existed!"
-                })
-
+        return JsonResponse({
+            "status": "Success",
+            "messages": "Service Report Item information added!"
+        })
 
 @ajax_login_required
 def doItemAdd(request):
     if request.method == "POST":
-        description = request.POST.get('description')
-        qty = request.POST.get('qty')
-        uom = request.POST.get('uom')
-        doitemid = request.POST.get('doitemid')
         projectid = request.POST.get('projectid')
         doid = request.POST.get('doid')
+        items = json.loads(request.POST.get('items'))
+        for item in items:
+            description = item.get('description')
+            qty = item.get('qty')
+            uom = item.get('uom')
+            doitemid = item.get('doitemid')
 
-        if doitemid == "-1":
-            try:
-                DoItem.objects.create(
-                    description=description,
-                    qty=qty,
-                    uom_id=uom,
-                    project_id=projectid,
-                    do_id=doid
-                )
-                quotationid = Project.objects.get(id=projectid).quotation_id
-                scope = Scope.objects.get(quotation_id=quotationid, description__iexact=description)
-                do_items = DoItem.objects.filter(project_id=projectid, description__iexact=description).aggregate(
-                    Sum('qty'))
-                scope.bal_qty = int(scope.qty) - int(do_items['qty__sum'])
-                scope.save()
-                return JsonResponse({
-                    "status": "Success",
-                    "messages": "Delivery Order Item information added!"
-                })
-            except IntegrityError as e:
-                return JsonResponse({
-                    "status": "Error",
-                    "messages": "Already DO Item is existed!"
-                })
-        else:
-            try:
+            if doitemid == "-1":
+                try:
+                    DoItem.objects.create(
+                        description=description,
+                        qty=qty,
+                        uom_id=uom,
+                        project_id=projectid,
+                        do_id=doid
+                    )
+                    quotationid = Project.objects.get(id=projectid).quotation_id
+                    scope = Scope.objects.get(quotation_id=quotationid, description__iexact=description)
+                    do_items = DoItem.objects.filter(project_id=projectid, description__iexact=description).aggregate(
+                        Sum('qty'))
+                    scope.bal_qty = int(scope.qty) - int(do_items['qty__sum'])
+                    scope.save()
+                except IntegrityError as e:
+                    return JsonResponse({
+                        "status": "Error",
+                        "messages": "Already DO Item is existed!"
+                    })
+            else:
+                try:
 
-                doitem = DoItem.objects.get(id=doitemid)
-                doitem.description = description
-                doitem.qty = qty
-                doitem.uom_id = uom
-                doitem.project_id = projectid
-                doitem.do_id = doid
-                doitem.save()
+                    doitem = DoItem.objects.get(id=doitemid)
+                    doitem.description = description
+                    doitem.qty = qty
+                    doitem.uom_id = uom
+                    doitem.project_id = projectid
+                    doitem.do_id = doid
+                    doitem.save()
 
-                quotationid = Project.objects.get(id=projectid).quotation_id
-                scope = Scope.objects.get(quotation_id=quotationid, description__iexact=description)
-                do_items = DoItem.objects.filter(project_id=projectid, description__iexact=description).aggregate(
-                    Sum('qty'))
-                scope.bal_qty = int(scope.qty) - int(do_items['qty__sum'])
-                scope.save()
+                    quotationid = Project.objects.get(id=projectid).quotation_id
+                    scope = Scope.objects.get(quotation_id=quotationid, description__iexact=description)
+                    do_items = DoItem.objects.filter(project_id=projectid, description__iexact=description).aggregate(
+                        Sum('qty'))
+                    scope.bal_qty = int(scope.qty) - int(do_items['qty__sum'])
+                    scope.save()
 
-                return JsonResponse({
-                    "status": "Success",
-                    "messages": "Delivery Order Item information updated!"
-                })
+                    return JsonResponse({
+                        "status": "Success",
+                        "messages": "Delivery Order Item information updated!"
+                    })
 
-            except IntegrityError as e:
-                return JsonResponse({
-                    "status": "Error",
-                    "messages": "Already DO Item is existed!"
-                })
+                except IntegrityError as e:
+                    return JsonResponse({
+                        "status": "Error",
+                        "messages": "Already DO Item is existed!"
+                    })
 
 
+        return JsonResponse({
+            "status": "Success",
+            "messages": "Delivery Order Item information added!"
+        })
 @ajax_login_required
 def getDoItem(request):
     if request.method == "POST":
         doitemid = request.POST.get('doitemid')
         doitem = DoItem.objects.get(id=doitemid)
+
         data = {
             'description': doitem.description,
             'qty': doitem.qty,
-            'uom': doitem.uom_id,
+            'uom': doitem.uom.name,
+            'uom_id': doitem.uom_id,
         }
         return JsonResponse(json.dumps(data), safe=False)
-
 
 @ajax_login_required
 def getSrItem(request):
@@ -2726,7 +2750,8 @@ def getSrItem(request):
         data = {
             'description': sritem.description,
             'qty': sritem.qty,
-            'uom': sritem.uom_id,
+            'uom': sritem.uom.name,
+            'uom_id': sritem.uom_id,
         }
         return JsonResponse(json.dumps(data), safe=False)
 
@@ -3412,7 +3437,7 @@ def exportDoPDF(request, value):
     ]
     buff = BytesIO()
     doc = SimpleDocTemplate(buff, pagesize=portrait(A4), rightMargin=0.25 * inch, leftMargin=0.45 * inch,
-                            topMargin=3.2 * inch, bottomMargin=3.1 * inch, title=pdfname)
+                            topMargin=3.5 * inch, bottomMargin=3.1 * inch, title=pdfname)
 
     if doitems.exists():
         index = 1
@@ -3571,7 +3596,7 @@ def header(canvas, doc, do, value, domain):
     canvas.drawString(LEFT_X_1, canvas.PAGE_HEIGHT - TOP_MARGIN - 3 * LINE_SPACE, "Ship To:  ")
     canvas.drawString(LEFT_X_1, canvas.PAGE_HEIGHT - TOP_MARGIN - 5 * LINE_SPACE, "Attn:  ")
     canvas.drawString(LEFT_X_3, canvas.PAGE_HEIGHT - TOP_MARGIN - 5 * LINE_SPACE, "Tel:  ")
-    canvas.drawString(LEFT_X_1, canvas.PAGE_HEIGHT - TOP_MARGIN - 6 * LINE_SPACE, "Subject: ")
+    canvas.drawString(LEFT_X_1, canvas.PAGE_HEIGHT - TOP_MARGIN - 7 * LINE_SPACE, "Subject: ")
     # canvas.drawString(LEFT_X_1, canvas.PAGE_HEIGHT - TOP_MARGIN - 7 * LINE_SPACE, "Remarks: ")
 
     canvas.setFont("Helvetica", 10)
@@ -3584,11 +3609,11 @@ def header(canvas, doc, do, value, domain):
     canvas.drawText(shiptoobject)
     canvas.drawString(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN - 5 * LINE_SPACE, "%s" % (project.contact_person.salutation + " " + project.contact_person.contact_person))
     canvas.drawString(LEFT_X_4, canvas.PAGE_HEIGHT - TOP_MARGIN - 5 * LINE_SPACE, "%s" % (project.tel))
-    canvas.drawString(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN - 6 * LINE_SPACE, "%s" % (project.RE))
-    # remarksobject = canvas.beginText(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN - 7 * LINE_SPACE)
-    # for line in remarks.splitlines(False):
-    #     remarksobject.textLine(line.rstrip())
-    # canvas.drawText(remarksobject)
+    # canvas.drawString(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN - 6 * LINE_SPACE, "%s" % (project.RE))
+    subjectobject = canvas.beginText(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN - 7 * LINE_SPACE)
+    for line in project.RE.splitlines(False):
+        subjectobject.textLine(line.rstrip())
+    canvas.drawText(subjectobject)
 
     dosignature = DOSignature.objects.filter(do_id=value)
     if dosignature.exists():
@@ -4145,3 +4170,24 @@ def ajax_all_projects(request):
 
 
         return render(request, 'projects/ajax-all-projects.html', {'projects': data_list})
+
+
+
+@ajax_login_required
+def ajax_do_items(request):
+    if request.method == "POST":
+        item_cnt = request.POST.get('item_cnt')
+        quotation_id = request.POST.get('quotation_id')
+        project_item_all = Scope.objects.filter(quotation_id=quotation_id, parent_id__isnull=True)
+        return render(request, 'projects/ajax-do-items.html',
+                      {'project_item_all': project_item_all, 'item_cnt': item_cnt, 'quotation_id':quotation_id})
+
+
+@ajax_login_required
+def ajax_sr_items(request):
+    if request.method == "POST":
+        item_cnt = request.POST.get('item_cnt')
+        quotation_id = request.POST.get('quotation_id')
+        project_item_all = Scope.objects.filter(quotation_id=quotation_id, parent_id__isnull=True)
+        return render(request, 'projects/ajax-sr-items.html',
+                      {'project_item_all': project_item_all, 'item_cnt': item_cnt, 'quotation_id':quotation_id})

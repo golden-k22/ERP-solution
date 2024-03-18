@@ -90,8 +90,8 @@ class ExpenseAdminClaimDetailView(DetailView):
             gst_sum = 0
             for gstrow in expensesclaim_details:
                 if gstrow.gst:
-                    gst_sum += float('{0:.2f}'.format(gstrow.amount * 0.08))
-                    gstrow.gstamount = '{0:.2f}'.format(gstrow.amount * 0.08)
+                    gst_sum += float('{0:.2f}'.format(gstrow.amount * 0.09))
+                    gstrow.gstamount = '{0:.2f}'.format(gstrow.amount * 0.09)
             context['subtotal'] = subtotal
             context['gst'] = gst_sum
             context['total_detail'] = subtotal + gst_sum
@@ -204,7 +204,7 @@ def expenseClaimItemdelete(request):
             gst_sum = 0
             for gstrow in ExpensesClaimDetail.objects.filter(id=expensesitem.expensesclaim_id):
                 if gstrow.gst:
-                    gst_sum += gstrow.amount * 0.08
+                    gst_sum += gstrow.amount * 0.09
             if ExpensesClaim.objects.filter(id=expensesitem.expensesclaim_id):
                 expense_amount = ExpensesClaim.objects.get(id=expensesitem.expensesclaim_id)
                 expense_amount.total = subtotal + gst_sum
@@ -268,8 +268,8 @@ class ExpenseClaimDetailView(DetailView):
             gst_sum = 0
             for gstrow in expensesclaim_details:
                 if gstrow.gst:
-                    gst_sum += gstrow.amount * 0.08
-                    gstrow.gstamount = '{0:.2f}'.format(gstrow.amount * 0.08)
+                    gst_sum += gstrow.amount * 0.09
+                    gstrow.gstamount = '{0:.2f}'.format(gstrow.amount * 0.09)
             
             context['subtotal'] = subtotal
             context['gst'] = gst_sum
@@ -379,8 +379,8 @@ def expensesclaimdetailsadd(request):
                     gst_sum = 0
                     for gstrow in ExpensesClaimDetail.objects.filter(expensesclaim_id=expenseid):
                         if gstrow.gst:
-                            gst_sum += gstrow.amount * 0.08
-                            gstrow.gstval = gstrow.amount * 0.08
+                            gst_sum += gstrow.amount * 0.09
+                            gstrow.gstval = gstrow.amount * 0.09
                     
                     if ExpensesClaim.objects.filter(id=expenseid):
                         expense_amount = ExpensesClaim.objects.get(id=expenseid)
@@ -410,7 +410,7 @@ def expensesclaimdetailsadd(request):
                 
                 if ExpensesClaimDetail.objects.filter(expensesclaim_id=expenseid).exists():
                     subtotal = ExpensesClaimDetail.objects.filter(expensesclaim_id=expenseid).aggregate(Sum('amount'))['amount__sum']
-                    gst = subtotal * 0.08
+                    gst = subtotal * 0.09
                     
                     if ExpensesClaim.objects.filter(id=expenseid):
                         expense_amount = ExpensesClaim.objects.get(id=expenseid)
@@ -470,7 +470,7 @@ def exportClaimPDF(request, value):
          Paragraph('''<para align=center><font size=10><b>Project No</b></font></para>'''),
          Paragraph('''<para align=center><font size=10><b>Vendor</b></font></para>'''),
          Paragraph('''<para align=center><font size=10><b>Description</b></font></para>'''),
-         Paragraph('''<para align=center><font size=10><b>GST 8%</b></font></para>'''),
+         Paragraph('''<para align=center><font size=10><b>GST 9%</b></font></para>'''),
          Paragraph('''<para align=center><font size=10><b>Amount (w/o GST)</b></font></para>'''),
          Paragraph('''<para align=center><font size=10><b>Sub Total</b></font></para>'''),
          Paragraph('''<para align=center><font size=10><b>Remark</b></font></para>''')]
@@ -508,8 +508,8 @@ def exportClaimPDF(request, value):
             temp_data.append(Paragraph(ecmitem.vendor, styleSheet["BodyText"]))
             temp_data.append(ecmdes)
             if ecmitem.gst:
-                gstval = '{0:.2f}'.format(ecmitem.amount * 0.08)
-                total_gst += ecmitem.amount * 0.08
+                gstval = '{0:.2f}'.format(ecmitem.amount * 0.09)
+                total_gst += ecmitem.amount * 0.09
                 total_amount += ecmitem.amount
                 total_subtotal += ecmitem.amount * 1.08
                 subtotal = '{0:.2f}'.format(ecmitem.amount * 1.08)

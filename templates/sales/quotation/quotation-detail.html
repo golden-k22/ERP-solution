@@ -266,8 +266,14 @@
                                         <div class="mt-3 mb-3 row">
                                             <div class="col-md-6">
                                                 <label for="quo_validity" class="form-label">Quotation Validity (Days): </label>
-                                                <input type="text" class="form-control" id="quo_validity" style="height:38px;" name="quo_validity" value="{{quotation.company_nameid.validity|default_if_none:''}}" readonly />
+<!--                                                <input type="text" class="form-control" id="quo_validity" style="height:38px;" name="quo_validity" value="{{quotation.company_nameid.validity|default_if_none:''}}" readonly />-->
 
+                                                <select class="form-control select2" id="quo_validity" name="quo_validity" required>
+                                                    <option value="">Select the Validity</option>
+                                                    {% for validity in validities %}
+                                                        <option value="{{validity.method}}" {% if validity.method == quotation.validity %}selected{% endif %}>{{validity.description}}</option>
+                                                    {% endfor %}
+                                                </select>
                                             </div>
                                             <div class="col-md-6">
                                                 <label for="quo_terms" class="form-label">Payment Terms (Days):</label>
@@ -433,6 +439,7 @@
                                     {% if quotation.flag %}
                                     {% if quotation.qtt_status == "Open" %}
                                     <button type="button" id="psubjectadd" class="btn btn-primary btn-sm"><i class="mdi mdi-content-save-move"></i> Add Subject</button>
+                                    <button type="button" id="poptionaladd" class="btn btn-success btn-sm"><i class="mdi mdi-content-save-move"></i> Add Optional</button>
                                     {% endif %}
                                     {% endif %}
                                     <button type="button" id="pdiscountadd" class="btn btn-primary btn-sm"><i class="mdi mdi-content-save-move"></i> Add Discount</button>
@@ -499,7 +506,6 @@
                                         <td width="8%" class="align-middle">Total</td>
                                         <td width="8%" class="align-middle">$ {{subtotal|floatformat:2}}</td>
                                         <td width="15%" class="align-middle"></td>
-
                                     </tr>
                                     <tr>
                                         <td></td>
@@ -515,7 +521,7 @@
                                         <td></td>
                                         <td></td>
                                         <td></td>
-                                        <td class="align-middle">GST 8%</td>
+                                        <td class="align-middle">GST 9%</td>
                                         <td class="align-middle">$ {{gst|floatformat:2}}</td>
                                         <td></td>
 
@@ -550,11 +556,9 @@
                             <div class="row">
                                 <div class="mt-1 col-md-3">
                                     {% if quotation.flag %}
-                                    {% if quotation.qtt_status == "Open" %}
                                     <button type="button" id="fileadd" class="btn btn-primary btn-sm">
                                         <i class="mdi mdi-content-save-move"></i> Add
                                     </button>
-                                    {% endif %}
                                     {% endif %}
                                 </div>
                                 <div class="mt-1 col-md-9">
@@ -702,6 +706,7 @@
                 </form>
                 <input type="hidden" id="scopeid" value="-1" />
                 <input type="hidden" id="subject_id" value="-1" />
+                <input type="hidden" id="is_optional" value="-1" />
 
             </div>
             <div class="modal-footer">
@@ -1159,8 +1164,6 @@
 
     $("#pdiscountadd").hide();
     function changeStateToAward(){
-
-        console.log("-------", $("#qtt_status").val());
         $("#pdiscountadd").hide();
         $(".plussign").hide();
         $(".edit").hide();
@@ -1264,6 +1267,25 @@
         $("#discountmodal").modal('show')
     });
 
+    $("#poptionaladd").on('click', function(e) {
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_add_optional" %}',
+            data: {
+                title: "Optional",
+                quotationid: `{{quote}}`,
+            },
+            type: 'POST',
+            success: function (data) {
+                if(data.status=="Success"){
+                    ajax_get_subjects();
+                } else {
+                    $("#text_error_detail").html(data.messages);
+                    $("#text_error_detail").show();
+                }
+            }
+        });
+    });
     $(".btn_subjectadd").on('click', function(e){
         $('#SubjectForm').parsley().validate();
         if ($('#SubjectForm').parsley().validate() === false) {
@@ -1333,16 +1355,14 @@
                     $("#items-content").empty();
                     let subjects=JSON.parse(JSON.parse(data));
                     for (var i = 0; i < subjects.length; i++){
-                        ajax_add_subject_items(subjects[i].pk, subjects[i].fields.subject);
+                        ajax_add_subject_items(subjects[i].pk, subjects[i].fields.subject, subjects[i].fields.is_optional );
                     }
-
 <!--                $("#items-content").append(data);-->
             }
         });
     };
 
-
-    function ajax_add_subject_items(subject_id, subject_title) {
+    function ajax_add_subject_items(subject_id, subject_title, is_optional) {
         $.ajax({
             headers: { "X-CSRFToken": '{{csrf_token}}' },
             url: '{% url "ajax_subject_items" %}',
@@ -1350,6 +1370,7 @@
                 sub_id: subject_id,
                 sub_title: subject_title,
                 quot_id: `{{quote}}`,
+                is_optional:is_optional
             },
             type: 'POST',
             success: function (data) {
@@ -1357,7 +1378,8 @@
                 if($("#qtt_status").val()=="Awarded"){
                     changeStateToAward();
                 }
-            }
+            },
+            async: false
         });
     };
 
@@ -1406,6 +1428,7 @@
                     scopeid: $("#scopeid").val(),
                     quotationid: `{{quote}}`,
                     qtt_id: $("#qtt_id").val(),
+                    is_optional:$("#is_optional").val(),
                 }
                 item_data.push(item)
             }

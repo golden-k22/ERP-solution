@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load jsignature_filters %}
 {% load static %}
-{% block page-title %}Delievery Order Detail{% endblock%}
+{% block page-title %}Delivery Order Detail{% endblock%}
 {% block css %}
     <link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css" />
     <link href="{% static 'assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" rel="stylesheet">
@@ -140,7 +140,7 @@
                                             <div class="col-md-6">
                                                 <div class="mb-3">
                                                     <label class="form-label" for="tel">Tel</label>
-                                                    <input type="text" class="form-control" id="tel" name="tel" value="{{summary.site_tel|default_if_none:''}}" required>
+                                                    <input type="text" class="form-control" maxlength="8" pattern="\d{8}" id="tel" name="tel" value="{{summary.site_tel|default_if_none:''}}" required>
                                                 </div>
                                             </div>
                                         </div>
@@ -427,39 +427,22 @@
             <div class="modal-body" id="manage_delivery_item">
                 <form class="needs-validation p-3" id="DoItemForm">
                     {% csrf_token %}
-                    <div id="text_error_do_item" style="display: none;" class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
-                    </div>
-                    
-                    <div class="mb-3 mt-3 row">
-                        <label for="itemdescription" class="col-md-4 col-form-label">Description:</label>
-                        <div class="col-md-8">
-                            <select class="form-control" id="itemdescription" required>
-                                <option value="">Select Description..</option>
-                                {% for description in projectitemall %}
-                                    <option value="{{description.description}}">{{description.description}}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label for="itemqty" class="col-md-4 col-form-label">QTY:</label>
-                        <div class="col-md-8">
-                            <input type="text" class="form-control" id="itemqty"  name="itemqty" required>
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label for="itemuom" class="col-md-4 col-form-label">UOM:</label>
-                        <div class="col-md-8">
-                            <input type="text" class="form-control" id="itemuom"  name="itemuom" required readonly="true">
-                            <input type="hidden" class="form-control" id="itemuom_id"  name="itemuom_id" required readonly="true">
-                        </div>
-                    </div>
+                    <div id="doitemFormContent"></div>
                     
                 </form>
                 <input type="hidden" id="doitemid" value="-1" />
             
             </div>
             <div class="modal-footer">
+
+                <div class="float-start col-md-12">
+                    <p class="fst-italic text-primary" id="multicnt_container">
+                        <span class="col-md-5">Continue insertion with </span>
+                        <input class="col-md-2" type="number" id="doitem_multicnt" value="1" style="margin-left:5px; margin-right:5px; border-color: #cccccc;height: 18px; padding: 10px;">
+                        <span class="col-md-2"> rows</span>
+                    </p>
+                </div>
+
                 <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_doitemadd">Add</button>
                 
@@ -527,27 +510,7 @@
         $('.select2').prop('disabled', true);
     });
     $(".select2").select2({width: '100%'});
-    $("#itemdescription").select2({width: '100%', dropdownParent: $("#manage_delivery_item")});
     $(".uom-select").select2({width: '100%', dropdownParent: $("#manage_delivery_item")});
-    $("#itemdescription").on('change', function(e){
-        if ($("#itemdescription").val() != ""){
-            $.ajax({
-                headers: { "X-CSRFToken": '{{csrf_token}}' },
-                url: '{% url "ajax_get_pro_uom" %}',
-                data: {
-                    itemdescription: $("#itemdescription").val(),
-                    quotationid: `{{quotation.id}}`
-                },
-                type: 'POST',
-                success: function (data) {
-                    up_data = JSON.parse(data);
-                    $("#itemuom").val(up_data.uom);
-                    $("#itemuom_id").val(up_data.uom_id);
-                    $("#itemqty").val(up_data.item_qty);
-                }
-            });
-        }
-    });
     $("#doitemdt").DataTable({
         searching: false, 
         paging: true, 
@@ -598,11 +561,9 @@
         $("#dosignature").addClass('active');
     } 
     $("#doitemadd").on('click', function(e){
-        $("#itemdescription").val('');
+        $("#doitemFormContent").empty();
+        ajax_add_do_items(1);
         $(".btn_doitemadd").html('Add');
-        $("#itemqty").val('');
-        $("#itemuom").val('');
-        $("#itemuom_id").val('');
         $("#doitemid").val('-1');
         $("#doitemmodal").modal('show');
     });
@@ -630,6 +591,8 @@
     });
     
     function updatedoitem(id){
+        $("#doitemFormContent").empty();
+        ajax_add_do_items(1);
         $("#doitemid").val(id);
         $("#head_title_item").html('Delivery Order Item');
         $(".btn_doitemadd").html('Update');
@@ -643,24 +606,26 @@
             success: function (data) {
                 up_data = JSON.parse(data)
                 is_exist=false;
-                $("#itemdescription option").each(function()
+                $("#itemdescription1 option").each(function()
                 {
                     if($(this).val()==up_data.description){
                         is_exist=true;
                     }
                 });
                 if(!is_exist){
-                    $("#itemdescription").append('<option value="'+up_data.description+'">'+up_data.description+'</option>');
+                    $("#itemdescription1").append('<option value="'+up_data.description+'">'+up_data.description+'</option>');
                 }
 
-                $("#itemdescription").val(up_data.description);
-                $("#itemdescription").trigger('change');
-                $("#itemqty").val(up_data.qty);
-                $("#itemuom").val(up_data.uom);
-                $("#itemuom_id").val(up_data.uom_id);
+                $("#itemdescription1").val(up_data.description);
+<!--                $("#itemdescription1").trigger('change');-->
+                $("#itemqty1").val(up_data.qty);
+                $("#itemuom1").val(up_data.uom);
+                $("#itemuom_id1").val(up_data.uom_id);
+            },
+            complete: function(){
+                $("#doitemmodal").modal('show');
             }
         });
-        $("#doitemmodal").modal('show');
     };
     function deletedeliveryitem(id) {
         $("#itemdel_id").val(id);
@@ -707,6 +672,7 @@
         $("#deliveryid").val(id);
         $("#head_title_do_signature").html('Update Delivery Signature');
         $(".btn_deliveryadd").html('Update');
+        console.log($("#deliveryid").val());
         $.ajax({
             headers: { "X-CSRFToken": '{{csrf_token}}' },
             url: '{% url "ajax_get_delivery_sign" %}',
@@ -768,21 +734,29 @@
     });
     $(".btn_doitemadd").on('click', function(e){
         $('#DoItemForm').parsley().validate();
+        item_cnt=$('#doitem_multicnt').val();
         if ($('#DoItemForm').parsley().validate() === false) {       
             event.preventDefault();
             event.stopPropagation();
             return;
         } else {
+            item_data=[];
+                for(index=1; index<=item_cnt; index++){
+                    let item={
+                        description: $("#itemdescription"+index).val(),
+                        qty: $("#itemqty"+index).val(),
+                        uom: $("#itemuom_id"+index).val(),
+                        doitemid: $("#doitemid").val()
+                    }
+                item_data.push(item)
+            }
             $.ajax({
                 headers: { "X-CSRFToken": '{{csrf_token}}' },
                 url: '{% url "ajax_do_item_add" %}',
                 data: {
-                    description: $("#itemdescription").val(),
-                    qty: $("#itemqty").val(),
-                    uom: $("#itemuom_id").val(),
+                    items: JSON.stringify(item_data),
                     projectid: `{{project_pk}}`,
                     doid: `{{delivery_pk}}`,
-                    doitemid: $("#doitemid").val()
                 },
                 type: 'POST',
                 success: function (data) {
@@ -850,5 +824,29 @@
 
         return [year, month, day].join('-');
     }
+
+
+    $('#doitem_multicnt').on('input', function(){
+        $("#doitemFormContent").empty();
+        for(index=1;index<=$(this).val();index++){
+            ajax_add_do_items(index);
+        }
+    });
+
+    function ajax_add_do_items(item_cnt) {
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_do_items" %}',
+            data: {
+                item_cnt: item_cnt,
+                quotation_id: `{{quotation.id}}`
+            },
+            type: 'POST',
+            success: function (data) {
+                $("#doitemFormContent").append(data);
+            }
+        });
+    };
+
 </script>
 {% endblock %}

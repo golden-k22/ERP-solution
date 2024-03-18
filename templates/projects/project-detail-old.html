@@ -88,21 +88,6 @@
         text-overflow: ellipsis;
         white-space: nowrap;
     }
-    .accordion {
-      background-color: #eee;
-      color: #444;
-      padding: 10px !important;
-      width: 100%;
-      border: none;
-      text-align: left;
-      outline: none;
-      font-size: 15px;
-      transition: 0.4s;
-      display: flex
-    }
-    .plussign::before {
-      content: "\2795";
-    }
 </style>    
 <div class="container-fluid">
     <div id="loading" style="z-index:1151 !important;font-size: 30px; position: absolute; top: 40%; left: 50%;">
@@ -405,77 +390,123 @@
                             </form>
                         </div>
                         <div class="tab-pane p-3" id="proj_item" role="tabpanel">
-
-                            <div class="row">
-                                <div class="mt-1 col-md-3"></div>
-                                <div class="mt-1 col-md-9">
-                                    <div class="justify-content-end d-flex">
-                                        <div id="newSearchPlace"></div>
+                            <span class="p-1 fw-bold" style="font-size: 15px;">
+                                Work Details
+                            </span>
+                            <ul class="nav nav-tabs mt-3" role="tablist">
+                                <li class="nav-item">
+                                    <a class="nav-link active" style="padding-left: 30px;padding-right: 30px;" data-bs-toggle="tab" href="#pitemoverview" id="pitemoverviewtab" role="tab">
+                                        <span class="d-block d-sm-none">OV</span>
+                                        <span class="d-none d-sm-block">OverView</span>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" style="padding-left: 30px;padding-right: 30px;" data-bs-toggle="tab" href="#pitemactivity" id="pitemactivitytab" role="tab">
+                                        <span class="d-block d-sm-none">AT</span>
+                                        <span class="d-none d-sm-block">Activity</span>
+                                    </a>
+                                </li>
+                            </ul>
+                            <div class="tab-content">
+                                <div class="tab-pane active p-3" id="pitemoverview" role="tabpanel">
+                                    <div class="table-responsive mt-2">
+                                        <table id="workdt" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                                            <thead>
+                                                <tr>
+                                                    <th width="5%">SN</th>
+                                                    <th width="75%">Description</th>
+                                                    <th width="10%">UOM</th>
+                                                    <th width="10%">QTY</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for projectitem in projectitems %}
+                                                <tr>
+                                                    <td width="5%" class="align-middle">{{ forloop.counter }}</td>
+                                                    <td width="75%" class="align-middle">{{projectitem.description|wordwrap:150|linebreaks|default_if_none:""}}</td>
+                                                    <td width="10%" class="align-middle">{{projectitem.uom|default_if_none:""}}</td>
+                                                    <td width="10%" class="align-middle">{{projectitem.qty|default_if_none:""}}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="tab-pane p-3" id="pitemactivity" role="tabpanel">
+                                    <div class="table-responsive mt-2">
+                                        <table id="workacitivedt" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                                            <thead>
+                                                <tr>
+                                                    <th>SN</th>
+                                                    <th>Description</th>
+                                                    <th>UOM</th>
+                                                    <th>QTY</th>
+                                                    <th>Allocation</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            {% for projectitem in projectitems %}
+                                                <tbody>
+                                                    
+                                                    <tr>
+                                                        <td class="align-middle">{{ forloop.counter }}</td>
+                                                        <td class="align-middle">{{projectitem.description|default_if_none:""|wordwrap:150|linebreaks}}</td>
+                                                        <td class="align-middle">{{projectitem.uom|default_if_none:""}}</td>
+                                                        <td class="align-middle">{{projectitem.qty|default_if_none:""}}</td>
+                                                        <td class="align-middle">
+                                                            {% if projectitem.allocation_perc %}
+                                                                {{projectitem.allocation_perc|floatformat:2|default_if_none:""}} %
+                                                            {% endif %}
+                                                        </td>
+                                                        <td class="align-middle">
+                                                            <!-- <a href="javascript:void(0);" onclick="updateitems('{{projectitem.id}}')" class="btn btn-outline-primary btn-sm edit com_update" title="Edit">
+                                                                <i class="fas fa-pencil-alt"></i>
+                                                            </a> -->
+                                                            <a href="javascript:void(0);" onclick="addsubitems('{{projectitem.id}}')" class="btn btn-outline-secondary btn-sm add" title="Add">
+                                                                <i class="ion ion-md-add"></i>
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                                {% if projectitem.childs %}
+                                                    <tbody> 
+                                                        {% for child in projectitem.childs %}
+                                                        <tr>
+                                                            <td class="align-middle"></td>
+                                                            <td class="align-middle">{{child.description|default_if_none:""}}</td>
+                                                            <td class="align-middle">{{child.uom|default_if_none:""}}</td>
+                                                            <td class="align-middle">{{child.qty|default_if_none:""}}</td>
+                                                            <td class="align-middle">
+                                                                {% if child.allocation_perc %}
+                                                                    {{child.allocation_perc|floatformat:2|default_if_none:""}} %
+                                                                {% endif %}
+                                                            </td>
+                                                            <td class="align-middle">
+                                                                <a href="javascript:void(0);" onclick="updateitems('{{child.id}}')" class="btn btn-outline-primary btn-sm edit com_update" title="Edit">
+                                                                    <i class="fas fa-pencil-alt"></i>
+                                                                </a>
+                                                                <a href="javascript:void(0);" onclick="deleteitems('{{child.id}}','{{child.description}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
+                                                                    <i class="far fa-trash-alt"></i>
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </table>
                                     </div>
                                 </div>
                             </div>
-                            <div id="items-content">
 
+                            <div class="row pt-2">
+                                <div class="mb-3">
+                                    <label class="form-label" for="note">Note</label>
+                                    <textarea class="form-control" id="note" name="note" rows="5">{{summary.quotation.note|default_if_none:''}}</textarea>
+                                </div>
                             </div>
 
-                            <div class="table-responsive">
-                                <table id="scopedatatable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
-
-                                    <tbody>
-                                    {% if projectitems %}
-                                    <tr>
-                                        <td width="5%"></td>
-                                        <td width="48%"></td>
-                                        <td width="8%"></td>
-                                        <td width="8%"></td>
-                                        <td width="8%" class="align-middle">Total</td>
-                                        <td width="8%" class="align-middle">$ {{subtotal|floatformat:2}}</td>
-                                        <td width="15%" class="align-middle"></td>
-                                    </tr>
-                                    <tr>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                            <td class="align-middle">Discount</td>
-                                        <td class="align-middle">$ {{summary.quotation.discount|floatformat:2}}</td>
-                                        <td></td>
-                                    </tr>
-                                    <tr>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td class="align-middle">GST 9%</td>
-                                        <td class="align-middle">$ {{gst|floatformat:2}}</td>
-                                        <td></td>
-
-                                    </tr>
-                                    <tr>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td class="align-middle">Final Total</td>
-                                        <td class="align-middle">$ {{final_total|floatformat:2}}</td>
-                                        <td></td>
-
-                                    </tr>
-                                    <tr>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td class="align-middle">Margin</td>
-                                        <td class="align-middle">{{summary.quotation.margin|floatformat:2}} %</td>
-                                        <td></td>
-
-                                    </tr>
-                                    {% endif %}
-
-                                    </tbody>
-                                </table>
-                            </div>
                             
                         </div>
                         <div class="tab-pane p-3" id="site_progress" role="tabpanel">
@@ -1795,7 +1826,6 @@
 <!--        $('#loading').hide();-->
 <!--    }, 5000);-->
     $('#loading').hide();
-    ajax_get_subjects();
     $("#note").prop("disabled", true);
     function onPriority(event) {
         event = (event) ? event : window.event;
@@ -3542,51 +3572,6 @@
         });
         $('#tbmitemdeleteModal').modal('hide');
     });
-
-    function ajax_get_subjects() {
-        $.ajax({
-            headers: { "X-CSRFToken": '{{csrf_token}}' },
-            url: '{% url "ajax_get_subjects" %}',
-            data: {
-                    quotationid: `{{quotation_pk}}`,
-            },
-            type: 'POST',
-            success: function (data) {
-                    $("#items-content").empty();
-                    let subjects=JSON.parse(JSON.parse(data));
-                    for (var i = 0; i < subjects.length; i++){
-                        ajax_add_subject_items(subjects[i].pk, subjects[i].fields.subject, subjects[i].fields.is_optional );
-                    }
-<!--                $("#items-content").append(data);-->
-            }
-        });
-    };
-
-    function ajax_add_subject_items(subject_id, subject_title, is_optional) {
-        $.ajax({
-            headers: { "X-CSRFToken": '{{csrf_token}}' },
-            url: '{% url "ajax_subject_items" %}',
-            data: {
-                sub_id: subject_id,
-                sub_title: subject_title,
-                quot_id: `{{quotation_pk}}`,
-                is_optional:is_optional
-            },
-            type: 'POST',
-            success: function (data) {
-                $("#items-content").append(data);
-                changeStateToAward();
-            },
-            async: false
-        });
-    };
-
-    function changeStateToAward(){
-        $("#pdiscountadd").hide();
-        $(".plussign").hide();
-        $(".edit").hide();
-        $(".delete").hide();
-    }
 
     setRetentionDate();
 </script>
