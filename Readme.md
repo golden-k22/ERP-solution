@@ -25,9 +25,10 @@
 ```
 ### Execute the docker compose
 ```
-$ docker compose -f docker-compose.yml down -v
-$ docker compose -f docker-compose.yml up -d --build
-$ docker compose -f docker-compose.yml exec web python manage.py migrate --noinput
+docker compose -f docker-compose.yml down -v
+docker compose -f docker-compose.yml up -d --build
+docker compose -f docker-compose.yml exec web python manage.py migrate --noinput
+docker compose -f docker-compose.yml exec web python manage.py collectstatic --no-input --clear
 ```
 
 ### Check the docker container 
@@ -51,6 +52,7 @@ exit
 Refer this link for more detail about the docker, gunicorn, nginx production.
 
 https://testdriven.io/blog/dockerizing-django-with-postgres-gunicorn-and-nginx/
+https://realpython.com/django-nginx-gunicorn/
 
 Read this to setup ERP solution in local.
 
