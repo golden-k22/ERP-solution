@@ -5,7 +5,7 @@ services:
     build: ./CNI-ERP
     command: gunicorn -c gunicorn.conf.py erpSolution.wsgi:application
     expose:
-      - 8000
+      - 8001
     env_file:
       - CNI-ERP/.env
     environment:
@@ -17,7 +17,7 @@ services:
     volumes:
       - static_volume:/home/old-erp/web/staticfiles
     ports:
-      - 1337:80
+      - 1335:80
     depends_on:
       - web
 volumes:

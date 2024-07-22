@@ -3,7 +3,7 @@ from .base import *
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG")
 
-ALLOWED_HOSTS = ["*", "localhost"]
+ALLOWED_HOSTS = ["*","165.232.170.117", "localhost"]
 DATA_UPLOAD_MAX_MEMORY_SIZE = 20971520
 #MySQL Database Engine
 DATABASES = {
@@ -24,9 +24,7 @@ DATABASES = {
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
-
 STATIC_ROOT = BASE_DIR / "staticfiles"
-
 STATICFILES_DIRS = (
     BASE_DIR / "static",
 )

@@ -35,3 +35,4 @@ ENV PYTHONUNBUFFERED 1
 COPY gunicorn.conf.py /home/old-erp/web/gunicorn.conf.py
 
 CMD ["gunicorn", "-c", "gunicorn.conf.py", "erpSolution.wsgi:application"]
+
