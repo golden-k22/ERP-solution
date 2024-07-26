@@ -21,12 +21,13 @@ from django.conf import settings
 
 from dashboard.views import handler404, handler500
 import notifications.urls
-
+from two_factor.urls import urlpatterns as two_factor_url
 handler404 = handler404
 handler500 = handler500
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/', admin.site.urls), 
+    url(r'^', include(two_factor_url, namespace='two_factor')),
     url(r'^', include('accounts.urls')),
     url(r'^', include('dashboard.urls')),
     url(r'^', include('sales.urls')),

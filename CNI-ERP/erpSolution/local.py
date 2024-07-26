@@ -41,18 +41,17 @@ LOGIN_URL = 'view_login'
 LOGOUT_REDIRECT_URL = 'view_login'
 
 
-DEFAULT_FROM_EMAIL = os.getenv("DJANGO_DEFAULT_EMAIL")
-
+# Email section
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_USE_TLS = True
 # EMAIL_USE_SSL = True
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
+DEFAULT_FROM_EMAIL = os.getenv("DJANGO_DEFAULT_EMAIL")
 EMAIL_HOST_USER = os.getenv("DJANGO_EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("DJANGO_EMAIL_HOST_PASSWORD")
 
-# Email section
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 INSTALLED_APPS = [
     'django_apscheduler',
@@ -83,6 +82,15 @@ INSTALLED_APPS = [
     'activity_log',
     'django.contrib.humanize',
     "calendarapp.apps.CalendarappConfig",
+    
+    'django_otp',
+    'django_otp.plugins.otp_totp',  # Time-based OTP
+    'django_otp.plugins.otp_static',  # Static OTP
+    # 'django_otp.plugins.otp_hotp',  # Counter-based OTP (if needed)
+    'django_otp.plugins.otp_email',
+    'two_factor',
+    'two_factor.plugins.email',
+
 ]
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -93,7 +101,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'activity_log.middleware.ActivityLogMiddleware',
+    'activity_log.middleware.ActivityLogMiddleware',    
+    'django_otp.middleware.OTPMiddleware', 
 
     'erpSolution.SessionMiddleware.SessionMiddleware'
 ]

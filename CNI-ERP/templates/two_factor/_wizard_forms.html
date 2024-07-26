@@ -1,0 +1,93 @@
+<!-- <table class="mb-3">
+  {{ wizard.management_form }}
+  {{ wizard.form.as_table }}
+</table> -->
+
+
+
+<!-- your_project/templates/two_factor/core/_wizard_form.html -->
+{% load static i18n %}
+
+<div class="two-factor-form-container">
+    <h2>{% block wizard_form_title %}{% trans "" %}{% endblock %}</h2>
+    
+    <form method="post" class="two-factor-form">
+        {% csrf_token %}
+        {{ wizard.management_form }}
+        
+        <div class="form-steps">
+            {% if wizard.form.forms %}
+                {% for form in wizard.form.forms %}
+                    <div class="form-step">
+                        {{ form.non_field_errors }}
+                        {{ form.as_p }}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="form-step">
+                    {{ wizard.form.non_field_errors }}
+                    {{ wizard.form.as_p }}
+                </div>
+            {% endif %}
+        </div>
+        {% include "two_factor/_wizard_actions.html" %}
+    </form>
+</div>
+
+<style>
+.two-factor-form-container {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+.two-factor-form-container h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.two-factor-form .form-steps {
+    margin-bottom: 20px;
+}
+
+.two-factor-form .form-step {
+    margin-bottom: 15px;
+}
+
+.two-factor-form .form-buttons {
+    text-align: center;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #004085;
+}
+
+label[for="id_auth-username"] {
+    /* Your styles here */
+    width: 30%;
+}
+label[for="id_auth-password"] {
+    /* Your styles here */
+    width: 30%;
+}
+input[name="auth-username"]{
+  width: 65%;
+}
+input[name="auth-password"]{
+  width: 65%;
+}
+
+</style>
+
+

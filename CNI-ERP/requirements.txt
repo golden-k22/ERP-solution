@@ -18,3 +18,6 @@ django-crontab
 matplotlib
 django-user-activity-log2==0.0.25
 gunicorn
+django-otp
+django-two-factor-auth
+phonenumbers

@@ -5,9 +5,12 @@ from django.contrib.auth.views import PasswordResetDoneView
 from django.contrib.auth.views import PasswordResetConfirmView
 from django.contrib.auth.views import PasswordResetCompleteView
 from django.urls import reverse_lazy
+from django.views.generic.base import RedirectView
+
 
 urlpatterns = [
-    url(r'^login/$', views.LoginView.as_view(), name='view_login'),
+    # url(r'^login/$', views.LoginView.as_view(), name='view_login'),
+    url('login/', RedirectView.as_view(url='/account/login/', permanent=True),name='view_login'),
     url(r'^logout/$', views.LogoutView.as_view(), name='view_logout'),
     url(r'^signup/$', views.SignupView.as_view(), name='view_signup'),
     url(r'^reset/password/$', PasswordResetView.as_view(template_name='accounts/password_reset_form.html', email_template_name='accounts/password_reset_email.html'), name='password_reset'),
