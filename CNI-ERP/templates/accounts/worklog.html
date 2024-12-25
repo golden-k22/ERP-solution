@@ -12,12 +12,13 @@
     <link href="{% static 'assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" rel="stylesheet"> 
     <link href="{% static 'assets/css/daterangepicker-bs3.css' %}" rel="stylesheet"> 
     <link rel="stylesheet" href="{% static 'assets/css/flatpicker.css' %}">
+    <link href="{% static 'assets/css/custom-dropdown.css' %}" rel="stylesheet" type="text/css" />
 
 {% endblock %}
 {% block content %}
 <style type="text/css">
     .select-search {
-        width: 85%;
+        width: 100%;
         padding: .575rem .75rem;
         font-size: .8125rem;
         font-weight: 400;
@@ -69,6 +70,10 @@
         background-color: #ffffff;
         opacity: 1;
     }
+    .space-custom{
+        padding-left: 5px;
+        padding-right: 5px;
+    }
 </style>
 <div class="container-fluid">
     <div id="loading" style="z-index:1151 !important;font-size: 30px; position: absolute; top: 40%; left: 50%;">
@@ -93,50 +98,52 @@
             <div class="card">
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-6">
-                            <div class="row">
-                                <div class="mt-1 col-md-2 space-custom">
+                        <div class="col-md-7">
+                            <div class="justify-content-start d-flex">
+                                <div class="mt-1 space-custom">
                                     <button type="button" id="worklogadd" class="btn btn-primary w-100" style="height: 38px;"><i class="mdi mdi-calendar-plus"></i> New</button>
                                 </div>
-                                <div class="mt-1 col-md-4 space-custom">
-                                    <div class="export_button justify-content-start d-flex"></div>
+                                <div class="mt-1 space-custom">
+                                    <div class="export_button"></div>
                                 </div>
                                 {% if request.user.role == "Managers" %}
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 space-custom">
                                     <button type="button" id="btn_import" class="btn btn-primary w-100" style="height: 38px;white-space: nowrap;" > Import</button>
                                 </div>
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 space-custom">
                                     <a href="{% url 'ajax-export-worklog' %}" class="btn btn-info" style="height: 38px;white-space: nowrap;" > Template Export</a>
                                 </div>
                                 {% endif %}
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="row justify-content-end">
-                                <div class="mt-1 col-md-2 space-custom">
+                        <div class="col-md-5">
+                            <div class="row justify-content-end d-flex">
+                                <div class="mt-1 col-md-6 space-custom">
                                     <select class="form-control search_filter" style="height:38px;" id="search_empno" required>
                                         <option value="">Select Emp No..</option>
                                         {% for emp_no in emp_nos %}
                                             <option value="{{emp_no.emp_no}}">{{emp_no.emp_no}}-{{emp_no.first_name}}</option>
                                         {% endfor %}
-                                    </select>
-                                    
+                                    </select>                                    
                                 </div>
-                                <div class="mt-1 col-md-2 space-custom">
-                                    <select class="form-control search_filter" id="year" required>
-                                        <!-- option value="">Year</option -->
-                                        {% for date_year in date_years %}
-                                            <option value="{{date_year}}">{{date_year}}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="mt-1 col-md-3 space-custom">
+                                <div class="mt-1 col-md-6 space-custom">
                                     <input class="select-search input-daterange-datepicker" style="height:38px;" type="text"  id="daterange" autocomplete="off" placeholder="Date Range" required> 
                                 </div>
-                                <div class="col-md-1 space-custom">
-<!--                                    <a href="javascript:void(0);" id="worklogsearch" class="btn btn-primary m-1"><i class="dripicons-search align-middle"></i></a>-->
+                            </div>
+                            
+                            <div class="row justify-content-end d-flex">                                
+                                <div class="mt-1 col-md-5 space-custom">
+                                    <div class="dropdown custom-dropdown">
+                                        <button class="dropbtn">Year</button>
+                                        <div class="dropdown-content" id="year-drop-content">
+                                            <label><input type="checkbox" value="0">All</label>
+                                            {% for date_year in date_years %}
+                                            <label><input type="checkbox" value="{{date_year}}">{{date_year}}</label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="mt-1 col-md-3">
+                                <div class="mt-1 col-md-7 space-custom">
                                     <div id="newSearchPlace"></div>
                                 </div>
                             </div>
@@ -368,9 +375,8 @@
         $("#datatable").DataTable();
         $("#text_error").hide();
     });
-    ajax_all_worklog();
-    //yearpicker 
-    {% comment %} $('.yearpicker').yearpicker(); {% endcomment %}
+    //  yearpicker 
+    // $('.yearpicker').yearpicker();
     function ajax_all_worklog() {
 
         $('#loading').show();
@@ -442,37 +448,27 @@
     });
     function worklogSearch(){
         var searhrange = $("#daterange").val();
-        if(searhrange == "" && $("#search_empno").val() == "" && $("#year").val() == ""){
-            location.reload();
-        } else {
-            $(".export_button").html('');
-            $("#newSearchPlace").html('');
-            $('#loading').show();
-            $.ajax({
-                headers: { "X-CSRFToken": '{{csrf_token}}' },
-                url: '{% url "ajax_filter_worklog" %}',
-                data: {
-                    daterange: $("#daterange").val(),
-                    search_empno: $("#search_empno").val(),
-                    search_year: $("#year").val(),
-                },
-                type: 'POST',
-                success: function (data) {
-                    $("#worklog_data").html(data)
-                },
-                complete: function(){
-                    $('#loading').hide();
-                }
-            });
-        }
+        $('#loading').show();
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_filter_worklog" %}',
+            data: {
+                daterange: $("#daterange").val(),
+                search_empno: $("#search_empno").val(),
+                search_years: JSON.stringify(selected_years),
+            },
+            type: 'POST',
+            success: function (data) {
+                $(".export_button").html('');
+                $("#newSearchPlace").html('');
+                $("#worklog_data").html(data)
+            },
+            complete: function(){
+                $('#loading').hide();
+            }
+        });
     };
 
-    $("#daterange").on('change', function(e){
-        worklogSearch();
-    });
-    $("#search_empno").on('change', function(e){
-        worklogSearch();
-    });
 
     function formatDateTime(date) {
         var d = new Date(date),
@@ -689,32 +685,92 @@
             });
         }
     });
+
+    ajax_all_worklog();
+    
     var current = new Date();
-    var currentyear = current.getFullYear(); 
+    var currentyear = current.getFullYear();
     var yearvalue = `{{exist_current_year}}`;
-    options_year = [];
-    if(yearvalue) {
-        var option_lenth = ($('#year option').length);
-        if (option_lenth == 0) {
-            options_year.push({value: currentyear, text: currentyear})
-            var newOption = new Option(currentyear, currentyear, true, true);
-            $('#year').append(newOption).trigger('change');
-        } else if(option_lenth > 0) {
-            $('#year').val(currentyear);
-            $("#year").trigger('change');
-        }
-        
-    } else {
-        
-        
-        $('#year option').each(function(idx) {
-            options_year.push({value: $(this).val(), text: $(this).text()});
+    selected_years=[];
+
+    if(!yearvalue) {
+        const newLabel = document.createElement('label');
+        const newCheckbox = document.createElement('input');
+        newCheckbox.type = 'checkbox';
+        newCheckbox.value = currentyear;
+        newLabel.appendChild(newCheckbox);
+        newLabel.appendChild(document.createTextNode(currentyear));
+        $('#year-drop-content').prepend(newLabel);
+    };
+    checkCheckbox(currentyear);
+    function checkCheckbox(value) {
+        const checkboxes = document.querySelectorAll('#year-drop-content input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            if (checkbox.value == value) {
+                checkbox.checked = true; // Check the checkbox
+                selected_years.push(value);
+            }
         });
-        
-        options_year.push({value: currentyear, text: currentyear})
-        var newOption = new Option(currentyear, currentyear, true, true);
-        $('#year').append(newOption).trigger('change');
+    };
+    function uncheckCheckbox(value) {
+        const checkboxes = document.querySelectorAll('#year-drop-content input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            if (checkbox.value == value) {
+                checkbox.checked = false;
+                selected_years = selected_years.filter(item => item !== value);
+            }
+        });
+    };
+
+    function checkAll(){
+        const checkboxes = document.querySelectorAll('#year-drop-content input[type="checkbox"]');
+        selected_years=[];
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = true; // Check the checkbox
+            const value = parseInt(checkbox.value, 10); // Get the checkbox value 
+            selected_years.push(value);
+        });
     }
+
+    function uncheckAll(){
+        const checkboxes = document.querySelectorAll('#year-drop-content input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false; // UnCheck the checkbox            
+        });
+        selected_years=[];
+    }
+
+    const checkboxes = document.querySelectorAll('#year-drop-content input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const value = parseInt(this.value, 10); // Get the checkbox value            
+            if (this.checked) {
+                if(this.value==0){
+                    checkAll();
+                }else{
+                    selected_years.push(value);
+                    uncheckCheckbox(0);
+                }
+            } else {
+                if(this.value==0){
+                    uncheckAll();
+                }else{
+                    selected_years = selected_years.filter(item => item !== value);
+                    uncheckCheckbox(0);
+                }
+            }
+            selected_years = selected_years.filter(item => item !== 0);
+            worklogSearch();
+        });
+    });
+    
+    $("#daterange").on('change', function(e){
+        worklogSearch();
+    });
+    $("#search_empno").on('change', function(e){
+        worklogSearch();
+    });
+    
 </script>
 {% endblock %}
 

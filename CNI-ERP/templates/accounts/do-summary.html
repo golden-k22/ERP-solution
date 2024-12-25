@@ -2,14 +2,16 @@
 {% load static %}
 {% block page-title %}Do Summary{% endblock%}
 {% block css %}
+    <!--link href="{% static 'assets/yearpicker/yearpicker.css' %}" rel="stylesheet" -->
     <link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css" />
-    <link href="{% static 'assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" rel="stylesheet">
     <!-- DataTables -->
     <link href="{% static 'assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
     <link href="{% static 'assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
     <!-- Responsive datatable examples -->
     <link href="{% static 'assets/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" /> 
-    <link href="{% static 'assets/css/daterangepicker-bs3.css' %}" rel="stylesheet"> 
+    <link href="{% static 'assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" rel="stylesheet"> 
+    <!-- Sweet Alert-->
+    <link href="{% static 'assets/libs/sweetalert2/sweetalert2.min.css' %}" rel="stylesheet" type="text/css" />
 {% endblock %}
 {% block content %}
 <style type="text/css">
@@ -47,8 +49,7 @@
                     <ol class="breadcrumb m-0">
                         <li class="breadcrumb-item"><a class="text-primary" href="{% url 'do_summary' %}"><b>Do Summary</b></a></li>
                         <li class="breadcrumb-item active">Summary</li>
-                    </ol>
-                    
+                    </ol>                    
             </div>
         </div>
     </div>
@@ -56,79 +57,33 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <!-- Tab panes -->
-                    <div class="tab-content">
-                        <div class="tab-pane p-3" id="mainDo" role="tabpanel">
-                            <div class="row mt-3">
-                                <div class="mt-1 col-md-9">
-                                    <div class="justify-content-end d-flex">
-                                        <div id="searchServicePlace"></div>
-                                    </div>
-                                </div>
+                    <div class="row">
+                        <div class="col-md-12 col-lg-12 col-xl-6 col-sm-12 pt-1"></div>
+          
+                        <div class="col-md-12 col-lg-12 col-xl-6 col-sm-12 pt-1">
+                          <div class="row justify-content-start d-flex">
+                            <div class="mt-1 col-md-3"></div>
+                            <div class="mt-1 col-md-4">
+                              <select class="form-control search_filter" id="status_filter" required>
+                                <option value="">Status</option>
+                                {% for key, value in do_status %}
+                                  <option value="{{ value }}">{{ value }}</option>
+                                {% endfor %}
+                              </select>
                             </div>
-                            <div class="table-responsive mt-2">
-                                <table id="dotable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
-                                    <thead>
-                                        <tr>
-                                            <th>SN</th>
-                                            <th>Do No</th>
-                                            <th>Date</th>
-                                            <th>Status</th>
-                                            <th>Customer Signed Do</th>
-                                            <th>Project Id</th>
-                                            <th>Invoice No</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for service in projDolist %}
-                                            <tr>
-                                                <td class="align-middle">{{forloop.counter}}</td>
-                                                <td class="align-middle">{{service.do_no|default_if_none:""}}</td>
-                                                <td class="align-middle">{{service.date|date:"d M, Y"|default_if_none:""}}</td>
-                                                <td class="align-middle">{{service.status|default_if_none:""}}</td>
-                                                <td class="align-middle">{{service.filename|default_if_none:""}}</td>
-                                                <td class="align-middle">{{service.project.proj_id|default_if_none:""}}</td>
-                                                <td class="align-middle">{{service.invoice_no|default_if_none:""}}</td>
-
-                                                <td class="align-middle">
-                                                    <a href="{% url 'project_do_detail' service.project_id service.id %}" class="btn btn-outline-primary btn-sm " title="View">
-                                                        <i class="ion ion-md-eye"></i>
-                                                    </a>
-                                                    <a href="javascript:void(0);" onclick="addProjInvoiceNo('{{service.id}}')" class="btn btn-outline-primary btn-sm srInvoiceUpdate" title="Add invoice No">
-                                                        <i class="fas fa-pencil-alt mr-2"></i>
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                        {% with projDoCount=projDolist|length %}
-                                        {% for service in salesDolist %}
-                                            <tr>
-                                                <td class="align-middle">{{forloop.counter|add:projDoCount}}</td>
-                                                <td class="align-middle">{{service.do_no|default_if_none:""}}</td>
-                                                <td class="align-middle">{{service.date|date:"d M, Y"|default_if_none:""}}</td>
-                                                <td class="align-middle">{{service.status|default_if_none:""}}</td>
-                                                <td class="align-middle">{{service.filename|default_if_none:""}}</td>
-                                                <td class="align-middle">{{service.product_sales.prod_sale_id|default_if_none:""}}</td>
-                                                <td class="align-middle">{{service.invoice_no|default_if_none:""}}</td>
-
-                                                <td class="align-middle">
-                                                    <a href="{% url 'sales_do_detail' service.product_sales_id service.id %}" class="btn btn-outline-primary btn-sm " title="View">
-                                                        <i class="ion ion-md-eye"></i>
-                                                    </a>
-                                                    <a href="javascript:void(0);" onclick="addSalesInvoiceNo('{{service.id}}')" class="btn btn-outline-primary btn-sm srInvoiceUpdate" title="Add invoice No">
-                                                        <i class="fas fa-pencil-alt mr-2"></i>
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                        {% endwith %}
-                                    </tbody>
-                                </table>
+                            <div class="mt-1 col-md-5">
+                              <div class="mt-1 d-flex justify-content-end">
+                                <div id="searchServicePlace"></div>
+                              </div>
                             </div>
+                          </div>
                         </div>
-
                     </div>
+                            
+                    <div id="list-table">
+                        
+                    </div>
+                    
                 </div>
             </div>
         </div>
@@ -179,44 +134,25 @@
 <script src="{% static 'assets/js/daterangepicker.js' %}"></script>
 <script src="{% static 'assets/libs/admin-resources/bootstrap-filestyle/bootstrap-filestyle.min.js' %}"></script>
 <script>
-    $('#note').prop('disabled', true);
-    $(".select2").select2({width: '100%'});
-    $("#dotable").DataTable({
-        "aaSorting": [[ 0, "asc" ]],
-        searching: true,
-        paging: true,
-        info: true,
-        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
-            "<'row'<'col-sm-12'tr>>" +
-            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
-    });
-    $("#searchServicePlace").html('');
-
-    $("#mainDo").addClass('active');
-
+    
+    
     function addSalesInvoiceNo( do_id) {
         $("#projType").val(2);
         $("#doid").val(do_id);
-        getInvoiceNo();
+        $("#invoice_no").val("");
+        $("#text_error_do").empty();
+        $("#text_error_do").hide();
+        $("#doInvoiceModal").modal('show');
     }
     function addProjInvoiceNo( do_id) {
         $("#projType").val(1);
         $("#doid").val(do_id);
-        getInvoiceNo();
+        $("#invoice_no").val("");
+        $("#text_error_do").empty();
+        $("#text_error_do").hide();
+        $("#doInvoiceModal").modal('show');
     }
 
-    function getInvoiceNo(){
-<!--        $.ajax({-->
-<!--            headers: { "X-CSRFToken": '{{csrf_token}}' },-->
-<!--            url: '{% url "ajax_check_do_invoice_no" %}',-->
-<!--            data: {},-->
-<!--            type: 'POST',-->
-<!--            success: function (data) {-->
-<!--                $("#invoice_no").val(data['invoice_no']);-->
-<!--            }-->
-<!--        });-->
-        $("#doInvoiceModal").modal('show');
-    };
     $(".btn_invoice_add").on('click', function(e){
         $('#DoInvoiceForm').parsley().validate();
         if ($('#DoInvoiceForm').parsley().validate() === false) {
@@ -237,17 +173,42 @@
                 processData: false,
                 type: 'POST',
                 success: function (data) {
-                    $("#doInvoiceModal").modal('hide');
                     if(data.status=="Success"){
+                        $("#doInvoiceModal").modal('hide');
                         $("#text_error_do").hide();
                         location.reload();
                     } else {
-                        $("#text_error_sr").html(data.messages);
-                        $("#text_error_sr").show();
+                        $("#text_error_do").html(data.messages);
+                        $("#text_error_do").show();
                     }
                 }
             });
         }
     });
+
+    get_list("")
+    $('#status_filter').on('change', function() {
+        var selectedStatus = $(this).val();
+        get_list(selectedStatus);
+    });
+
+    function get_list(selectedStatus){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{ csrf_token }}' },
+            url: '{% url "ajax_filter_do_summary" %}',  // Replace with the URL of your Django view that handles the filtering
+            type: 'GET',
+            data: {
+                'status': selectedStatus
+            },
+            success: function(response) {
+                // Update the table body with the new data
+                $("#searchServicePlace").html('');
+                $('#list-table').html(response);
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching data:', error);
+            }
+        });
+    }
 </script>
 {% endblock %}

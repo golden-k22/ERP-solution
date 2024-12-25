@@ -1,5 +1,5 @@
 from django.contrib import admin
-from accounts.models import User, UserAddress, Role, WorkLog, MaterialLog, AssetLog, OTCalculation, Holiday,Privilege, Uom
+from accounts.models import User, UserAddress, Role, WorkLog, MaterialLog, AssetLog, OTCalculation, Holiday,Privilege, Uom, WPType, UserStatus
 from django.contrib.auth.admin import UserAdmin
 # Register your models here.
 
@@ -7,7 +7,7 @@ class UserIAdmin(UserAdmin):
     fieldsets = (
         (None, {'fields': ('email', 'password', 'username', 'last_login','nric','nationality','wp_type','wp_no',  'role', 'wp_expiry',  'passport_no', 'passport_expiry','dob', 'phone', 'fcm_token', 'signature' )}),
         ('Permissions', {'fields': (
-            'is_active',
+            'status',
             'is_staff',
             'is_superuser',
             'groups',
@@ -37,3 +37,5 @@ admin.site.register(OTCalculation)
 admin.site.register(Holiday)
 admin.site.register(Privilege)
 admin.site.register(Uom)
+admin.site.register(WPType)
+admin.site.register(UserStatus)

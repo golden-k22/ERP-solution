@@ -4,6 +4,9 @@ from django.core.mail import EmailMultiAlternatives
 from django.template import RequestContext, TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.conf import settings
+import sendgrid
+from sendgrid.helpers.mail import Mail, Email, To, Content
+import os
 
 
 def send_active_mail(subject, email_template_name,
@@ -46,3 +49,21 @@ def send_active_mail(subject, email_template_name,
         if settings.DEBUG:
             print('Inside')
             print(sys.exc_info())
+
+
+def send_mail(to_email, subject, message):
+    try:
+        
+        sg = sendgrid.SendGridAPIClient(api_key=getattr(settings, 'EMAIL_HOST_PASSWORD'))
+        from_email = Email(getattr(settings, 'DEFAULT_FROM_EMAIL'))  # Change to your verified sender
+        to_email = To(to_email)  # Change to your recipient
+        subject = subject
+        content = Content("text/html", message)
+        mail = Mail(from_email, to_email, subject, content)
+
+        # Get a JSON-ready representation of the Mail object
+        mail_json = mail.get()
+        # Send an HTTP POST request to /mail/send
+        response = sg.client.mail.send.post(request_body=mail_json)
+    except Exception as e:
+        print(f"An error occurred: {e}")

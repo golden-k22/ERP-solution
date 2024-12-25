@@ -13,13 +13,22 @@
             <div class="col-md-8">
 <!--                <textarea class="form-control" rows="4" type="text" id="description{{item_cnt}}" list="list__desc-list" required></textarea>-->
 
-                <input class="form-control" type="text" list="list__desc-list" id="description{{item_cnt}}">
+                {% comment %} <input class="form-control" type="text" list="list__desc-list" id="description{{item_cnt}}">
 
                 <datalist id="list__desc-list">
                     {% for description in descriptions %}
                         <option value="{{description.description}}" data-value={{description.id}}></option>
                     {% endfor %}
-                </datalist>
+                </datalist> {% endcomment %}
+                <textarea 
+                    class="form-control" 
+                    id="description{{item_cnt}}" 
+                    placeholder="Start typing..."
+                    oninput=showSuggestions(this.value)
+                    onblur=hideSuggestions()
+                    rows="4" 
+                    cols="50"></textarea>
+                <div id="suggestions-box" class="suggestions" style="display: none;"></div>
             </div>
         </div>
         <div class="mb-3 mt-3 row">
@@ -33,7 +42,7 @@
         <div class="mb-3 row">
             <label for="uom{{item_cnt}}" class="col-md-4 col-form-label">UOM:</label>
             <div class="col-md-8">
-                <select class="form-control uom-select" id="uom{{item_cnt}}" name="uom" >
+                <select class="form-control uom-select" id="uom{{item_cnt}}" name="uom" required>
                     <option value="">Select UOM</option>
                     {% for uom in uoms %}
                         <option value="{{uom.id}}">{{uom.name}}</option>
@@ -60,23 +69,63 @@
     $(".select2").select2({width: '0%'});
     $(".uom-select").select2({width: '100%', dropdownParent: $("#manage_info")});
 
-    $("#description"+{{item_cnt}}).on('change', function(e){
-        $.ajax({
-            headers: { "X-CSRFToken": '{{csrf_token}}' },
-            url: '{% url "ajax_get_scope_by_description" %}',
-            data: {
-                description: $("#description"+{{item_cnt}}).val(),
-            },
-            type: 'POST',
-            success: function (data) {
-                scope_data=JSON.parse(data);
-                if (scope_data.status=="success"){
-                    $("#unitprice"+{{item_cnt}}).val(scope_data.unit_price);
-                    $("#unitcost"+{{item_cnt}}).val(scope_data.unit_cost);
-                    $("#uom"+{{item_cnt}}).val(scope_data.uom_id);
-                    $("#uom"+{{item_cnt}}).trigger("change");
-                }
-            }
+    
+    const descriptions = [
+        {% for description in descriptions %}
+            { value: "{{ description.description|escapejs }}", id: "{{ description.id }}" },
+        {% endfor %}
+    ];
+
+
+    function showSuggestions(inputValue) {
+        const suggestionsBox = document.getElementById('suggestions-box');
+        suggestionsBox.innerHTML = ''; // Clear previous suggestions
+        if (inputValue.length === 0) {
+            suggestionsBox.style.display = 'none';
+            return;
+        }
+
+        const filteredDescriptions = descriptions.filter(item =>
+            item.value.toLowerCase().includes(inputValue.toLowerCase())
+        );
+
+        filteredDescriptions.forEach(item => {
+            const suggestionItem = document.createElement('div');
+            suggestionItem.style.borderBottom = '1px solid #ccc'; // Add the border-bottom style
+            suggestionItem.style.padding = '8px'; // Add some padding for better spacing
+            suggestionItem.style.cursor = 'pointer'; // Change the cursor to pointer on hover
+            suggestionItem.textContent = item.value;
+            suggestionItem.onclick = () => {
+                $("#description"+{{item_cnt}}).val(item.value);
+                suggestionsBox.style.display = 'none';
+                $.ajax({
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                    url: '{% url "ajax_get_scope_by_description" %}',
+                    data: {
+                        description: $("#description"+{{item_cnt}}).val(),
+                    },
+                    type: 'POST',
+                    success: function (data) {
+                        scope_data=JSON.parse(data);
+                        if (scope_data.status=="success"){
+                            $("#unitprice"+{{item_cnt}}).val(scope_data.unit_price);
+                            $("#unitcost"+{{item_cnt}}).val(scope_data.unit_cost);
+                            $("#uom"+{{item_cnt}}).val(scope_data.uom_id);
+                            $("#uom"+{{item_cnt}}).trigger("change");
+                        }
+                    }
+                });
+            };
+            suggestionsBox.appendChild(suggestionItem);
         });
-    });
+
+        suggestionsBox.style.display = filteredDescriptions.length > 0 ? 'block' : 'none';
+    }
+
+    function hideSuggestions() {
+        setTimeout(() => {
+            document.getElementById('suggestions-box').style.display = 'none';
+        }, 200); // Delay to allow click event on suggestions to be registered
+    }
+
 </script>

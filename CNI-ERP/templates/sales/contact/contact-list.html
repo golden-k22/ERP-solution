@@ -42,6 +42,10 @@
         text-decoration: none;
         background-color: #7a6fbe;
     }
+    .space-custom{
+        padding-left: 5px;
+        padding-right: 5px;
+    }
 
 </style>
 <div class="container-fluid">
@@ -67,16 +71,16 @@
             <div class="card">
                 <div class="card-body">
                     <div class="row mb-1">
-                        <div class="col-md-6">
-                            <div class="row">
-                                <div class="mt-1 col-md-2 space-custom">
+                        <div class="col-md-7">
+                            <div class="row justify-content-start d-flex">
+                                <div class="mt-1 col-md-3 space-custom">
+                                    <div class="export_button"></div>
+                                </div>
+                                <div class="mt-1 col-md-3 space-custom">
                                     <button type="button" id="contactadd" class="btn btn-primary w-100 p-2"
                                             style="height: 38px;white-space: nowrap;"><i
                                             class="mdi mdi-calendar-plus mr-2"></i> New
                                     </button>
-                                </div>
-                                <div class="mt-1 col-md-2 space-custom">
-                                    <div class="export_button justify-content-center d-flex"></div>
                                 </div>
                                 {% if request.user.role == "Managers" %}
                                 <div class="mt-1 col-md-2 space-custom">
@@ -84,16 +88,16 @@
                                             style="height: 38px;white-space: nowrap;"> Import
                                     </button>
                                 </div>
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 col-md-3 space-custom">
                                     <a href="{% url 'ajax-export-contact' %}" class="btn btn-info"
                                        style="height: 38px;white-space: nowrap;"> Template Export</a>
                                 </div>
                                 {% endif %}
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-5">
                             <div class="row justify-content-end">
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 col-md-4 space-custom">
                                     <select class="form-control search_filter" id="contact_person" required>
                                         <option value="">Contact</option>
                                         {% for contact_per in contact_persons %}
@@ -101,35 +105,28 @@
                                         </option>
                                         {% endfor %}
                                     </select>
-
                                 </div>
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 col-md-4 space-custom">
                                     <select class="form-control search_filter" id="search_email" required>
                                         <option value="">Email</option>
                                         {% for email in emails %}
                                         <option value="{{email.email}}">{{email.email}}</option>
                                         {% endfor %}
                                     </select>
-
                                 </div>
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 col-md-4 space-custom">
                                     <select class="form-control search_filter" id="role_filter" required>
                                         <option value="">Role</option>
                                         {% for role in roles %}
                                         <option value="{{role.role}}">{{role.role}}</option>
                                         {% endfor %}
                                     </select>
-
                                 </div>
-                                <div class="col-md-1 space-custom">
-<!--                                    <a href="javascript:void(0);" id="contactsearch" class="btn btn-primary m-1"><i-->
-<!--                                            class="dripicons-search align-middle"></i></a>-->
-                                </div>
-                                <div class="mt-1 col-md-3">
-                                    <div class="mt-1 d-flex justify-content-end">
-                                        <div id="newSearchPlace"></div>
-                                    </div>
-                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-1 col-md-12">
+                            <div class="mt-1 d-flex justify-content-end">
+                                <div id="newSearchPlace"></div>
                             </div>
                         </div>
 

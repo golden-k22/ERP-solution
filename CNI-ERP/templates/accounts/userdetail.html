@@ -21,6 +21,13 @@
     .datepicker {
         z-index:1151 !important;
     }
+    #togglePassword {
+        cursor: pointer;
+    }
+    
+    #togglePassword:hover {
+        color: #007bff; /* Change color on hover */
+    }
 </style>
 <link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css" />
 <link href="{% static 'assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" rel="stylesheet">
@@ -125,14 +132,26 @@
                                             <div class="row">
                                                 <div class="col-md-6">
                                                     <div class="mb-3">
-                                                        <label class="form-label" for="wp_type">WP Type</label>
-                                                        <input type="text" class="form-control" style="height: 38px;" id="wp_type" value="{{user.wp_type|default_if_none:''}}" required>
+                                                        <label class="form-label" for="wp_type">Work Permit Type</label>
+                                                        <select class="form-control select2" id="wp_type" required>
+                                                            <option value="">Select Work Permit</option>
+                                                            {% for wp_type in wp_types %}
+                                                                <option value="{{wp_type.wp_type}}"{% if user.wp_type == wp_type.wp_type %} selected{% endif %}>{{wp_type.wp_type}}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                        {% comment %} <input type="text" class="form-control" style="height: 38px;" id="wp_type" value="{{user.wp_type|default_if_none:''}}" required> {% endcomment %}
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6">
                                                     <div class="mb-3">
                                                         <label class="form-label" for="nationality">Nationality</label>
-                                                        <input type="text" class="form-control" style="height: 38px;" id="nationality" value="{{user.nationality|default_if_none:''}}" required>
+                                                        <select class="form-control select2" id="nationality" required>
+                                                            <option value="">Select the Country</option>
+                                                            {% for country in countrys %}
+                                                                <option value="{{country.name}}"{% if country.name == user.nationality %} selected{% endif %}>{{country.name}}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                        {% comment %} <input type="text" class="form-control" style="height: 38px;" id="nationality" value="{{user.nationality|default_if_none:''}}" required> {% endcomment %}
                                                     </div>
                                                 </div>
                                             </div>
@@ -219,8 +238,18 @@
                                                         <label class="form-label" for="basic_salary">Basic Salary </label>
                                                         <input type="text" class="form-control" style="height: 38px;" id="basic_salary" value="{{user.basic_salary|default_if_none:''}}" required>
                                                     </div>
-                                                </div>
-                                                
+                                                </div>  
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="status">Status </label>
+                                                        <select class="form-control select2" id="status" required>
+                                                            <option value="">Select the Status</option>
+                                                            {% for status in user_status %}
+                                                                <option value="{{status.id}}"{% if status.id == user.status_id %} selected{% endif %}>{{status.status}}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                </div>                                                
                                             </div>
                                         </div>
                                         <div class="col-md-4">
@@ -254,7 +283,7 @@
                                                         <select class="form-control select2" id="country" required>
                                                             <option value="">Select the Country</option>
                                                             {% for country in countrys %}
-                                                                <option value="{{country.id}}"{% if country.id == useraddress.country_id %} selected{% endif %}>{{country.name}}</option>
+                                                                <option value="{{country.id}}"{% if country.name == "Singapore" or country.id == useraddress.country_id %} selected{% endif %}>{{country.name}}</option>
                                                             {% endfor %}
                                                         </select>
                                                     </div>
@@ -277,7 +306,7 @@
                                                 <div class="mb-3 row">
                                                     <label for="name" class="col-md-4 col-form-label">UserName:</label>
                                                     <div class="col-md-8">
-                                                        <input class="form-control" type="text" style="height: 38px;" value="{{user.username|default_if_none:''}}"  id="username" required>
+                                                        <input class="form-control" type="text" style="height: 38px;" value="{{user.username|default:user.first_name|default:''}}"  id="username">
                                                     </div>
                                                 </div>
                                             </div>
@@ -285,9 +314,14 @@
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <div class="mb-3 row">
-                                                    <label for="name" class="col-md-4 col-form-label">Password:</label>
+                                                    <label for="password" class="col-md-4 col-form-label">Password:</label>
                                                     <div class="col-md-8">
-                                                        <input class="form-control" type="text" style="height: 38px;" id="password" value="{{user.password_box|default_if_none:''}}" required>
+                                                        <div class="input-group">
+                                                            <input class="form-control" type="password" id="password" value="{{user.password_box|default_if_none:''}}" style="height: 38px;">                                                            
+                                                                <span class="input-group-text " style="height: 38px;">
+                                                                    <i class="fa fa-eye" id="togglePassword" style="cursor: pointer;"></i>
+                                                                </span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -309,7 +343,7 @@
                                                 <div class="mb-3 row">
                                                     <label for="name" class="col-md-4 col-form-label">PinCode:</label>
                                                     <div class="col-md-8">
-                                                        <input class="form-control" type="text" value="{{user.pincode|default_if_none:''}}"  id="pincode" required>
+                                                        <input class="form-control" type="text" value="{{user.pincode|default_if_none:''}}"  id="pincode">
                                                     </div>
                                                 </div>
                                             </div>
@@ -319,7 +353,7 @@
                                                 <div class="mb-3 row">
                                                     <label for="name" class="col-md-4 col-form-label">FCM_TOKEN:</label>
                                                     <div class="col-md-8">
-                                                        <input class="form-control" type="text" value="{{user.fcm_token|default_if_none:''}}" id="fcm_token" required>
+                                                        <input class="form-control" type="text" value="{{user.fcm_token|default_if_none:''}}" id="fcm_token">
                                                     </div>
                                                 </div>
                                             </div>
@@ -906,8 +940,9 @@
     $("#UserInfoForm input").prop("disabled", true);
     $("#UserInfoForm select2").prop("disabled", true);
     $('#userdetailsave').prop('disabled', true);
-    $('#btn_generate_password').prop('disabled', true);
-    
+    $('#btn_generate_password').prop('disabled', true);    
+    $('select').prop('disabled', true);
+
     $("#usercancel").hide();
     $(".select2").select2({width: '100%'});
     $('#issued_by').prop('disabled', false);
@@ -1101,7 +1136,8 @@
                     address: $("#address").val(),
                     unit: $("#unit").val(),
                     postalcode: $("#postalcode").val(),
-                    basic_salary: $("#basic_salary").val(),
+                    basic_salary: $("#basic_salary").val(),                    
+                    status: $("#status").val(),
                     country: $("#country").val(),
                     userid: `{{selected_user}}`,
                     username: $("#username").val(),
@@ -1477,6 +1513,15 @@
         });
         $("#usersignmodal").modal('show');
 
+    });
+    document.getElementById('togglePassword').addEventListener('click', function (e) {
+        // Toggle the type attribute
+        const passwordInput = document.getElementById('password');
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+    
+        // Toggle the eye slash icon
+        this.classList.toggle('fa-eye-slash');
     });
 
 </script>

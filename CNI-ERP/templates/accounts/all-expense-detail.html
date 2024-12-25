@@ -281,7 +281,7 @@
                                                 <th>Project No</th>
                                                 <th>Vendor</th>
                                                 <th>Description</th>
-                                                <th>GST 9%</th>
+                                                <th>GST {{gst_default|floatformat:0}}%</th>
                                                 <th>Remark</th>
                                                 <th>Amount (w/o GST)</th>
                                                 <th>Action</th>
@@ -335,7 +335,7 @@
                                             <td></td>
                                             <td></td>
                                             <td></td>
-                                            <td class="align-middle">GST 9%</td>
+                                            <td class="align-middle">GST {{gst_default|floatformat:0}}%</td>
                                             <td class="align-middle">$ {{gst|floatformat:2}}</td> 
                                             <td></td>    
                                         </tr>
@@ -488,7 +488,7 @@
                     <div class="mb-3 row">
                         <div class="col-md-6">
                             <input type="checkbox" class="form-check-input me-2 p-2" id="gststatus">
-                            <label class="form-check-label" for="gststatus" style="margin-top: 3px;"> GST 9%
+                            <label class="form-check-label" for="gststatus" style="margin-top: 3px;"> GST {{gst_default|floatformat:0}}%
                             </label>
                         </div>
                     </div>

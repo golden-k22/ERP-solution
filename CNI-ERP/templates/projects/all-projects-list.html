@@ -47,6 +47,9 @@
 </style>
 {% load humanize %}
 <div class="container-fluid">
+    <div id="loading" style="z-index:1151 !important;font-size: 30px; position: absolute; top: 40%; left: 50%;">
+        <img src="{% static 'assets/images/spinning-circles.svg' %}" width="80" alt="" style="background: transparent;">
+    </div>
     <div class="row">
         <div class="col-sm-6">
             <div class="page-title-box">
@@ -65,14 +68,14 @@
             <div class="card">   
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="row">
-                                <div class="mb-1 mt-1 col-md-6 space-custom">
+                                <div class="mb-1 mt-1 col-md-12 space-custom">
                                     <div class="export_button justify-content-start d-flex"></div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-8">
+                        <div class="col-md-6">
                             <div class="row justify-content-end">
 <!--                                <div class="mt-1 col-md-2 space-custom">-->
 <!--                                    <select class="form-control search_filter" id="search_quotation" required>-->
@@ -82,7 +85,7 @@
 <!--                                        {% endfor %}-->
 <!--                                    </select>-->
 <!--                                </div>-->
-                                <div class="mt-1 col-md-3">
+                                <div class="mt-1">
                                     <div id="newSearchPlace"></div>
                                 </div>
                             </div>
@@ -116,6 +119,7 @@
 
 
 <script>
+    $('#loading').hide();
     $(document).ready(function(){
         $("#text_error").hide();
     });
@@ -125,7 +129,8 @@
     $(".select2").select2({width: '100%', dropdownParent: $("#manage_info")});
     ajax_all_projects();
     
-    function ajax_all_projects() {
+    function ajax_all_projects() {        
+        $('#loading').show();
         $.ajax({
             headers: { "X-CSRFToken": '{{csrf_token}}' },
             url: '{% url "ajax_all_projects" %}',
@@ -136,6 +141,9 @@
             success: function (data) {
                 console.log(data)
                 $("#projects_list").html(data);
+            },
+            complete: function(){
+                $('#loading').hide();
             }
         });
     };

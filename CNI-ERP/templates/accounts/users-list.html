@@ -39,6 +39,10 @@
         text-decoration: none;
         background-color: #7a6fbe;
     }
+    .space-custom{
+        padding-left: 5px;
+        padding-right: 5px;
+    }
 </style>
 <div class="container-fluid">
     <div id="loading" style="z-index:1151 !important;font-size: 30px; position: absolute; top: 40%; left: 50%;">
@@ -48,8 +52,7 @@
         <div class="col-sm-6">
             <div class="page-title-box">
                 <h4>Users 
-                </h4>
-                
+                </h4>                
                 <ol class="breadcrumb m-0">
                     <li class="breadcrumb-item"><a class="text-primary" href="{% url 'all_users' %}"><b>Users</b></a></li>
                     <li class="breadcrumb-item active">All Users</li>
@@ -63,19 +66,19 @@
             <div class="card">
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-4">
-                            <div class="row">
-                                <div class="mt-1 col-md-3 space-custom">
+                        <div class="col-md-5">
+                            <div class="justify-content-start d-flex">
+                                <div class="mt-1 space-custom">
                                     <button type="button" id="useradd" class="btn btn-primary w-100 p-2" style="height: 38px;white-space: nowrap;"><i class="mdi mdi-calendar-plus mr-2"></i> New</button>
                                 </div>
-                                <div class="mt-1 col-md-9 space-custom">
+                                <div class="mt-1 space-custom">
                                     <div class="export_button justify-content-start d-flex"></div>
                                 </div>
                             </div> 
                         </div>
-                        <div class="col-md-8">
+                        <div class="col-md-7">
                             <div class="row justify-content-end d-flex">
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 col-md-4">
                                     <select class="form-control search_filter" id="search_empno" required>
                                         <option value="">Emp No</option>
                                         {% for empid in empids %}
@@ -83,7 +86,7 @@
                                         {% endfor %}
                                     </select>
                                 </div>
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 col-md-4">
                                     <select class="form-control search_filter" id="search_nric" required>
                                         <option value="">NRIC/FIN</option>
                                         {% for nric in nrics %}
@@ -92,7 +95,7 @@
                                     </select>
                                     
                                 </div>
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 col-md-4">
                                     <select class="form-control search_filter" id="search_role" required>
                                         <option value="">Role</option>
                                         {% for role in roles %}
@@ -101,12 +104,9 @@
                                     </select>
                                     
                                 </div>
-                                <div class="col-md-1 space-custom">
-<!--                                    <a href="javascript:void(0);" id="usersearch" class="btn btn-primary m-1"><i class="dripicons-search align-middle"></i></a>-->
-                                </div>
-                                <div class="mt-1 col-md-3">
-                                    <div id="newSearchPlace"></div>
-                                </div>
+                            </div>
+                            <div class="row justify-content-end d-flex">
+                                <div id="newSearchPlace"></div>
                             </div>
                         </div>
                     </div>
@@ -137,22 +137,34 @@
                             <input class="form-control" type="text"  id="empno" required>
                         </div>
                     </div>
+                    <div class="mb-3 mt-3 row">
+                        <label for="empno" class="col-md-4 col-form-label">User Name:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text"  id="username" required>
+                        </div>
+                    </div>
                     <div class="mb-3 row">
                         <label for="firstname" class="col-md-4 col-form-label">First Name:</label>
                         <div class="col-md-8">
-                            <input class="form-control" type="text" id="firstname" required>
+                            <input class="form-control" type="text" id="firstname">
                         </div>
                     </div>
                     <div class="mb-3 row">
                         <label for="lastname" class="col-md-4 col-form-label">Last Name</label>
                         <div class="col-md-8">
-                            <input class="form-control" type="text" id="lastname" required>
+                            <input class="form-control" type="text" id="lastname">
                         </div>
                     </div>
                     <div class="mb-3 row">
                         <label for="nationality" class="col-md-4 col-form-label">Nationality:</label>
                         <div class="col-md-8">
-                            <input type="text" class="form-control" type="text" id="nationality" required>
+                            <select class="form-control select2" id="nationality" required>
+                                <option value="">Country</option>
+                                {% for country in countrys %}
+                                    {% comment %} <option value="{{country.id}}">{{country.name}}</option> {% endcomment %}
+                                    <option value="{{country.name}}">{{country.name}}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
                     <div class="mb-3 row">
@@ -229,6 +241,27 @@
     </div>
     <!-- /.modal-dialog -->
 </div>
+
+<div id="newUserConfirmModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalLabel">Add New User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5 id="confirm_description"></h5>
+                <input type="hidden" id="confirm_user_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button id="add_confirm" type="button" class="btn btn-primary waves-effect btn-sm waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
 {% endblock %}
 {% block scripts %}
     <script src="{% static 'assets/libs/select2/js/select2.full.min.js' %}"></script>
@@ -293,6 +326,8 @@
             }
         };
 
+        
+
         $("#search_empno").on('change', function(e){
             usersearch();
         });
@@ -307,9 +342,11 @@
             $("#head_title").html('Add New User');
             $("#userid").val("-1");
             $("#empno").val(""),
+            $("#username").val(""),
             $("#firstname").val(""),
             $("#lastname").val(""),
             $("#nationality").val(""),
+            $("#nationality").trigger("change"),
             $("#nric").val(""),
             $("#role").val(""),
             $('#role').trigger('change');
@@ -319,10 +356,21 @@
         });
         $(".select2").select2({width: '100%', dropdownParent: $("#manage_info"), dropdownCssClass: 'hover-primary',});
         $(".search_filter").select2({width: '100%'});
+
+        
+        
         $(".btn_useradd").on('click', function(e){
+            $("#confirm_description").html("Are you sure you want to create this user "+'"'+$("#username").val()+'"'+"?");
+            $("#newUserConfirmModal").modal('show');
+            $("#usermodal").modal('hide');
+        });
+
+        $("#add_confirm").on('click', function(event){            
+            $('#newUserConfirmModal').modal('hide');
             if ($('#UserForm').parsley().validate() === false) {         
                 event.preventDefault();
                 event.stopPropagation();
+                $("#usermodal").modal('show');
                 return;
             } else {
                 $('#loading').show();
@@ -331,13 +379,13 @@
                     url: '{% url "ajax_add_user" %}',
                     data: {
                         empno: $("#empno").val(),
+                        username: $("#username").val(),
                         firstname: $("#firstname").val(),
                         lastname: $("#lastname").val(),
                         nationality: $("#nationality").val(),
                         nric: $("#nric").val(),
                         role: $("#role").val(),
-                        phone: $("#phone").val(),
-                        
+                        phone: $("#phone").val(),                        
                         userid: $("#userid").val()
 
                     },
@@ -354,6 +402,7 @@
                         } else {
                             $("#text_error").html(data.messages);
                             $("#text_error").show();
+                            $("#usermodal").modal('show');
                         }
                     },
                     complete: function(){
@@ -362,6 +411,8 @@
                 });
             }
         });
+
+
         $("#btn_create_role").on('click', function(e){
             $("#newrole").val("");
             $("#createrole").modal('show');

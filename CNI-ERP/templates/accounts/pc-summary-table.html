@@ -1,0 +1,54 @@
+{% load static %}
+<div class="table-responsive mt-2">
+    <table id="pctable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+        <thead>
+            <tr>
+                <th width="5%">SN</th>
+                <th width="10%">Pc No</th>
+                <th width="10%">Date</th>
+                <th width="10%">Status</th>
+                <th width="10%">Amount</th>
+                <th width="25%">Customer Signed Pc</th>
+                <th width="10%">Project Id</th>
+                <th width="10%">Invoice No</th>
+                <th width="10%">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for service in projPclist %}
+                <tr>
+                    <td class="align-middle">{{forloop.counter}}</td>                                                
+                    <td class="align-middle">{{service.pc_no|default_if_none:""}}</td>
+                    <td class="align-middle">{{service.date|date:"d M, Y"|default_if_none:""}}</td>
+                    <td class="align-middle">{{service.status|default_if_none:""}}</td>
+                    <td class="align-middle">{{service.amount|default_if_none:""}}</td>
+                    <td class="align-middle">{{service.filename|default_if_none:""}}</td>
+                    <td class="align-middle">
+                        <a href="{% url 'project_summary_detail' service.project_id %}">
+                            {{service.project.proj_id|default_if_none:""}}
+                        </a>
+                    </td>
+                    <td class="align-middle">{{service.invoice_no|default_if_none:""}}</td>
+
+                    <td class="align-middle">
+                        <a href="{% url 'project_summary_detail' service.project_id%}" class="btn btn-outline-primary btn-sm " title="View">
+                            <i class="ion ion-md-eye"></i>
+                        </a>
+                        <a href="javascript:void(0);" onclick="addProjInvoiceNo('{{service.id}}')" class="btn btn-outline-primary btn-sm pcInvoiceUpdate" title="Add invoice No">
+                            <i class="fas fa-pencil-alt mr-2"></i>
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script>
+    $(".select2").select2({width: '100%'});
+    $("#pctable").DataTable({
+        "aaSorting": [[ 0, "asc" ]],
+        paging: true,
+        info: true,
+    });
+    $("#searchServicePlace").html($(".dataTables_filter"));
+</script>

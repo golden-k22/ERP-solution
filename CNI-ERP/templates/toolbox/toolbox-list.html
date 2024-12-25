@@ -48,6 +48,10 @@
         text-decoration: none;
         background-color: #7a6fbe;
     }
+    .space-custom{
+        padding-left: 5px;
+        padding-right: 5px;
+    }
 </style>
 <div class="container-fluid">
     <div class="row">
@@ -76,19 +80,19 @@
             <div class="card">   
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-4">
-                            <div class="row">
-                                <div class="mt-1 col-md-3 space-custom">
+                        <div class="col-md-5">
+                            <div class="row justify-content-start d-flex">
+                                <div class="mt-1 col-md-4 space-custom">
                                     <button type="button" id="tbmadd" class="btn btn-primary w-100" style="height: 38px;"><i class="mdi mdi-calendar-plus"></i> New</button>
                                 </div>
-                                <div class="mt-1 col-md-9 space-custom">
-                                    <div class="export_button justify-content-start d-flex"></div>
+                                <div class="mt-1 col-md-8 space-custom">
+                                    <div class="export_button"></div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-8">
+                        <div class="col-md-7">
                             <div class="row justify-content-end">
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 col-md-4 space-custom">
                                     <select class="form-control search_filter" id="search_tbm" required>
                                         <option value="">TBM No</option>
                                         {% for tbm_no in tbms_no %}
@@ -96,7 +100,7 @@
                                         {% endfor %}
                                     </select>
                                 </div>
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 col-md-4 space-custom">
                                     <select class="form-control search_filter" id="search_project" required>
                                         <option value="">Project No</option>
                                         {% for project_no in projects_no %}
@@ -104,15 +108,12 @@
                                         {% endfor %}
                                     </select>
                                 </div>
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 col-md-4 space-custom">
                                     <input class="form-control input-daterange-datepicker" style="height: 38px;" type="text" placeholder="Please select Date"  id="daterange" autocomplete="off" required>
                                 </div>
-                                <div class="mb-1 col-md-1 space-custom justify-content-start">
-<!--                                    <a href="javascript:void(0);" id="toolboxsearch" class="btn btn-primary m-1"><i class="dripicons-search align-middle"></i></a>-->
-                                </div>
-                                <div class="mt-1 col-md-3">
-                                    <div id="newSearchPlace"></div>
-                                </div> 
+                            </div>
+                            <div class="row justify-content-end">
+                                <div id="newSearchPlace"></div>
                             </div>
                         </div> 
                     </div>

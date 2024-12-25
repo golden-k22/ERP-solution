@@ -1,4 +1,4 @@
-{% extends "two_factor/_base_focus.html" %}
+{% extends "two_factor/_base.html" %}
 {% load i18n %}
 {% load two_factor_tags %}
 
@@ -6,26 +6,27 @@
   {{ form.media }}
 {% endblock %}
 
-{% block content %}
-  <h1>{% block title %}{% trans "Login" %}{% endblock %}</h1>
 
-  {% if wizard.steps.current == 'auth' %}
+{% block content %}
+  <!-- <h1>{% block title %}{% trans "Login" %}{% endblock %}</h1> -->
+
+  <!-- {% if wizard.steps.current == 'auth' %}
     <p>{% blocktrans %}Enter your credentials.{% endblocktrans %}</p>
   {% elif wizard.steps.current == 'token' %}
-    <p>{{ device|as_verbose_action }}</p>
+    <p class="backup_tokens_form">{{ device|as_verbose_action }}</p>
   {% elif wizard.steps.current == 'backup' %}
-    <p>{% blocktrans trimmed %}Use this form for entering backup tokens for logging in.
+    <p class="backup_tokens_form">{% blocktrans trimmed %}Use this form for entering backup tokens for logging in.
       These tokens have been generated for you to print and keep safe. Please
       enter one of these backup tokens to login to your account.{% endblocktrans %}</p>
-  {% endif %}
+  {% endif %} -->
 
   <form action="" method="post">
-    <!-- {% block main_form_content %} -->
+    {% block main_form_content %}
     {% csrf_token %}
-    {% include "two_factor/_wizard_forms.html" %}
+    {% include "two_factor/_login_wizard_forms.html" %}
 
     {# hidden submit button to enable [enter] key #}
-    <input type="submit" value="" hidden />
+    <!-- <input type="submit" value="" hidden /> -->
 
     {% if other_devices %}
       <p>{% trans "Or, alternatively, use one of your other authentication methods:" %}</p>
@@ -37,12 +38,11 @@
         </button>
       {% endfor %}</p>
     {% endif %}
-
     {% endblock %}
   </form>
 
   {% block 'backup_tokens' %}
-    {% if backup_tokens %}
+    <!-- {% if backup_tokens %}
        <hr>
        <div class="backup_tokens_form">
        <form action="" method="post">
@@ -54,6 +54,6 @@
             </p>
        </form>
        </div>
-    {% endif %}
+    {% endif %} -->
   {% endblock %}
 {% endblock %}

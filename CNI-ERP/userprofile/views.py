@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.contrib.auth.hashers import make_password
-from accounts.models import User
+from accounts.models import User, UserStatus
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from sales.decorater import ajax_login_required
@@ -25,11 +25,15 @@ def change_password(request):
         #notification send
         sender = request.user
         description = 'Password of ' + user.empid +  ' - was changed by ' + request.user.username
-        for receiver in User.objects.all():
-            if receiver.notificationprivilege.password_change:
-                notify.send(sender, recipient=receiver, verb='Message', level="success", description=description)
+        user_status=UserStatus.objects.get(status='resigned')
+        try:
+            for receiver in User.objects.exclude(status=user_status).all():
+                if receiver.notificationprivilege.password_change:
+                    notify.send(sender, recipient=receiver, verb='Message', level="success", description=description)
 
-        return JsonResponse({'status': 'ok', 'messages': "Password is changed successfully"})
+            return JsonResponse({'status': 'ok', 'messages': "Password is changed successfully"})
+        except Exception as e:
+            return JsonResponse({'status': 'failed', 'messages': "Failed in change the password."})
 
     else:
         return render(request, "userprofile/change-password.html")
@@ -40,8 +44,7 @@ def check_password(request):
         currentpassword = request.POST.get('currentpassword') 
         reset_id = request.POST.get('reset_id')
         user = User.objects.get(id=reset_id)
-        if user.check_password(currentpassword):
-            
+        if user.check_password(currentpassword):            
             return JsonResponse({'status': 'ok'})
         else:
             return JsonResponse({'status': 'no'})

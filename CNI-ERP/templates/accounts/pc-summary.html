@@ -56,58 +56,31 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <!-- Tab panes -->
-                    <div class="tab-content">
-                        <div class="tab-pane p-3" id="mainPc" role="tabpanel">
-                            <div class="row mt-3">
-                                <div class="mt-1 col-md-9">
-                                    <div class="justify-content-end d-flex">
-                                        <div id="searchServicePlace"></div>
-                                    </div>
-                                </div>
+                    <div class="row">
+                        <div class="col-md-12 col-lg-12 col-xl-6 col-sm-12 pt-1"></div>
+          
+                        <div class="col-md-12 col-lg-12 col-xl-6 col-sm-12 pt-1">
+                          <div class="row justify-content-start d-flex">
+                            <div class="mt-1 col-md-3"></div>
+                            <div class="mt-1 col-md-4">
+                              <select class="form-control search_filter" id="status_filter" required>
+                                <option value="">Status</option>
+                                {% for key, value in pc_status %}
+                                  <option value="{{ value }}">{{ value }}</option>
+                                {% endfor %}
+                              </select>
                             </div>
-                            <div class="table-responsive mt-2">
-                                <table id="pctable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
-                                    <thead>
-                                        <tr>
-                                            <th>SN</th>
-                                            <th>Pc No</th>
-                                            <th>Date</th>
-                                            <th>Status</th>
-                                            <th>Amount</th>
-                                            <th>Customer Signed Pc</th>
-                                            <th>Project Id</th>
-                                            <th>Invoice No</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for service in projPclist %}
-                                            <tr>
-                                                <td class="align-middle">{{forloop.counter}}</td>
-                                                <td class="align-middle">{{service.pc_no|default_if_none:""}}</td>
-                                                <td class="align-middle">{{service.date|date:"d M, Y"|default_if_none:""}}</td>
-                                                <td class="align-middle">{{service.status|default_if_none:""}}</td>
-                                                <td class="align-middle">{{service.amount|default_if_none:""}}</td>
-                                                <td class="align-middle">{{service.filename|default_if_none:""}}</td>
-                                                <td class="align-middle">{{service.project.proj_id|default_if_none:""}}</td>
-                                                <td class="align-middle">{{service.invoice_no|default_if_none:""}}</td>
-
-                                                <td class="align-middle">
-                                                    <a href="{% url 'project_summary_detail' service.project_id%}" class="btn btn-outline-primary btn-sm " title="View">
-                                                        <i class="ion ion-md-eye"></i>
-                                                    </a>
-                                                    <a href="javascript:void(0);" onclick="addProjInvoiceNo('{{service.id}}')" class="btn btn-outline-primary btn-sm pcInvoiceUpdate" title="Add invoice No">
-                                                        <i class="fas fa-pencil-alt mr-2"></i>
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+                            <div class="mt-1 col-md-5">
+                              <div class="mt-1 d-flex justify-content-end">
+                                <div id="searchServicePlace"></div>
+                              </div>
                             </div>
+                          </div>
                         </div>
-
+                    </div>
+                            
+                    <div id="list-table">
+                        
                     </div>
                 </div>
             </div>
@@ -158,38 +131,14 @@
 <script src="{% static 'assets/js/daterangepicker.js' %}"></script>
 <script src="{% static 'assets/libs/admin-resources/bootstrap-filestyle/bootstrap-filestyle.min.js' %}"></script>
 <script>
-    $('#note').prop('disabled', true);
-    $(".select2").select2({width: '100%'});
-    $("#pctable").DataTable({
-        "aaSorting": [[ 0, "asc" ]],
-        searching: true,
-        paging: true,
-        info: true,
-        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
-            "<'row'<'col-sm-12'tr>>" +
-            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
-    });
-    $("#searchServicePlace").html('');
-
-    $("#mainPc").addClass('active');
-
     function addProjInvoiceNo(pc_id) {
         $("#pcid").val(pc_id);
-        getInvoiceNo();
+        $("#invoice_no").val("");
+        $("#text_error_do").empty();
+        $("#text_error_do").hide();
+        $("#doInvoiceModal").modal('show');
     }
 
-    function getInvoiceNo(){
-<!--        $.ajax({-->
-<!--            headers: { "X-CSRFToken": '{{csrf_token}}' },-->
-<!--            url: '{% url "ajax_check_pc_invoice_no" %}',-->
-<!--            data: {},-->
-<!--            type: 'POST',-->
-<!--            success: function (data) {-->
-<!--                $("#invoice_no").val(data['invoice_no']);-->
-<!--            }-->
-<!--        });-->
-        $("#doInvoiceModal").modal('show');
-    };
     $(".btn_invoice_add").on('click', function(e){
         $('#DoInvoiceForm').parsley().validate();
         if ($('#DoInvoiceForm').parsley().validate() === false) {
@@ -209,17 +158,43 @@
                 processData: false,
                 type: 'POST',
                 success: function (data) {
-                    $("#doInvoiceModal").modal('hide');
                     if(data.status=="Success"){
+                        $("#doInvoiceModal").modal('hide');
                         $("#text_error_do").hide();
                         location.reload();
                     } else {
-                        $("#text_error_sr").html(data.messages);
-                        $("#text_error_sr").show();
+                        $("#text_error_do").html(data.messages);
+                        $("#text_error_do").show();
                     }
                 }
             });
         }
     });
+
+    
+    get_list("")
+    $('#status_filter').on('change', function() {
+        var selectedStatus = $(this).val();
+        get_list(selectedStatus);
+    });
+
+    function get_list(selectedStatus){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{ csrf_token }}' },
+            url: '{% url "ajax_filter_pc_summary" %}',  // Replace with the URL of your Django view that handles the filtering
+            type: 'GET',
+            data: {
+                'status': selectedStatus
+            },
+            success: function(response) {
+                // Update the table body with the new data
+                $("#searchServicePlace").html('');
+                $('#list-table').html(response);
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching data:', error);
+            }
+        });
+    }
 </script>
 {% endblock %}

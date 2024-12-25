@@ -4,13 +4,12 @@ from django.contrib.auth.views import PasswordResetView
 from django.contrib.auth.views import PasswordResetDoneView
 from django.contrib.auth.views import PasswordResetConfirmView
 from django.contrib.auth.views import PasswordResetCompleteView
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, path
 from django.views.generic.base import RedirectView
 
-
 urlpatterns = [
-    # url(r'^login/$', views.LoginView.as_view(), name='view_login'),
-    url('login/', RedirectView.as_view(url='/account/login/', permanent=True),name='view_login'),
+    path('account/login/', RedirectView.as_view(url='/login', permanent=True)),
+    url(r'^login/$', views.Custom2faLoginView.as_view(), name='view_login'),
     url(r'^logout/$', views.LogoutView.as_view(), name='view_logout'),
     url(r'^signup/$', views.SignupView.as_view(), name='view_signup'),
     url(r'^reset/password/$', PasswordResetView.as_view(template_name='accounts/password_reset_form.html', email_template_name='accounts/password_reset_email.html'), name='password_reset'),
@@ -26,6 +25,9 @@ urlpatterns = [
     url(r'^sr_summary/$', views.SrSummary.as_view(), name='sr_summary'),
     url(r'^do_summary/$', views.DoSummary.as_view(), name='do_summary'),
     url(r'^pc_summary/$', views.PcSummary.as_view(), name='pc_summary'),
+    url(r'^filter-do-summary/$', views.ajax_filter_do_summary, name='ajax_filter_do_summary'),
+    url(r'^filter-sr-summary/$', views.ajax_filter_sr_summary, name='ajax_filter_sr_summary'),
+    url(r'^filter-pc-summary/$', views.ajax_filter_pc_summary, name='ajax_filter_pc_summary'),
 
     #User part
     url(r'^users/$', views.UsersList.as_view(), name='all_users'),

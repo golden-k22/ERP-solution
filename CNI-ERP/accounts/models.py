@@ -1,7 +1,10 @@
 from cities_light.models import Country
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-
+from django.conf import settings
+from django.utils import timezone
+from django.dispatch import receiver
+from django.db.models.signals import post_save
 
 class Uom(models.Model):
     name = models.CharField(max_length=100, unique=True, blank=True, null=True)
@@ -27,6 +30,24 @@ class Role(models.Model):
     class Meta:
         db_table = "tb_role"
 
+class WPType(models.Model):
+    wp_type = models.CharField(max_length=150, unique=True, blank=False, null=False)
+
+    def __str__(self):
+        return self.wp_type
+
+    class Meta:
+        db_table = "tb_wp_type"
+
+
+class UserStatus(models.Model):
+    status = models.CharField(max_length=150, unique=True, blank=False, null=False)
+
+    def __str__(self):
+        return self.status
+
+    class Meta:
+        db_table = "tb_user_status"
 
 class User(AbstractUser):
     empid = models.CharField(max_length=20, blank=True, null=True)
@@ -48,6 +69,12 @@ class User(AbstractUser):
     basic_salary = models.CharField(max_length=50, blank=True, null=True)
     password_box = models.CharField(max_length=200, blank=True, null=True)
     signature = models.ImageField(upload_to=content_file_signature, blank=True)
+    status = models.ForeignKey(UserStatus, on_delete=models.SET_NULL, blank=True, null=True)
+    # username = models.CharField(
+    #     max_length=150,
+    #     unique=False,
+    #     help_text=('Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.'),
+    # )
 
     def __str__(self):
         return self.username
@@ -275,6 +302,7 @@ class NotificationPrivilege(models.Model):
     tbm_no_created = models.BooleanField(blank=True, null=True, default=True)
     reminder_signature = models.IntegerField(default=3)
     reminder_invoice = models.IntegerField(default=3)
+    worklog_checkin = models.BooleanField(blank=True, null=True, default=True)
     inventory_item_deleted = models.BooleanField(blank=True, null=True, default=True)
     stock_equal_restock = models.BooleanField(blank=True, null=True, default=True)
     do_status = models.BooleanField(blank=True, null=True, default=True)

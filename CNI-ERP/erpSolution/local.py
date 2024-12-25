@@ -41,16 +41,23 @@ LOGIN_URL = 'view_login'
 LOGOUT_REDIRECT_URL = 'view_login'
 
 
-# Email section
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# # Email section
+# # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_USE_TLS = True
-# EMAIL_USE_SSL = True
-EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
+# EMAIL_HOST_USER = os.getenv("DJANGO_EMAIL_HOST_USER")
+# EMAIL_HOST_PASSWORD = os.getenv("DJANGO_EMAIL_HOST_PASSWORD")
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.sendgrid.net'
 EMAIL_PORT = 587
-DEFAULT_FROM_EMAIL = os.getenv("DJANGO_DEFAULT_EMAIL")
+EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
 EMAIL_HOST_USER = os.getenv("DJANGO_EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = os.getenv("DJANGO_EMAIL_HOST_PASSWORD")
+EMAIL_HOST_PASSWORD = os.getenv('SENDGRID_API_KEY')
 
 
 INSTALLED_APPS = [
@@ -104,7 +111,10 @@ MIDDLEWARE = [
     'activity_log.middleware.ActivityLogMiddleware',    
     'django_otp.middleware.OTPMiddleware', 
 
-    'erpSolution.SessionMiddleware.SessionMiddleware'
+    'erpSolution.SessionMiddleware.DynamicTwoFactorRememberMiddleware',
+    'erpSolution.SessionMiddleware.AutoLogoutMiddleware',
+    # 'erpSolution.SessionMiddleware.SessionMiddleware',
+
 ]
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
@@ -164,7 +174,16 @@ TEMPLATES = [
         },
     },
 ]
-
+# Use database-backed sessions
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False     # opional, as this will log you out when browser is closed
-SESSION_COOKIE_AGE = 1800                   # 0r 30 * 60, same thing
-SESSION_SAVE_EVERY_REQUEST = True          # Will prevent from logging you out after 300 seconds
+# SESSION_COOKIE_AGE = 1800                   # 0r 30 * 60, same thing
+# SESSION_SAVE_EVERY_REQUEST = True          # Will prevent from logging you out after 300 seconds
+AUTO_LOGOUT_DELAY = 30 * 60      # Used custom logout middleware for auto logout.
+
+# Enable the "remember me" cookie for two-factor authentication
+TWO_FACTOR_REMEMBER_COOKIE = True
+TWO_FACTOR_REMEMBER_COOKIE_AGE = 86400  # 1 day
+
+TIME_ZONE = os.getenv('TIME_ZONE')
+USE_TZ = True  # Ensure that timezone support is enabled

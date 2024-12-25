@@ -51,7 +51,7 @@ class Project(models.Model):
     RE = models.TextField(blank=True, null=True)
     proj_incharge = models.CharField(max_length=100, blank=True, null=True)
     proj_status = models.CharField(max_length=255, choices=Status, default="Open")
-    proj_name = models.CharField(max_length=100, blank=True, null=True)
+    proj_name = models.TextField(blank=True, null=True)
     proj_postalcode = models.CharField(max_length=50, blank=True, null=True)
     latitude = models.CharField(max_length=50, blank=True, null=True)
     longitude = models.CharField(max_length=50, blank=True, null=True)
@@ -98,7 +98,7 @@ class Do(models.Model):
     upload_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name="do_upload_by")
     project = models.ForeignKey(Project, on_delete=models.SET_NULL, blank=True, null=True)
     remarks = models.TextField(null=True, blank=True)
-    invoice_no=models.CharField(max_length=8, blank=True, null=True)
+    invoice_no=models.CharField(max_length=50, blank=True, null=True)
 
     def filename(self):
         return os.path.basename(self.document.name)
@@ -218,7 +218,7 @@ class Sr(models.Model):
     time_out = models.DateTimeField(blank=True, null=True)
     remark = models.TextField(blank=True, null=True)
     project = models.ForeignKey(Project, on_delete=models.SET_NULL, blank=True, null=True)
-    invoice_no=models.CharField(max_length=8, blank=True, null=True)
+    invoice_no=models.CharField(max_length=50, blank=True, null=True)
 
     def filename(self):
         return os.path.basename(self.document.name)
@@ -247,7 +247,7 @@ class Pc(models.Model):
     amount = models.DecimalField(max_digits=8, decimal_places=2, null=True)
     payment_cert_no = models.CharField(max_length=100, blank=True, null=True)
     project = models.ForeignKey(Project, on_delete=models.SET_NULL, blank=True, null=True)
-    invoice_no=models.CharField(max_length=8, blank=True, null=True)
+    invoice_no=models.CharField(max_length=50, blank=True, null=True)
 
     def filename(self):
         return os.path.basename(self.document.name)
@@ -320,59 +320,6 @@ class SRSignature(JSignatureFieldsMixin):
     class Meta:
         db_table = "tb_sr_signature"
 
-# class Pc(models.Model):
-#     Open = 'Open'
-#     Awarded = 'Signed'
-#     Status = (
-#         ('Open', 'Open'),
-#         ('Signed', 'Signed'),
-#     )
-#     pc_no = models.CharField(max_length=100, blank=True, null=True)
-#     status = models.CharField(max_length=100, choices=Status, default=Open)
-#     date = models.DateField(null=True, blank=True)
-#     document = models.FileField(upload_to=content_file_progress,null=True, blank=True)
-#     uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
-#     claim_no = models.IntegerField(null=True, blank=True)
-#     less_previous_claim = models.CharField(max_length=255, blank=True, null=True)
-#     #terms = models.CharField(max_length=255, blank=True, null=True)
-#     project = models.ForeignKey(Project, on_delete=models.SET_NULL, blank=True, null=True)
-#
-#     def filename(self):
-#         return os.path.basename(self.document.name)
-#     def __str__(self):
-#         return self.pc_no
-#     class Meta:
-#         db_table = "tb_pc"
-# class PcItem(models.Model):
-#     description = models.CharField(max_length=250,blank=True, null=True)
-#     qty = models.IntegerField(default=0, blank=True, null=True)
-#     uom = models.ForeignKey(Uom, on_delete=models.SET_NULL, blank=True, null=True)
-#     price = models.CharField(max_length=250, blank=True, null=True)
-#     done_qty = models.IntegerField(default=0, blank=True, null=True)
-#     done_percent = models.FloatField(blank=True, null=True)
-#     qty = models.IntegerField(default=0, blank=True, null=True)
-#     amount = models.CharField(max_length=250, blank=True, null=True)
-#     project = models.ForeignKey(Project, on_delete=models.SET_NULL, blank=True, null=True)
-#     pc = models.ForeignKey(Pc, on_delete=models.SET_NULL, blank=True, null=True)
-#
-#     def __str__(self):
-#         return self.description
-#     class Meta:
-#         db_table = "tb_pc_items"
-# class PCSignature(JSignatureFieldsMixin):
-#     name = models.CharField(max_length=250, blank=True, null=True)
-#     nric = models.CharField(max_length=250, blank=True, null=True)
-#     update_date = models.DateField(null=True, blank=True)
-#     project = models.ForeignKey(Project, on_delete=models.SET_NULL, blank=True, null=True)
-#     pc = models.ForeignKey(Pc, on_delete=models.SET_NULL, blank=True, null=True)
-#     signature_image = models.ImageField(upload_to=content_file_pcsignature,null=True, blank=True)
-#
-#     def __str__(self):
-#         return self.name
-#     class Meta:
-#         db_table = "tb_pc_signature"
-
-
 class ActivitySchedule(models.Model):
     scope = models.ForeignKey(Scope, on_delete=models.SET_NULL, blank=True, null=True)
     qty = models.IntegerField(default=0, blank=True, null=True)
@@ -392,4 +339,17 @@ class ScheduleUsers(models.Model):
         return self.project
     class Meta:
         db_table = "tb_schedule_users"
+class InvoiceFormat(models.Model):
+    prefix = models.CharField(max_length=50, blank=True, null=True)
+    suffix = models.IntegerField(default=6, blank=True, null=True)
+    def __str__(self):
+        return self.prefix
+    class Meta:
+        db_table = "tb_invoice_format"
+class WorklogCheckSchedule(models.Model):
+    schedule_time = models.TimeField(blank=True, null=True)
+    def __str__(self):
+        return str(self.schedule_time)
+    class Meta:
+        db_table = "tb_worklog_check_schedule"
 

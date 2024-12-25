@@ -71,6 +71,10 @@
         text-decoration: none;
         background-color: #7a6fbe;
     }
+    .space-custom{
+        padding-left: 5px;
+        padding-right: 5px;
+    }
 </style>
 <div class="container-fluid">
     <div id="loading" style="z-index:1151 !important;font-size: 30px; position: absolute; top: 40%; left: 50%;">
@@ -96,11 +100,8 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4">
-                            <div class="row">
-                                <div class="mt-1 col-md-0 space-custom">
-<!--                                    <button type="button" id="assetlogadd" class="btn btn-primary w-100" style="height: 38px;"><i class="mdi mdi-calendar-plus"></i> New</button>-->
-                                </div>
-                                <div class="mt-1 col-md-6 space-custom">
+                            <div class="justify-content-start d-flex">
+                                <div class="mt-1 space-custom">
                                     <div class="export_button justify-content-center d-flex"></div>
                                 </div>
                             </div>
@@ -116,7 +117,7 @@
                                     </select>
                                     
                                 </div>
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 col-md-3 space-custom">
                                     <select class="form-control search_filter" id="search_assetname" required>
                                         <option value="">Asset Name</option>
                                         {% for assetname in assetnames %}
@@ -125,7 +126,7 @@
                                     </select>
                                     
                                 </div>
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 col-md-3 space-custom">
                                     <select class="form-control search_filter" id="search_assetcode" required>
                                         <option value="">Asset Code</option>
                                         {% for assetcode in assetcodes %}
@@ -134,10 +135,7 @@
                                     </select>
                                     
                                 </div> 
-                                <div class="col-md-1">
-<!--                                    <a href="javascript:void(0);" id="assetlogsearch" class="btn btn-primary m-1"><i class="dripicons-search align-middle"></i></a>-->
-                                </div>
-                                <div class="mt-1 col-md-3">
+                                <div class="mt-1 col-md-4">
                                     <div id="newSearchPlace"></div>
                                 </div>
                             </div>

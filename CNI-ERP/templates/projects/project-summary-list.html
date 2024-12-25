@@ -12,6 +12,7 @@
     <link href="{% static 'assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" rel="stylesheet"> 
     <!-- Sweet Alert-->
     <link href="{% static 'assets/libs/sweetalert2/sweetalert2.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/css/custom-dropdown.css' %}" rel="stylesheet" type="text/css" />
 
 {% endblock %}
 {% block content %}
@@ -75,6 +76,9 @@
     }
 </style>
 <div class="container-fluid">
+    <div id="loading" style="z-index:1151 !important;font-size: 30px; position: absolute; top: 40%; left: 50%;">
+        <img src="{% static 'assets/images/spinning-circles.svg' %}" width="80" alt="" style="background: transparent;">
+    </div>
     <div class="row">
         <div class="col-sm-6">
             <div class="page-title-box">
@@ -95,10 +99,10 @@
             <div class="card">
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-12 col-lg-12 col-xl-5 col-sm-12 pb-1">
+                        <div class="col-md-12 col-lg-12 col-xl-2 col-sm-12 pb-1">
                             <div class="row">
-                                <div class="mt-1 col-md-2 space-custom">
-                                    <div class="export_button justify-content-center d-flex"></div>
+                                <div class="mt-1 col-md-3 space-custom">
+                                    <div class="export_button d-flex"></div>
                                 </div>
 <!--                                <div class="mt-1 col-md-2 space-custom">-->
 <!--                                    <button type="button" id="btn_import" class="btn btn-primary new-button" style="height: 38px;white-space: nowrap;" > Import</button>-->
@@ -108,7 +112,7 @@
 <!--                                </div>-->
                             </div>
                         </div>
-                        <div class="col-md-12 col-lg-12 col-xl-7 col-sm-12 pt-1">
+                        <div class="col-md-12 col-lg-12 col-xl-10 col-sm-12 pt-1">
                             <div class="row justify-content-start d-flex">
                                 <div class="mt-1 col-md-2 space-custom">
                                     <select class="form-control search_filter" id="search_projectno" required>
@@ -116,38 +120,54 @@
                                         {% for proj_no in proj_nos %}
                                             <option value="{{proj_no.proj_id}}">{{proj_no.proj_id}}</option>
                                         {% endfor %}
-                                    </select>
-                                    
+                                    </select>                                    
                                 </div>
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 col-md-3 space-custom">
                                     <select class="form-control search_filter" id="search_customer" required>
                                         <option value="">Customer</option>
                                         {% for cust in customers %}
                                             <option value="{{cust.company_nameid}}">{{cust.company_nameid}}-{{cust.company_name}}</option>
                                         {% endfor %}
-                                    </select>
-                                    
+                                    </select>                                    
                                 </div>
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 col-md-3 space-custom">
                                     <select class="form-control search_filter" id="incharge_filter" required>
                                         <option value="">In-Charge</option>
                                         {% for proj_incharge in proj_incharges %}
                                             <option value="{{proj_incharge.proj_incharge}}">{{proj_incharge.proj_incharge}}</option>
                                         {% endfor %}
-                                    </select>
-                                    
+                                    </select>                                    
                                 </div>
                                 <div class="mt-1 col-md-2 space-custom">
-                                    <select class="form-control search_filter" id="year" required>
-                                        {% for date_year in date_years %}
-                                            <option value="{{date_year}}">{{date_year}}</option>
+                                    <select class="form-control search_filter" id="status" required>
+                                        <option value="">Status</option>
+                                        {% for key, value in proj_status %}
+                                            <option value="{{value}}">{{value}}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
-                                <div class="col-md-1 space-custom justify-content-start">
-<!--                                    <a href="javascript:void(0);" id="summarysearch" class="btn m-1 btn-primary"><i class="dripicons-search align-middle"></i></a>-->
+                                <div class="mt-1 col-md-2 space-custom">
+                                    {% comment %} <select class="form-control search_filter" id="year" required>
+                                        {% for date_year in date_years %}
+                                            <option value="{{date_year}}">{{date_year}}</option>
+                                        {% endfor %}
+                                    </select> {% endcomment %}
+
+                                    <div class="dropdown custom-dropdown">
+                                        <button class="dropbtn">Year</button>
+                                        <div class="dropdown-content" id="year-drop-content">
+                                            <label><input type="checkbox" value="0">All</label>
+                                            {% for date_year in date_years %}
+                                            <label><input type="checkbox" value="{{date_year}}">{{date_year}}</label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="mt-1 col-md-3">
+                            </div>
+                            <div class="row justify-content-start d-flex">
+                                <div class="mt-1 col-md-8 space-custom">
+                                </div>
+                                <div class="mt-1 col-md-4">
                                     <div class="mt-1 d-flex justify-content-end">
                                         <div id="newSearchPlace"></div>
                                     </div>
@@ -312,15 +332,18 @@
 <script src="{% static 'assets/libs/sweetalert2/sweetalert2.min.js' %}"></script>
 {% comment %} <script src="{% static 'assets/yearpicker/yearpicker.js' %}"></script> {% endcomment %}
 <script>
+    $('#loading').hide();
     $(document).ready(function(){
         $("#text_error").hide();
     });
     $(".select2").select2({width: '100%', dropdownParent: $("#manage_info")});
     $(".search_filter").select2({width: '100%'});
     {% comment %} $('.yearpicker').yearpicker(); {% endcomment %}
+    
     ajax_all_summary();
     
-    function ajax_all_summary() {
+    function ajax_all_summary() {        
+        $('#loading').show();
         $.ajax({
             headers: { "X-CSRFToken": '{{csrf_token}}' },
             url: '{% url "ajax_all_summary" %}',
@@ -328,10 +351,10 @@
             },
             type: 'POST',
             success: function (data) {
-                $("#summary_data").html(data);
-
                 $(".export_button").html('');
                 $("#newSearchPlace").html('');
+                $("#summary_data").html(data);
+                $('#loading').hide();
             }
         });
     };
@@ -340,27 +363,27 @@
         localStorage.removeItem('workprogress');
         localStorage.removeItem('workitem');
     })
+
     function summarysearch(){
-        if($("#search_projectno").val() == "" &&  $("#incharge_filter").val() == "" && $("#search_customer").val() == "" && $("#year").val() == "") {
-            location.reload();
-        } else {
-            $(".export_button").html('');
-            $("#newSearchPlace").html('');
-            $.ajax({
-                headers: { "X-CSRFToken": '{{csrf_token}}' },
-                url: '{% url "ajax_filter_summary" %}',
-                data: {
-                    search_projectno: $("#search_projectno").val(),
-                    incharge_filter: $("#incharge_filter").val(),
-                    search_customer: $("#search_customer").val(),
-                    search_year: $("#year").val(),
-                },
-                type: 'POST',
-                success: function (data) {
-                    $("#summary_data").html(data);
-                }
-            });
-        }
+        $('#loading').show();
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_filter_summary" %}',
+            data: {
+                search_projectno: $("#search_projectno").val(),
+                incharge_filter: $("#incharge_filter").val(),
+                search_customer: $("#search_customer").val(),
+                search_years: JSON.stringify(selected_years),
+                status: $("#status").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                $(".export_button").html('');
+                $("#newSearchPlace").html('');
+                $("#summary_data").html(data);
+                $('#loading').hide()
+            }
+        });
     }
     $("#search_projectno").on('change', function(e){
         summarysearch();
@@ -371,7 +394,7 @@
     $("#incharge_filter").on('change', function(e){
         summarysearch();
     });
-    $("#year").on('change', function(e){
+    $("#status").on('change', function(e){
         summarysearch();
     });
 
@@ -565,29 +588,80 @@
             });
         }
     });
+    
     var current = new Date();
-    var currentyear = current.getFullYear(); 
+    var currentyear = current.getFullYear();
     var yearvalue = `{{exist_current_year}}`;
-    options_year = [];
-    if(yearvalue) {
-        var option_lenth = ($('#year option').length);
-        if (option_lenth == 0) {
-            options_year.push({value: currentyear, text: currentyear})
-            var newOption = new Option(currentyear, currentyear, true, true);
-            $('#year').append(newOption).trigger('change');
-        } else if(option_lenth > 0) {
-            $('#year').val(currentyear);
-            $("#year").trigger('change');
-        }
-        
-    } else {
-        $('#year option').each(function(idx) {
-            options_year.push({value: $(this).val(), text: $(this).text()});
+    selected_years=[];
+
+    if(!yearvalue) {
+        const newLabel = document.createElement('label');
+        const newCheckbox = document.createElement('input');
+        newCheckbox.type = 'checkbox';
+        newCheckbox.value = currentyear;
+        newLabel.appendChild(newCheckbox);
+        newLabel.appendChild(document.createTextNode(currentyear));
+        $('#year-drop-content').prepend(newLabel);
+    };
+    checkCheckbox(currentyear);
+    function checkCheckbox(value) {
+        const checkboxes = document.querySelectorAll('#year-drop-content input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            if (checkbox.value == value) {
+                checkbox.checked = true; // Check the checkbox
+                selected_years.push(value);
+            }
         });
-        options_year.push({value: currentyear, text: currentyear})
-        var newOption = new Option(currentyear, currentyear, true, true);
-        $('#year').append(newOption).trigger('change');
+    };
+    function uncheckCheckbox(value) {
+        const checkboxes = document.querySelectorAll('#year-drop-content input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            if (checkbox.value == value) {
+                checkbox.checked = false;
+                selected_years = selected_years.filter(item => item !== value);
+            }
+        });
+    };
+
+    function checkAll(){
+        const checkboxes = document.querySelectorAll('#year-drop-content input[type="checkbox"]');
+        selected_years=[];
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = true; // Check the checkbox
+            const value = parseInt(checkbox.value, 10); // Get the checkbox value 
+            selected_years.push(value);
+        });
     }
+    function uncheckAll(){
+        const checkboxes = document.querySelectorAll('#year-drop-content input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false; // UnCheck the checkbox            
+        });
+        selected_years=[];
+    }
+
+    const checkboxes = document.querySelectorAll('#year-drop-content input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const value = parseInt(this.value, 10); // Get the checkbox value            
+            if (this.checked) {
+                if(this.value==0){
+                    checkAll();
+                }else{
+                    selected_years.push(value);
+                    uncheckCheckbox(0);
+                }
+            } else {
+                if(this.value==0){
+                    uncheckAll();
+                }else{
+                    selected_years = selected_years.filter(item => item !== value);
+                    uncheckCheckbox(0);
+                }
+            }
+            summarysearch();
+        });
+    });
     
 </script>
 {% endblock %}

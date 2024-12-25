@@ -231,7 +231,7 @@
                                         <div class="row pt-2">
                                             <div class="mb-3">
                                                 <label class="form-label" for="proj_name">Project Name</label>
-                                                <input type="text" class="form-control" id="proj_name" style="height:38px;" name="proj_name" value={% if summary.proj_name == None or  summary.proj_name == "" %} "{{summary.proj_id}} - {{summary.RE}}"
+                                                <input type="text" class="form-control" id="proj_name" style="height:38px;" title="Colons are not allowed." value={% if summary.proj_name == None or  summary.proj_name == "" %} "{{summary.proj_id}} - {{summary.RE}}"
                                                 {% else %} "{{summary.proj_name}}" {% endif %} required>
                                             </div>
                                         </div>
@@ -404,7 +404,134 @@
                                 
                             </form>
                         </div>
+
+
+
                         <div class="tab-pane p-3" id="proj_item" role="tabpanel">
+                            <span class="p-1 fw-bold" style="font-size: 15px;">
+                                Work Details
+                            </span>
+                            <ul class="nav nav-tabs mt-3" role="tablist">
+                                <li class="nav-item">
+                                    <a class="nav-link active" style="padding-left: 30px;padding-right: 30px;" data-bs-toggle="tab" href="#pitemoverview" id="pitemoverviewtab" role="tab">
+                                        <span class="d-block d-sm-none">OV</span>
+                                        <span class="d-none d-sm-block">OverView</span>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" style="padding-left: 30px;padding-right: 30px;" data-bs-toggle="tab" href="#pitemactivity" id="pitemactivitytab" role="tab">
+                                        <span class="d-block d-sm-none">AT</span>
+                                        <span class="d-none d-sm-block">Activity</span>
+                                    </a>
+                                </li>
+                            </ul>
+                            <div class="tab-content">
+                                <div class="tab-pane active p-3" id="pitemoverview" role="tabpanel">
+                                    <div class="table-responsive mt-2">
+                                        <table id="workdt" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                                            <thead>
+                                                <tr>
+                                                    <th width="5%">SN</th>
+                                                    <th width="75%">Description</th>
+                                                    <th width="10%">UOM</th>
+                                                    <th width="10%">QTY</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for projectitem in projectitems %}
+                                                <tr>
+                                                    <td width="5%" class="align-middle">{{ forloop.counter }}</td>
+                                                    <td width="75%" class="align-middle">{{projectitem.description|wordwrap:150|linebreaks|default_if_none:""}}</td>
+                                                    <td width="10%" class="align-middle">{{projectitem.uom|default_if_none:""}}</td>
+                                                    <td width="10%" class="align-middle">{{projectitem.qty|default_if_none:""}}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="tab-pane p-3" id="pitemactivity" role="tabpanel">
+                                    <div class="table-responsive mt-2">
+                                        <table id="workacitivedt" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                                            <thead>
+                                                <tr>
+                                                    <th>SN</th>
+                                                    <th>Description</th>
+                                                    <th>UOM</th>
+                                                    <th>QTY</th>
+                                                    <th>Allocation</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            {% for projectitem in projectitems %}
+                                                <tbody>
+                                                    
+                                                    <tr>
+                                                        <td class="align-middle">{{ forloop.counter }}</td>
+                                                        <td class="align-middle">{{projectitem.description|default_if_none:""|wordwrap:150|linebreaks}}</td>
+                                                        <td class="align-middle">{{projectitem.uom|default_if_none:""}}</td>
+                                                        <td class="align-middle">{{projectitem.qty|default_if_none:""}}</td>
+                                                        <td class="align-middle">
+                                                            {% if projectitem.allocation_perc %}
+                                                                {{projectitem.allocation_perc|floatformat:2|default_if_none:""}} %
+                                                            {% endif %}
+                                                        </td>
+                                                        <td class="align-middle">
+                                                            <!-- <a href="javascript:void(0);" onclick="updateitems('{{projectitem.id}}')" class="btn btn-outline-primary btn-sm edit com_update" title="Edit">
+                                                                <i class="fas fa-pencil-alt"></i>
+                                                            </a> -->
+                                                            <a href="javascript:void(0);" onclick="addsubitems('{{projectitem.id}}')" class="btn btn-outline-secondary btn-sm add" title="Add">
+                                                                <i class="ion ion-md-add"></i>
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                                {% if projectitem.childs %}
+                                                    <tbody> 
+                                                        {% for child in projectitem.childs %}
+                                                        <tr>
+                                                            <td class="align-middle"></td>
+                                                            <td class="align-middle">{{child.description|default_if_none:""}}</td>
+                                                            <td class="align-middle">{{child.uom|default_if_none:""}}</td>
+                                                            <td class="align-middle">{{child.qty|default_if_none:""}}</td>
+                                                            <td class="align-middle">
+                                                                {% if child.allocation_perc %}
+                                                                    {{child.allocation_perc|floatformat:2|default_if_none:""}} %
+                                                                {% endif %}
+                                                            </td>
+                                                            <td class="align-middle">
+                                                                <a href="javascript:void(0);" onclick="updateitems('{{child.id}}')" class="btn btn-outline-primary btn-sm edit com_update" title="Edit">
+                                                                    <i class="fas fa-pencil-alt"></i>
+                                                                </a>
+                                                                <a href="javascript:void(0);" onclick="deleteitems('{{child.id}}','{{child.description}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
+                                                                    <i class="far fa-trash-alt"></i>
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row pt-2">
+                                <div class="mb-3">
+                                    <label class="form-label" for="note">Note</label>
+                                    <textarea class="form-control" id="note" name="note" rows="5">{{summary.quotation.note|default_if_none:''}}</textarea>
+                                </div>
+                            </div>
+
+                            
+                        </div>
+
+
+
+
+                        {% comment %} <div class="tab-pane p-3" id="proj_item" role="tabpanel">
 
                             <div class="row">
                                 <div class="mt-1 col-md-3"></div>
@@ -415,69 +542,9 @@
                                 </div>
                             </div>
                             <div id="items-content">
-
                             </div>
-
-                            <div class="table-responsive">
-                                <table id="scopedatatable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
-
-                                    <tbody>
-                                    {% if projectitems %}
-                                    <tr>
-                                        <td width="5%"></td>
-                                        <td width="48%"></td>
-                                        <td width="8%"></td>
-                                        <td width="8%"></td>
-                                        <td width="8%" class="align-middle">Total</td>
-                                        <td width="8%" class="align-middle">$ {{subtotal|floatformat:2}}</td>
-                                        <td width="15%" class="align-middle"></td>
-                                    </tr>
-                                    <tr>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                            <td class="align-middle">Discount</td>
-                                        <td class="align-middle">$ {{summary.quotation.discount|floatformat:2}}</td>
-                                        <td></td>
-                                    </tr>
-                                    <tr>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td class="align-middle">GST 9%</td>
-                                        <td class="align-middle">$ {{gst|floatformat:2}}</td>
-                                        <td></td>
-
-                                    </tr>
-                                    <tr>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td class="align-middle">Final Total</td>
-                                        <td class="align-middle">$ {{final_total|floatformat:2}}</td>
-                                        <td></td>
-
-                                    </tr>
-                                    <tr>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td class="align-middle">Margin</td>
-                                        <td class="align-middle">{{summary.quotation.margin|floatformat:2}} %</td>
-                                        <td></td>
-
-                                    </tr>
-                                    {% endif %}
-
-                                    </tbody>
-                                </table>
-                            </div>
-                            
-                        </div>
+                        </div> {% endcomment %}
+                        
                         <div class="tab-pane p-3" id="site_progress" role="tabpanel">
                             <span class="p-1 fw-bold" style="font-size: 15px;">
                                 Work Progress 
@@ -736,7 +803,12 @@
                                         {% for delivery in dolist %}
                                         <tr>
                                             <td class="align-middle">{{forloop.counter}}</td>
-                                            <td class="align-middle">{{delivery.do_no|default_if_none:""}}</td>
+                                            <td class="align-middle">
+                                                <a href="{% url 'do_summary'%}">
+                                                    {{delivery.do_no|default_if_none:""}}
+                                                </a>
+                                            </td>
+                                            {% comment %} <td class="align-middle">{{delivery.do_no|default_if_none:""}}</td> {% endcomment %}
                                             <td class="align-middle">{{delivery.date|date:"d M, Y"|default_if_none:""}}</td>
                                             <td class="align-middle">{{delivery.status|default_if_none:""}}</td>
                                             <td class="align-middle">{{delivery.filename|default_if_none:""}}</td>
@@ -760,7 +832,7 @@
                                                 </a>
                                             </td>
                                         </tr>
-                                    {% endfor %}
+                                        {% endfor %}
                                     
                                     </tbody>
                                 </table>
@@ -797,7 +869,11 @@
                                         {% for service in srlist %}
                                         <tr>
                                             <td class="align-middle">{{forloop.counter}}</td>
-                                            <td class="align-middle">{{service.sr_no|default_if_none:""}}</td>
+                                            <td class="align-middle">
+                                                <a href="{% url 'sr_summary'%}">
+                                                    {{service.sr_no|default_if_none:""}}
+                                                </a>
+                                            </td>
                                             <td class="align-middle">{{service.date|date:"d M, Y"|default_if_none:""}}</td>
                                             <td class="align-middle">{{service.status|default_if_none:""}}</td>
                                             <td class="align-middle">{{service.filename|default_if_none:""}}</td>
@@ -862,7 +938,11 @@
                                             {% for progress in pclist %}
                                             <tr>
                                                 <td class="align-middle">{{forloop.counter}}</td>
-                                                <td class="align-middle">{{progress.pc_no|default_if_none:""}}</td>
+                                                <td class="align-middle">
+                                                    <a href="{% url 'pc_summary'%}">
+                                                        {{progress.pc_no|default_if_none:""}}
+                                                    </a>
+                                                </td>
                                                 <td class="align-middle">{{progress.date|date:"d M, Y"|default_if_none:""}}</td>
                                                 <td class="align-middle">{{progress.status|default_if_none:""}}</td>
                                                 <td class="align-middle">{{progress.amount|default_if_none:""}}</td>
@@ -3575,7 +3655,7 @@
             type: 'POST',
             success: function (data) {
                 $("#items-content").append(data);
-                changeStateToAward();
+                <!--changeStateToAward();-->
             },
             async: false
         });

@@ -1,9 +1,5 @@
 import base64
 import datetime
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.utils import formatdate
 from functools import partial
 
 from django.conf import settings
@@ -15,7 +11,7 @@ from django.views.generic.list import ListView
 import pytz
 from django.views import generic
 from maintenance.models import Device, MainSRSignature, MainSr, MainSrItem, Maintenance, MaintenanceFile, Schedule
-from accounts.models import Uom, User, NotificationPrivilege
+from accounts.models import Uom, User, NotificationPrivilege, UserStatus
 from maintenance.resources import MainSrItemResource, MaintenanceResource
 from project.models import Sr
 from sales.decorater import ajax_login_required
@@ -40,6 +36,7 @@ from io import BytesIO
 from reportlab.lib.pagesizes import A4, landscape, portrait
 from notifications.signals import notify
 from textwrap import wrap
+from accounts.email import send_mail
 
 
 # Create your views here.
@@ -78,27 +75,6 @@ def ajax_filter_maintenance(request):
             maintenance = maintenance.filter(start_date__gte=startdate, start_date__lte=enddate)
         return render(request, 'maintenance/ajax-maintenance.html', {'maintenances': maintenance})
 
-
-def send_mail(to_email, subject, message):
-    # For Gmail
-    SMTP_SERVER = "smtp.gmail.com"
-    SMTP_PORT = 587
-    my_email = os.getenv("DJANGO_DEFAULT_EMAIL")
-    my_password=os.getenv("DJANGO_EMAIL_HOST_PASSWORD")
-    msg = MIMEMultipart()
-    msg['From'] = my_email
-    msg['To'] = to_email
-    msg['Date'] = formatdate(localtime=True)
-    msg['Subject'] = subject
-    msg.attach(MIMEText(message, 'html'))
-
-    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as smtpObj:
-        smtpObj.ehlo()
-        smtpObj.starttls()
-        smtpObj.login(my_email, my_password)
-        smtpObj.sendmail(my_email, to_email, msg.as_string())
-        smtpObj.close()
-    # print("********* Sent mail to {0} Successfully! **********".format(to_email))
 # def task():
 #     sender = User.objects.filter(role="Managers").first()
 #     is_email = NotificationPrivilege.objects.get(user_id=sender.id).is_email
@@ -245,7 +221,8 @@ class MaintenanceDetailView(DetailView):
         context['filelist'] = MaintenanceFile.objects.filter(maintenance_id=content_pk)
         context['srlist'] = MainSr.objects.filter(maintenance_id=content_pk)
         quotation = summary.quotation
-        maintenanceitems = Scope.objects.filter(quotation_id=quotation.id, parent=None)
+        # maintenanceitems = Scope.objects.filter(quotation_id=quotation.id, parent=None)
+        maintenanceitems = Scope.objects.filter(quotation_id=quotation.id)
         context['maintenanceitems'] = maintenanceitems
         context["devices"] = Device.objects.filter(maintenance_id=content_pk)
         context['suppliers'] = Company.objects.filter(associate="Supplier")
@@ -441,7 +418,8 @@ def mainsrdocadd(request):
                     description = '<a href="/maintenance-detail/' + str(
                         mainsr.maintenance_id) + '/service-report-detail/'+str(mainsr.id)+'">Project Sr No : {0} Status updated from {1} to Signed</a>'.format(
                         mainsr.sr_no, mainsr.status)
-                    for receiver in User.objects.filter(
+                    user_status=UserStatus.objects.get(status='resigned')
+                    for receiver in User.objects.exclude(status=user_status).filter(
                             Q(username=mainsr.maintenance.proj_incharge) | Q(role='Managers')).distinct():
                         if receiver.notificationprivilege.do_status:
                             notify.send(sender, recipient=receiver, verb='Message', level="success",
@@ -882,7 +860,7 @@ def exportMainSrPDF(request, value):
     quotation = maintenance.quotation
     sritems = MainSrItem.objects.filter(sr_id=value)
 
-    domain = request.META['HTTP_HOST']
+    domain = os.getenv("DOMAIN")
     logo = Image('http://' + domain + '/static/assets/images/printlogo.png', hAlign='LEFT')
     response = HttpResponse(content_type='application/pdf')
     # currentdate = datetime.date.today().strftime("%d-%m-%Y")
@@ -1134,8 +1112,8 @@ class NumberedCanvas(canvas.Canvas):
         canvas.Canvas.__init__(self, *args, **kwargs)
         self._saved_page_states = []
         self.PAGE_HEIGHT = defaultPageSize[1]
-        self.PAGE_WIDTH = defaultPageSize[0]
-        self.domain = settings.HOST_NAME
+        self.PAGE_WIDTH = defaultPageSize[0]        
+        self.domain = os.getenv("DOMAIN")
         self.logo = ImageReader('http://' + self.domain + '/static/assets/images/printlogo.png')
 
     def showPage(self):
@@ -1272,7 +1250,7 @@ def addMainSrSign(request):
         format, imgstr = default_base64.split(';base64,')
         ext = format.split('/')[-1]
         signature_image = ContentFile(base64.b64decode(imgstr),
-                                      name='service-sign-' + datetime.date.today() + "." + ext)
+                                      name='service-sign-' + datetime.date.today().strftime("%Y-%m-%d") + "." + ext)
         if serviceid == "-1":
             try:
                 MainSRSignature.objects.create(
@@ -1294,7 +1272,8 @@ def addMainSrSign(request):
                     description = '<a href="/maintenance-detail/' + str(
                         sr.maintenance_id) + '/service-report-detail/'+str(sr.id)+'">Project Sr No : {0} Status updated from {1} to Signed</a>'.format(
                         sr.sr_no, sr.status)
-                    for receiver in User.objects.filter(
+                    user_status=UserStatus.objects.get(status='resigned')
+                    for receiver in User.objects.exclude(status=user_status).filter(
                             Q(username=sr.maintenance.proj_incharge) | Q(role='Managers')).distinct():
                         if receiver.notificationprivilege.do_status:
                             notify.send(sender, recipient=receiver, verb='Message', level="success",

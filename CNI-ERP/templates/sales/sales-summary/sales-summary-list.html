@@ -73,6 +73,10 @@
             width: 100px;
         }
     }
+    .space-custom{
+        padding-left: 5px;
+        padding-right: 5px;
+    }
 </style>
 <div class="container-fluid">
     <div class="row">
@@ -95,10 +99,10 @@
             <div class="card">
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-12 col-lg-12 col-xl-5 col-sm-12 pb-1">
+                        <div class="col-md-12 col-lg-12 col-xl-3 col-sm-12 pb-1">
                             <div class="row">
-                                <div class="mt-1 col-md-2 space-custom">
-                                    <div class="export_button justify-content-center d-flex"></div>
+                                <div class="mt-1 col-md-12 space-custom">
+                                    <div class="export_button justify-content-start d-flex"></div>
                                 </div>
 <!--                                <div class="mt-1 col-md-2 space-custom">-->
 <!--                                    <button type="button" id="btn_import" class="btn btn-primary new-button" style="height: 38px;white-space: nowrap;" > Import</button>-->
@@ -108,18 +112,15 @@
 <!--                                </div>-->
                             </div>
                         </div>
-                        <div class="col-md-12 col-lg-12 col-xl-7 col-sm-12 pt-1">
-                            <div class="row justify-content-start d-flex">
-                                <div class="mt-1 col-md-2 space-custom">
-                                </div>
-                                <div class="mt-1 col-md-2 space-custom">
+                        <div class="col-md-12 col-lg-12 col-xl-9 col-sm-12 pt-1">
+                            <div class="row justify-content-end d-flex">
+                                <div class="mt-1 col-md-3 space-custom">
                                     <select class="form-control search_filter" id="search_sales_no" required>
                                         <option value="">Product Sales No</option>
                                         {% for sales_no in sales_nos %}
                                             <option value="{{sales_no.prod_sale_id}}">{{sales_no.prod_sale_id}}</option>
                                         {% endfor %}
                                     </select>
-
                                 </div>
                                 <div class="mt-1 col-md-2 space-custom">
                                     <select class="form-control search_filter" id="search_customer" required>
@@ -138,10 +139,7 @@
                                     </select>
                                 </div>
 
-                                <div class="col-md-1 space-custom justify-content-start">
-<!--                                    <a href="javascript:void(0);" id="summarysearch" class="btn m-1 btn-primary"><i class="dripicons-search align-middle"></i></a>-->
-                                </div>
-                                <div class="mt-1 col-md-3">
+                                <div class="mt-1 col-md-5">
                                     <div class="mt-1 d-flex justify-content-end">
                                         <div id="newSearchPlace"></div>
                                     </div>

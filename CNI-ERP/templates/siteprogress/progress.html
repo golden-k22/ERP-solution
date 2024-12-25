@@ -14,7 +14,6 @@
 {% block content %}
 <style type="text/css">
     .select-search {
-        width: 85%;
         padding: .575rem .75rem;
         font-size: .8125rem;
         font-weight: 400;
@@ -128,34 +127,25 @@
                             <div id="progresslog_data"></div>
                         </div>
                         <div class="tab-pane p-3" id="progress_log" role="tabpanel">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="row">
-                                        <div class="mt-1 col-md-3 space-custom">
-                                            <button type="button" id="siteprogressadd" class="btn btn-outline-secondary waves-effect w-100" style="height: 38px;display: none;"><i class="mdi mdi-calendar-plus"></i> New</button>
-                                        </div>
+                            <div class="d-flex">
+                                <div class="col-md-8 justify-content-start d-flex">
+                                    <div class="mt-1 me-3 space-custom">
+                                        <button type="button" id="siteprogressadd" class="btn btn-outline-secondary waves-effect w-100" style="height: 38px;display: none;"><i class="mdi mdi-calendar-plus"></i> New</button>
                                     </div>
-                                </div>
-                                <div class="col-md-8">
-                                    <div class="row justify-content-end">
-                                        <div class="mt-1 col-md-2 space-custom">
-                                            <select class="form-control select2" id="search_description" required>
-                                                <option value="">Description</option>
-                                                {% for description in descriptions %}
-                                                    <option value="{{description.description}}">{{description.description}}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                        <div class="mt-1 col-md-3 space-custom">
-                                            <input class="select-search input-daterange-datepicker" type="text"  id="overviewdaterange" autocomplete="off" placeholder="Date Range" required> 
-                                        </div>
-                                        <div class="col-md-1 space-custom">
-<!--                                            <a href="javascript:void(0);" id="overviewsearch" class="btn btn-primary m-1"><i class="dripicons-search align-middle"></i></a>-->
-                                        </div>
-                                        <div class="mt-1 col-md-3">
-                                            <div id="oSearchPlace"></div>
-                                        </div>
+                                    <div class="mt-1 me-3 space-custom" style="width: 200px;">
+                                        <select class="form-control select2" id="search_description" required>
+                                            <option value="">Description</option>
+                                            {% for description in descriptions %}
+                                                <option value="{{description.description}}">{{description.description}}</option>
+                                            {% endfor %}
+                                        </select>
                                     </div>
+                                    <div class="mt-1 me-3 space-custom">
+                                        <input class="select-search input-daterange-datepicker" type="text"  id="overviewdaterange" autocomplete="off" placeholder="Date Range" required> 
+                                    </div>
+                                </div>                            
+                                <div class="col-md-4 justify-content-end d-flex">
+                                    <div id="oSearchPlace"></div>
                                 </div>
                             </div>
                             <div id="overview_data"></div>

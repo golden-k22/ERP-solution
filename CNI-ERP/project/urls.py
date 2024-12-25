@@ -97,12 +97,8 @@ urlpatterns = [
     url(r'^ajax_get_service_sign/$', views.getServiceSign, name='ajax_get_service_sign'),
     url(r'^ajax_get_uom_name/$', views.ajax_get_uom_name, name='ajax_get_uom_name'),
 
-
-    url(r'^ajax_check_sr_invoice_no/$', views.ajax_check_sr_invoice_no, name='ajax_check_sr_invoice_no'),
     url(r'^ajax_add_sr_invoice_no/$', views.ajax_add_sr_invoice_no, name='ajax_add_sr_invoice_no'),
-    url(r'^ajax_check_do_invoice_no/$', views.ajax_check_do_invoice_no, name='ajax_check_do_invoice_no'),
     url(r'^ajax_add_do_invoice_no/$', views.ajax_add_do_invoice_no, name='ajax_add_do_invoice_no'),
-    url(r'^ajax_check_pc_invoice_no/$', views.ajax_check_pc_invoice_no, name='ajax_check_pc_invoice_no'),
     url(r'^ajax_add_pc_invoice_no/$', views.ajax_add_pc_invoice_no, name='ajax_add_pc_invoice_no'),
 
     # Scheduling
@@ -110,6 +106,7 @@ urlpatterns = [
     url(r'^ajax_get_planning_table/$', views.get_planning_table, name='ajax_get_planning_table'),
     url(r'^ajax_get_overview_table/$', views.get_overview_table, name='ajax_get_overview_table'),
     url(r'^ajax_get_planning_modal/$', views.get_planning_modal, name='ajax_get_planning_modal'),
+    url(r'^ajax_get_overview_modal/$', views.get_overview_modal, name='ajax_get_overview_modal'),
     url(r'^ajax_edit_planning_modal/$', views.edit_planning_modal, name='ajax_edit_planning_modal'),
     url(r'^ajax_get_activity_ids/$', views.get_activity_ids, name='ajax_get_activity_ids'),
     url(r'^ajax_add_activities/$', views.add_activities, name='ajax_add_activities'),

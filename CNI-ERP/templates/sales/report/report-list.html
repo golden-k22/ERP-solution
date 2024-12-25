@@ -44,6 +44,10 @@
         text-decoration: none;
         background-color: #7a6fbe;
     }
+    .space-custom{
+        padding-left: 5px;
+        padding-right: 5px;
+    }
 </style>
 {% load humanize %}
 <div class="container-fluid">
@@ -114,14 +118,14 @@
                     <div class="row">
                         <div class="col-md-4">
                             <div class="row">
-                                <div class="mb-1 mt-1 col-md-6 space-custom">
+                                <div class="mb-1 mt-1 col-md-12 space-custom">
                                     <div class="export_button justify-content-start d-flex"></div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-8">
                             <div class="row justify-content-end">
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 col-md-3 space-custom">
                                     <select class="form-control search_filter" id="search_quotation" required>
                                         <option value="">Quotation No</option>
                                         {% for sqtt_id in sqtt_ids %}
@@ -129,10 +133,10 @@
                                         {% endfor %}
                                     </select>
                                 </div>
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 col-md-4 space-custom">
                                     <input class="form-control input-daterange-datepicker" autocomplete="off" type="text" style="height: 38px;" placeholder="Date"  id="daterange" required>
                                 </div>
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 col-md-3 space-custom">
                                     <select class="form-control search_filter" id="search_person" required>
                                         <option value="">Sale Person</option>
                                         {% for saleper in salepersons %}
@@ -148,13 +152,10 @@
                                         {% endfor %}
                                     </select>
                                 </div>
-                                <div class="mt-1 col-md-1 justify-content-start">
-<!--                                    <a href="javascript:void(0);" id="reportsearch" class="btn btn-primary"><i class="dripicons-search align-middle"></i></a>-->
-                                </div>
-                                <div class="mt-1 col-md-3">
-                                    <div id="newSearchPlace"></div>
-                                </div>
                             </div>
+                        </div>
+                        <div class="mt-1 col-md-12">
+                            <div id="newSearchPlace"></div>
                         </div>
                     </div>
                     <div id="report_data"></div>

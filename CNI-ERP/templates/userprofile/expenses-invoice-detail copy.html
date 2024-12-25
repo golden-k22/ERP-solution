@@ -1,0 +1,960 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block page-title %}Expenses Claim Detail{% endblock%}
+{% block css %}
+    <link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" rel="stylesheet">
+    <!-- DataTables -->
+    <link href="{% static 'assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'assets/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" /> 
+    <link rel="stylesheet" href="{% static 'assets/dropify/dist/css/dropify.min.css' %}">
+{% endblock %}
+{% block content %}
+<style type="text/css">
+    .datepicker {
+        z-index:1151 !important;
+    }
+    .dropify-wrapper .dropify-message span.file-icon p {
+        font-size:14px!important;
+        color: #CCC;
+    }
+</style>
+<div class="container-fluid">
+    <div id="loading" style="z-index:1151 !important;font-size: 30px; position: absolute; top: 40%; left: 50%;">
+        <img src="{% static 'assets/images/spinning-circles.svg' %}" width="80" alt="" style="background: transparent;">
+    </div>
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="page-title-box">
+                <h4>Invoice Details
+                </h4>
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a class="text-primary" href="{% url 'all_expenses_claim' %}"><b>Expenses Claim</b></a></li>
+                    <li class="breadcrumb-item active">Invoice Details</li>
+                </ol>
+                
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link" style="padding-left: 30px;padding-right: 30px;" id="claimdetailtab" data-bs-toggle="tab" href="#claimdetail" role="tab">
+                                <span class="d-block d-sm-none">DT</span>
+                                <span class="d-none d-sm-block">DETAILS</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" style="padding-left: 30px;padding-right: 30px;" id="claimitemtab" href="#claimitem" role="tab">
+                                <span class="d-block d-sm-none">IT</span>
+                                <span class="d-none d-sm-block">ITEMS </span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" style="padding-left: 30px;padding-right: 30px;" id="claimfiletab" href="#claimfile" role="tab">
+                                <span class="d-block d-sm-none">FL</span>
+                                <span class="d-none d-sm-block">FILES </span>
+                            </a>
+                        </li>
+                    </ul>
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        <div class="tab-pane p-3" id="claimdetail" role="tabpanel">
+
+                            <div class="row">
+                                <form data-parsley-validate id="ExpensesClaimDetailForm">
+                                    <div class="button-items mb-3">
+<!--                                        <a href="javascript:void(0);" id="expensesclaimupdate" class="align-middle btn-lg btn-outline-primary"><i class="fas fa-pencil-alt mr-2"></i></a>-->
+<!--                                        <a href="javascript:void(0);" id="expensesclaimcancel" class="align-middle btn-lg btn-outline-danger"><i class="ion ion-ios-close-circle mr-2"></i></a>-->
+                                        <button type="button" id="claim_submit" class="btn btn-primary btn-sm" style="margin-bottom: 0px!important;"><i class="mdi mdi-content-save-move"></i> Submit</button>
+                                    </div>
+                                    <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;"-->
+                                    <div class="row p-3" >
+                                        <div class="col-md-6">
+                                            <div class="row pt-1">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="emp_id">Emp No</label>
+                                                    <input type="text" class="form-control" id="emp_id" name="emp_id" value="{{expenseclaim.emp_id|default_if_none:''}}" required>
+                                                </div>
+                                            </div>
+                                            <div class="row pt-1" >
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="expense_name">Name</label>
+                                                    <input type="text" class="form-control" id="expense_name" name="expense_name" value="{{expenseclaim.expenses_name|default_if_none:''}}" required>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="row pt-1">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="amount">Total Amount</label>
+                                                    <input type="text" class="form-control js-number" id="amount" name="amount" value="{{total_detail|floatformat:2|default_if_none:''}}" required readonly>
+                                                </div>
+                                            </div>                                
+                                        </div>
+                                        <div class="col-md-2"></div>
+                                        <div class="col-md-4">
+                                            <div class="row pt-2 me-3 ms-3">
+                                                <span class="badge bg-primary pt-3 pb-3 fst-italic" style="font-size: 18px!important;">EXPENSES CLAIM</span>
+                                            </div>
+                                            <div class="row mt-3 mb-3 me-5 ms-5">
+                                                <div class="d-flex justify-content-center">
+                                                    <input type="text" class="form-control" id="ec_id" name="ec_id" style="text-align: center;padding-top: 10px;padding-bottom: 10px;font-size: 20px; width: 50%;" value="{{expenseclaim.ec_id|default_if_none:''}}" readonly>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3 me-2 ms-2 row">
+                                                <label class="col-md-3 col-form-label" for="submission_date">Date</label>
+                                                <div class="col-md-9">
+                                                    <input type="text" style="height:38px;" class="form-control" id="submission_date"  name="submission_date" value="{{expenseclaim.submission_date|date:'d M, Y'|default_if_none:''}}" data-date-format="dd M yyyy" data-provide="datepicker" data-date-autoclose="true" required>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3 me-2 ms-2 row">
+                                                <label for="exp_status" class="col-md-3 col-form-label">Status:</label>
+                                                <div class="col-md-9">
+                                                    <select class="form-control select2" id="exp_status" name="exp_status" required>
+                                                        <option value="Open" {% if expenseclaim.status == "Open" %}selected{% endif %}>Open</option>
+                                                        <option value="Pending" {% if expenseclaim.status == "Pending" %}selected{% endif %}>Pending</option>
+                                                        <option value="Approved" {% if expenseclaim.status == "Approved" %}selected{% endif %}>Approved</option>
+                                                        <option value="Rejected" {% if expenseclaim.status == "Rejected" %}selected{% endif %}>Rejected</option>
+            
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="tab-pane p-3" id="claimitem" role="tabpanel">
+                            <div class="row mt-3">
+                                <div class="p-2">
+                                    <button type="button" id="expensedetailadd" class="btn btn-primary btn-sm"><i class="mdi mdi-content-save-move"></i> Add</button>
+                                    <button type="button" id="invoiceupload" class="btn btn-primary btn-sm"><i class="mdi mdi-content-save-move"></i> Upload Invoice</button>
+                                </div>
+                                <div class="table-responsive pt-1">
+                                    <table id="detaildatatable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                                        <thead>
+                                            <tr>
+                                                <th>SN</th>
+                                                <th>Date</th>
+                                                <th>Project No</th>
+                                                <th>Vendor</th>
+                                                <th>Description</th>
+                                                <th>GST {{gst_default|floatformat:0}}%</th>
+                                                <th>Remark</th>
+                                                <th>Amount (w/o GST)</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for d_expensesclaim in expensesclaim_details %}
+                                            <tr>
+                                                <td class="align-middle">{{forloop.counter}}</td>
+                                                <td class="align-middle">{{d_expensesclaim.date|date:'d M, Y'|default_if_none:""}}</td>
+                                                <td class="align-middle">{{d_expensesclaim.proj_id|default_if_none:""}}</td>
+                                                
+                                                <td class="align-middle">{{d_expensesclaim.vendor|default_if_none:""}}</td>
+                                                <td class="align-middle">{{d_expensesclaim.description|default_if_none:""}}</td>
+                                                <td class="align-middle">
+                                                    {% if d_expensesclaim.gst %}
+                                                        {{ d_expensesclaim.gstamount }}
+                                                    {% else %}
+                                                        -
+                                                    {% endif %}
+                                                </td>
+                                                <td class="align-middle">{{d_expensesclaim.remark|default_if_none:"--"}}</td>
+                                                <td class="align-middle">$ {{d_expensesclaim.amount|floatformat:2|default_if_none:""}}</td>
+                                                <td class="align-middle">
+                                                    <a href="javascript:void(0);" onclick="updateexitem('{{d_expensesclaim.id}}')" class='btn btn-outline-primary btn-sm edit {% if expenseclaim.status != "Open" %} disabled {% endif %}' title="Edit">
+                                                        <i class="fas fa-pencil-alt"></i>
+                                                    </a>
+                                                    <a href="javascript:void(0);" onclick="deleteexitem('{{d_expensesclaim.id}}')" class='btn btn-outline-danger btn-sm delete {% if expenseclaim.status != "Open" %} disabled {% endif %}' title="Delete">
+                                                        <i class="far fa-trash-alt"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                        {% if expensesclaim_details %}
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td class="align-middle">Subtotal</td>
+                                            <td class="align-middle">$ {{subtotal|floatformat:2}}</td>   
+                                            <td></td>  
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td class="align-middle">GST {{gst_default|floatformat:0}}%</td>
+                                            <td class="align-middle">$ {{gst|floatformat:2}}</td> 
+                                            <td></td>    
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td class="align-middle">Total</td>
+                                            <td class="align-middle">$ {{total_detail|floatformat:2}}</td> 
+                                            <td></td>    
+                                        </tr>
+                                        {% endif %}
+                                        
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane p-3" id="claimfile" role="tabpanel">
+                            <div class="row">
+                                <div class="p-2">
+                                    <button type="button" id="expensefileadd" class="btn btn-primary btn-sm"><i class="mdi mdi-content-save-move"></i> Add</button>
+                                </div>
+                                <div class="table-responsive pt-1">
+                                    <table id="filedatatable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                                        <thead>
+                                            <tr>
+                                                <th>SN</th>
+                                                <th>Receipt No</th>
+                                                <th>Document</th>
+                                                <th>Uploaded By</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                         {% for expensesclaimfile in expensesclaim_files %}
+                                            <tr>
+                                                <td class="align-middle">{{expensesclaimfile.id|default_if_none:""}}</td>
+                                                <td class="align-middle" style="cursor: pointer;" data-filename="{{expensesclaimfile.receipt_name}}" data-file="{{expensesclaimfile.receipt_file.url}}" data-number="{{expensesclaimfile.receipt_no}}" data-id="{{expensesclaimfile.id}}">{{expensesclaimfile.receipt_no|default_if_none:""}}</td>
+                                                <td class="align-middle">{{expensesclaimfile.receipt_name|default_if_none:""}}</td>
+                                                
+                                                <td class="align-middle">{{expensesclaimfile.upload_by|default_if_none:""}}</td>
+                                                <td class="align-middle">
+                                                    <div class="d-none d-sm-block">
+                                                        <a href="{{expensesclaimfile.receipt_file.url}}" download class="btn btn-outline-primary btn-sm edit com_update" title="download">
+                                                            <i class="ion ion-md-arrow-down"></i>
+                                                        </a>
+                                                        <a href="javascript:void(0);" onclick="deleteexpensefile('{{expensesclaimfile.id}}')" class="btn btn-outline-danger btn-sm delete" title="Delete">
+                                                            <i class="far fa-trash-alt"></i>
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Delete Expenses Claim File modal content -->
+<div id="deleteModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="delModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="delModalLabel">Delete Expenses Claim File</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5>Are you sure you want to delete this record?</h5>
+                <input type="hidden" id="del_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button id="del_confirm" type="button" class="btn btn-primary waves-effect btn-sm waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!--Expense Claim Detail modal content -->
+<div id="expenseclaimdetailmodal" class="modal fade" role="dialog" aria-labelledby="expenseclaimdetail1ModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_item">Add New Expenses Detail</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_info_detail">
+                <form class="needs-validation p-3" id="EDetailForm">
+                    {% csrf_token %}
+
+                    <div id="text_error_detail" class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+                    </div>
+                    
+                    <div class="mb-3 mt-3 row">
+                        <label for="detail_date" class="col-md-4 col-form-label">Date:</label>
+                        <div class="col-md-8">
+                            <input type="text" class="form-control" id="detail_date"  name="detail_date"  data-date-format="dd M yyyy" data-provide="datepicker" data-date-autoclose="true" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="proj_id" class="col-md-4 col-form-label">Project No:</label>
+                        <div class="col-md-8">
+                            <select class="form-control select2" id="proj_id" required>
+                                <option value="">Select Project No</option>
+                                {% for project in projects %}
+                                    <option value="{{project.id}}">{{project.proj_name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="vendor" class="col-md-4 col-form-label">Vendor</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="vendor" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="description" class="col-md-4 col-form-label">Description:</label>
+                        <div class="col-md-8">
+                            <textarea class="form-control" rows="4" type="text" id="description" required></textarea>
+                        </div>
+                        
+                    </div>
+                    
+                    <div class="mb-3 row">
+                        <label for="detail_amount" class="col-md-4 col-form-label">Amount:</label>
+                        <div class="col-md-8">
+                            <input class="form-control js-number" type="text" id="detail_amount" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="remark" class="col-md-4 col-form-label">Remark:</label>
+                        <div class="col-md-8">
+                            <textarea class="form-control" rows="4" type="text" id="remark"></textarea>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <div class="col-md-6">
+                            <input type="checkbox" class="form-check-input me-2 p-2" id="gststatus">
+                            <label class="form-check-label" for="gststatus" style="margin-top: 3px;"> GST {{gst_default|floatformat:0}}%
+                            </label>
+                        </div>
+                    </div>
+                    
+                </form>
+                <input type="hidden" id="detailid" value="-1" />
+                <input type="hidden" id="gstbool" value="0" />
+            
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_detailadd">Add</button>
+                
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!--Expense Claim File modal content -->
+<div id="expenseclaimfilemodal" class="modal fade" role="dialog" aria-labelledby="expenseclaimfileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_file">Add New Expenses Files</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_info_file">
+                <form class="needs-validation p-3" id="EFilesForm">
+                    {% csrf_token %}
+
+                    <div id="text_error_file" class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+                    </div>
+                    
+                    <div class="mb-3 mt-3 row">
+                        <label for="receipt_no" class="col-md-4 col-form-label">Receipt No:</label>
+                        <div class="col-md-8">
+                            <input class="form-control" type="text" id="receipt_no" readonly>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="file_receipt" class="col-md-4 col-form-label">Receipt File:</label>
+                        <div class="col-md-8">
+                            <input class="dropify" type="file" id="file_receipt" required>
+                        </div>
+                        
+                    </div>
+                    
+                </form>
+                <input type="hidden" id="fileid" value="-1" />
+            
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_fileadd">Add</button>
+                
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!--Expense Claim invoice upload modal content -->
+<div id="expenseclaiminvoicemodal" class="modal fade" role="dialog" aria-labelledby="expenseclaiminvoiceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_invoice">Upload invoice</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_info_invoice">
+                <form class="needs-validation p-3" id="EInvoiceForm">
+                    {% csrf_token %}
+
+                    <div id="text_error_invoice" class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+                    </div>
+                    
+                    <div class="mb-3 mt-3 row">
+                        <label for="invoice_proj_id" class="col-md-4 col-form-label">Project No:</label>
+                        <div class="col-md-8">
+                            <select class="form-control select2" id="invoice_proj_id" required>
+                                <option value="">Select Project No</option>
+                                {% for project in projects %}
+                                    <option value="{{project.id}}">{{project.proj_name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="invoice_receipt" class="col-md-4 col-form-label">Invoice :</label>
+                        <div class="col-md-8">
+                            <input class="dropify" type="file" id="invoice_receipt" required>
+                        </div>
+                        
+                    </div>
+                    
+                </form>
+                <input type="hidden" id="invoicefileid" value="-1" />
+            
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_invoiceupload">Add</button>
+                
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- Delete Expense Claim Detail modal content -->
+<div id="EXpenseDetaildeleteModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="delModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="edelModalLabel">Delete Expense Claim Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5>Are you sure you want to delete this record?</h5>
+                <input type="hidden" id="eitemdel_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button id="eitem_del_confirm" type="button" class="btn btn-primary waves-effect btn-sm waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'assets/libs/select2/js/select2.full.min.js' %}"></script>
+<script src="{% static 'assets/libs/bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+<!-- Responsive examples -->
+<script src="{% static 'assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+<script src="{% static 'assets/dropify/dist/js/dropify.min.js' %}"></script>
+<script>
+<!--    $('.dropify').dropify();-->
+    $('#loading').hide();
+
+    $("#ExpensesClaimDetailForm input").prop("disabled", true);
+    $("#ExpensesClaimDetailForm textarea").prop("disabled", true);
+    $("#ExpensesClaimDetailForm select").prop("disabled", true);
+    $("#amount").prop('disabled', false);
+
+    if ('{{expenseclaim.status}}'!= "Open"){
+        $("#ExpensesClaimDetailForm input").prop("disabled", true);
+        $("#ExpensesClaimDetailForm textarea").prop("disabled", true);
+        $('#claim_submit').prop('disabled', true);
+        $('select').prop('disabled', true);
+        $('#exp_status').prop('disabled', true);
+        $('#expensedetailadd').prop('disabled', true);
+        $('#expensedetailadd').hide();
+        $('#invoiceupload').prop('disabled', true);
+        $('#invoiceupload').hide();
+        $('#expensefileadd').prop('disabled', true);
+        $('#expensefileadd').hide();
+<!--        $(".edit").addClass('disabled');-->
+        $(".delete").hide();
+    }
+    $("#detaildatatable").DataTable({ordering: false,searching: false, paging: false, info: false});
+    $("#filedatatable").DataTable({"aaSorting": [[ 0, "desc" ]],searching: false, paging: false, info: false});
+    $('#expensesclaimcancel').hide();
+<!--    $('select').prop('disabled', true);-->
+    $("#text_error").hide();
+    $("#text_error_detail").hide();
+    $("#text_error_file").hide();
+    $(".select2").select2({width: '100%'});
+    $("#proj_id").select2({width: '100%', dropdownParent: $("#EDetailForm")});
+    $("#invoice_proj_id").select2({width: '100%', dropdownParent: $("#EInvoiceForm")});
+
+    $(".preview-file").on("click", function(e){
+        $("#fileid").val($(this).data('id'));
+        $("#head_title_file").html('File View');
+        $(".btn_fileadd").hide();
+        $("#receipt_no").val($(this).data('number'));
+        
+        let input = $("#file_receipt");
+        let wrapper = input.closest('.dropify-wrapper');
+        let preview = wrapper.find('.dropify-preview');
+        let filename = wrapper.find('.dropify-filename-inner');
+        let render = wrapper.find('.dropify-render').html('');
+        input.val('').attr('title', $(this).data('filename'));
+        wrapper.removeClass('has-error').addClass('has-preview');
+        var filetype = $(this).data('file').split(".")[1]
+        var filetypeicon = '<span class="dropify-extension">'+ filetype+'</span>'
+        filename.html($(this).data('filename'));
+        render.append($("<input type='file' />").addClass('dropify').attr("data-default-file", $(this).data('file')));
+        render.append($('<i class="dropify-font-file"></i>'));
+        render.append($(filetypeicon));
+        preview.fadeIn();
+        $("#expenseclaimfilemodal").modal('show');
+    })
+    $(".js-number").keydown(function (event) {
+        if (event.shiftKey == true) {
+            event.preventDefault();
+        }
+
+        if ((event.keyCode >= 48 && event.keyCode <= 57) || 
+            (event.keyCode >= 96 && event.keyCode <= 105) || 
+            event.keyCode == 8 || event.keyCode == 9 || event.keyCode == 37 ||
+            event.keyCode == 39 || event.keyCode == 46 || event.keyCode == 190) {
+
+        } else {
+            event.preventDefault();
+        }
+
+        if($(this).val().indexOf('.') !== -1 && event.keyCode == 190)
+            event.preventDefault(); 
+        //if a decimal has been added, disable the "."-button
+
+    });
+    $("#appname").on('change', function(e){
+        var userid = $(this).find(':selected').data('id');
+        if($("#appname").val() == "") {
+            $(".user-signature").attr("src", "{% static 'assets/images/logo.png' %}");
+        } else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_get_user_signature" %}',
+                data: {
+                    'userid': userid,
+                },
+                type: 'POST',
+                success: function (data) {             
+                    parsedata = JSON.parse(data);
+                    if(parsedata.signature != ""){
+                        $(".user-signature").attr("src", parsedata.signature).css({'width' : 'auto' , 'height' : '100px'});
+                    } else {
+                        $(".user-signature").attr("src", "{% static 'assets/images/logo.png' %}");
+                    }
+                }
+            });
+        }
+    });
+    $("#veriname").on('change', function(e){
+        var userid = $(this).find(':selected').data('id');
+        if($("#veriname").val() == "") {
+            $(".veri-user-signature").attr("src", "{% static 'assets/images/logo.png' %}");
+        } else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_get_user_signature" %}',
+                data: {
+                    'userid': userid,
+                },
+                type: 'POST',
+                success: function (data) {
+                    parsedata = JSON.parse(data);
+                    if(parsedata.signature != ""){
+                        $(".veri-user-signature").attr("src", parsedata.signature).css({'width' : 'auto' , 'height' : '100px'});
+                    } else {
+                        $(".veri-user-signature").attr("src", "{% static 'assets/images/logo.png' %}");
+                    }
+                }
+            });
+        }
+    });
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+
+    $("#expensefileadd").on('click', function(e){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_check_receipt_no" %}',
+            data: {},
+            type: 'POST',
+            success: function (data) {
+                var prefix = "CRN";
+                var strDate = new Date();
+                var fullYear = strDate.getFullYear().toString().substr(-2);
+                if (data['status'] == "exist") {
+                    var do_no_value = data.receipt_no;
+                    if (do_no_value.substring(0,2) == fullYear) {
+                        suffix_val = (parseInt(do_no_value.substring(2,6)) + 1).toString();
+                        if(suffix_val.length == 3) {
+                            suffix_val = "0" + suffix_val;
+                        }
+
+                        $("#receipt_no").val(prefix+fullYear+suffix_val);
+                    } else {
+
+                        $("#receipt_no").val(prefix+fullYear+"1000");
+                    }
+                } else {
+                    $("#receipt_no").val(prefix+fullYear+"1000");
+                }
+            }
+        });
+
+        $("#file_receipt").next(".dropify-clear").trigger("click");
+        $("#head_title_file").html('New File');
+        $("#fileid").val('-1');
+        $("#expenseclaimfilemodal").modal('show')
+    });
+    $(".btn_fileadd").on('click', function(e){
+        $('#EFilesForm').parsley().validate();
+        if ($('#EFilesForm').parsley().validate() === false) {         
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            var receipt_data = $("#file_receipt").prop('files')[0];
+            var form_data = new FormData();
+            form_data.append('receipt_file', receipt_data);
+            form_data.append('expenseid', `{{expense_claim_pk}}`);
+            form_data.append('fileid', $("#fileid").val());
+            form_data.append('receipt_no', $("#receipt_no").val());
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_update_expenses_file" %}',
+                data: form_data,
+                cache: false,
+                contentType: false,
+                processData: false,
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_file").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_file").html(data.messages);
+                        $("#text_error_file").show();
+                    }
+                }
+            });
+        }
+    });
+    
+    $(".btn_invoiceupload").on('click', function(e){
+        $('#EInvoiceForm').parsley().validate();
+        if ($('#EInvoiceForm').parsley().validate() === false) {         
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            var receipt_data = $("#invoice_receipt").prop('files')[0];
+            var form_data = new FormData();
+            form_data.append('receipt_file', receipt_data);
+            form_data.append('expenseid', `{{expense_claim_pk}}`);
+            form_data.append('fileid', $("#invoicefileid").val());
+            form_data.append('projid', $("#invoice_proj_id").val());
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_update_invoice_file" %}',
+                data: form_data,
+                cache: false,
+                contentType: false,
+                processData: false,
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_invoice").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_invoice").html(data.messages);
+                        $("#text_error_invoice").show();
+                    }
+                }
+            });
+        }
+    });
+    function deleteexpensefile(id) {
+        $("#del_id").val(id);
+        $("#deleteModal").modal('show');
+    }
+
+    $("#del_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_expenses_claim_file" %}',
+            data: {
+                'fileid': $("#del_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload(); 
+                }
+            }
+        });
+        $('#deletModal').modal('hide');
+    });
+    
+    $("#claim_submit").on('click', function(e){
+        $('#ExpensesClaimDetailForm').parsley().validate();
+        if ($('#ExpensesClaimDetailForm').parsley().validate() === false) {         
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            $('#loading').show();
+
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_update_expenses_claim" %}',
+                data: {
+                    emp_id: $("#emp_id").val(),
+                    expense_name: $("#expense_name").val(),
+                    submission_date: formatDate($("#submission_date").val()),
+                    //exp_status: $("#exp_status").val(),
+                    exp_status: "Pending",
+                    amount: $("#amount").val(),
+                    ec_id: $("#ec_id").val(),
+                    expenseid: `{{expense_claim_pk}}`,
+                    approveby:$("#appname").val(),
+                    verifiedby:$("#veriname").val(),
+
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error").hide();
+<!--                        location.reload();-->
+                        $('#exp_status').val("Pending");
+                        $('#exp_status').trigger('change');
+                        $("#ExpensesClaimDetailForm input").prop("disabled", true);
+                        $("#ExpensesClaimDetailForm textarea").prop("disabled", true);
+                        $('#claim_submit').prop('disabled', true);
+                        $('select').prop('disabled', true);
+                        $('#exp_status').prop('disabled', true);
+<!--                        $(".edit").addClass('disabled');-->
+                        $(".delete").hide();
+
+                        $('#expensedetailadd').prop('disabled', true);
+                        $('#expensedetailadd').hide();
+                        $('#invoiceupload').prop('disabled', true);
+                        $('#invoiceupload').hide();                        
+                        $('#expensefileadd').prop('disabled', true);
+                        $('#expensefileadd').hide();
+                    } else {
+                        $("#text_error").html(data.messages);
+                        $("#text_error").show();
+                    }
+
+                },
+                complete: function(){
+                    $('#loading').hide();
+                }
+            });
+        }
+    });
+    function formatDate(date) {
+        var d = new Date(date),
+            month = '' + (d.getMonth() + 1),
+            day = '' + d.getDate(),
+            year = d.getFullYear();
+
+        if (month.length < 2) 
+            month = '0' + month;
+        if (day.length < 2) 
+            day = '0' + day;
+
+        return [year, month, day].join('-');
+    }
+    
+    $("#expensedetailadd").on('click', function(e){
+        $("#detail_date").val('');
+        $("#proj_id").val('');
+        $('#proj_id').trigger('change');
+        $("#vendor").val('');
+        $("#description").val('');
+        $("#detail_amount").val('');
+        $("#detailid").val('-1');
+        $("#expenseclaimdetailmodal").modal('show')
+    });
+    $("#invoiceupload").on('click', function(e){
+        $("#text_error_invoice").hide();
+        $("#invoice_proj_id").val('');
+        $('#invoice_proj_id').trigger('change');
+        $("#expenseclaiminvoicemodal").modal('show')
+    });
+    $('#gststatus').change(function() {
+        if ( !this.checked) { 
+            $("#gstbool").val(this.checked)
+        } else {
+            $("#gstbool").val(this.checked)
+        }
+     
+     });
+
+    $(".btn_detailadd").on('click', function(e){
+        $('#EDetailForm').parsley().validate();
+        if ($('#EDetailForm').parsley().validate() === false) {         
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_expenses_details" %}',
+                data: {
+                    proj_id: $("#proj_id").val(),
+                    vendor: $("#vendor").val(),
+                    description: $("#description").val(),
+                    detail_amount: $("#detail_amount").val(),
+                    detail_gst: $("#gstbool").val(),
+                    remark: $("#remark").val(),
+                    detail_date: formatDate($("#detail_date").val()),
+                    detailid: $("#detailid").val(),
+                    expenseid: `{{expense_claim_pk}}`,
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_detail").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_detail").html(data.messages);
+                        $("#text_error_detail").show();
+                    }
+                }
+            });
+        }
+    });
+    $('a[role=tab]').click(function(){
+        if (this.id == "claimdetailtab") {
+            localStorage.setItem("basicclaimitem", '1');
+        } else if (this.id == "claimitemtab") {
+            localStorage.setItem("basicclaimitem", '2');
+        } else if (this.id == "claimfiletab") {
+            localStorage.setItem("basicclaimitem", '3');
+        } 
+    });
+    var tabactive = localStorage.getItem("basicclaimitem");
+    if (tabactive == null || tabactive == '1') {
+        $("#claimdetailtab").addClass('active');
+        $("#claimitemtab").removeClass('active');
+        $("#claimfiletab").removeClass('active');
+
+        $("#claimdetail").addClass('active');
+        $("#claimitem").removeClass('active');
+        $("#claimfile").removeClass('active');
+
+    } else if (tabactive == '2') {
+        $("#claimdetailtab").removeClass('active');
+        $("#claimfiletab").removeClass('active');
+        $("#claimitemtab").addClass('active');
+
+        $("#claimdetail").removeClass('active');
+        $("#claimitem").addClass('active');
+        $("#claimfile").removeClass('active');
+    } else if (tabactive == '3') {
+        $("#claimdetailtab").removeClass('active');
+        $("#claimfiletab").addClass('active');
+        $("#claimitemtab").removeClass('active');
+
+        $("#claimdetail").removeClass('active');
+        $("#claimfile").addClass('active');
+        $("#claimitem").removeClass('active');
+    }
+    function updateexitem(id) {
+        $("#detailid").val(id);
+        $("#head_title_item").html('Update Expenses Item');
+        $(".btn_detailadd").html('Update');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_expenses_item" %}',
+            data: {
+                exidetailid: $("#detailid").val()
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data);
+                $("#detail_date").val(up_data.date);
+                $('#proj_id').val(up_data.proj_id);
+                $('#proj_id').trigger('change');
+                $("#vendor").val(up_data.vendor);
+                $("#description").val(up_data.description);
+                $("#detail_amount").val(up_data.amount);
+                $("#remark").val(up_data.remark);
+                $("#gststatus").prop("checked", up_data.gst);
+                $("#gstbool").val(up_data.gst);
+            }
+        });
+        $("#expenseclaimdetailmodal").modal('show');
+    }
+    function deleteexitem(id) {
+        $("#eitemdel_id").val(id);
+        $("#EXpenseDetaildeleteModal").modal('show');
+    }
+
+    $("#eitem_del_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_expense_item" %}',
+            data: {
+                'itemdetailid': $("#eitemdel_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload(); 
+                }
+            }
+        });
+        $('#EXpenseDetaildeleteModal').modal('hide');
+    });
+</script>
+
+{% endblock %}

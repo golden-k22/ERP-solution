@@ -21,7 +21,7 @@
         z-index:1151 !important;
     }
     .select-search {
-        width: 60%;
+        width: 90%;
         padding: .375rem .75rem;
         font-size: .8125rem;
         font-weight: 400;
@@ -69,6 +69,10 @@
         text-decoration: none;
         background-color: #7a6fbe;
     }
+    .space-custom{
+        padding-left: 5px;
+        padding-right: 5px;
+    }
 </style>
 <div class="container-fluid">
     <div id="loading" style="z-index:1151 !important;font-size: 30px; position: absolute; top: 40%; left: 50%;">
@@ -94,33 +98,28 @@
             <div class="card">
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-4">
-                            <div class="row">
-                                <div class="mt-1 col-md-3 space-custom">
+                        <div class="col-md-5">
+                            <div class="justify-content-start d-flex">
+                                <div class="mt-1 space-custom">
                                     <a href="javascript:void(0);" id="ot_redirect" class="btn btn-primary p-2 w-100" style="height: 38px;white-space: nowrap;">Summary</a>
                                 </div>
-                                <div class="mt-1 col-md-9 space-custom">
+                                <div class="mt-1 space-custom">
                                     <div class="export_button justify-content-start d-flex"></div>
                                 </div>
                             </div> 
                         </div>
-                        <div class="col-md-8">
+                        <div class="col-md-7">
                             <div class="row justify-content-end d-flex">
-                                <div class="mt-1 col-md-4">
-                                    <div class="justify-content-start d-flex">
-                                        <label for="checkin_time" class="col-form-label">Checkin Time:</label>
-                                        <input class="select-search" type="text" autocomplete="off" id="checkin_time" required> 
-                                    </div>
-                                    
+                                <div class="mt-1 col-md-3 space-custom">
+                                    <input class="select-search" type="text" autocomplete="off" placeholder="Checkin Time" id="checkin_time" required> 
                                 </div>
-                                <div class="mt-1 col-md-4">
-                                    <label for="checkout_time" class="col-form-label">Checkout Time:</label>
-                                    <input class="select-search" type="text" autocomplete="off" id="checkout_time" required> 
+                                <div class="mt-1 col-md-3 space-custom">
+                                    <input class="select-search" type="text" autocomplete="off" placeholder="Checkout Time" id="checkout_time" required> 
                                 </div>
                                 <div class="col-md-1 space-custom">
                                     <a href="javascript:void(0);" id="otcalculatesearch" class="btn btn-primary m-1"><i class="dripicons-search align-middle"></i></a>
                                 </div>
-                                <div class="mt-1 col-md-3">
+                                <div class="mt-1 col-md-5">
                                     <div id="newSearchPlace"></div>
                                 </div>
                             </div>

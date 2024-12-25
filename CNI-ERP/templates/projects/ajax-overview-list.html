@@ -4,7 +4,7 @@
     <table id="projplantable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
         <thead>
             <tr>
-                <th style="width:50px;" class="align-middle align-center"></th>
+                <th style="width:50px;" class="align-middle align-center">SN</th>
                 <th style="width:150px;" class="align-middle align-center">Date</th>
                 {% with title="A" %}
                 {% for index in max_cnt|get_range%}
@@ -19,7 +19,7 @@
             {% with forloop.counter as outer_counter %}
             {% addDays start_date forloop.counter0 as next_day %}
             <tr style="height: 100px;">
-                <td class="align-middle align-center"> <a href="javascript:void(0);" onclick="showActivities('schedule-{{outer_counter}}')" class="plussign"></a></td>
+                <td class="align-middle align-center">{{outer_counter}}</td>
                 {% resolve assigned_cnts forloop.counter0 as assigned %}
                 {% resolve balanced_cnts forloop.counter0 as balanced %}
                 <td class="align-middle align-center">
@@ -36,6 +36,11 @@
                         {% for user in project.users %}
                             <div>{{user.username}}</div>
                         {% endfor %}
+                    </div>
+                    <div>
+                        <!-- <a href="javascript:void(0);" onclick="showOverviewDetail({{project.activities|safe}})" class="plussign"></a> -->
+                        <a href="javascript:void(0);" onclick="showOverviewDetail('{{project.project.id}}', '{{next_day|date:"d/m/Y"}}')" class="ion ion-md-eye">  View detail</a>
+
                     </div>
                 </td>
                 {% endfor %}
@@ -59,11 +64,57 @@
         </tbody>
     </table>
 </div>
+
+<!--Site Progress modal content -->
+<div id="overviewDetailModal" class="modal fade" role="dialog" aria-labelledby="overviewDetailModal" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered" style="max-width: 600px;">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_overview">View Overview Detail</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_overview">
+                <form class="needs-validation p-3" id="OverviewForm">
+                    {% csrf_token %}
+                    <div id="text_error_overview" class="alert alert-danger alert-dismissible fade show mb-0" style="display: none;" role="alert">
+                    </div>
+                    <div id="overview_modal_table"></div>
+                </form>
+                <input type="hidden" id="is_edit" value="-1" />
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
     function showActivities(tr_id){
-        if ($('#'+tr_id).is(":hidden")==false)
+        if ($('#'+tr_id).is(":hidden")==false){
             $('#'+tr_id).hide();
-        else
+            $('#overviewDetailModal').modal('hide');
+        }
+        else{
             $('#'+tr_id).show();
-    }
+            $('#overviewDetailModal').modal('show');
+        }
+    };
+    function showOverviewDetail(project_id, plan_date){        
+        $("#overview_modal_table").empty();
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_overview_modal" %}',
+            data: {
+                project_id: project_id,
+                plan_date: plan_date,
+            },
+            type: 'POST',
+            success: function (data) {
+                $("#overview_modal_table").append(data);
+            }
+        });
+        $("#overviewDetailModal").modal('show');
+    };
+
 </script>

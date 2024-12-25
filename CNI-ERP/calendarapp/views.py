@@ -16,8 +16,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy, reverse
 from notifications.signals import notify
 
-from accounts.models import User, NotificationPrivilege
-from accounts.views import send_mail
+from accounts.models import User, NotificationPrivilege,UserStatus
 from calendarapp.models import Event
 from calendarapp.utils import Calendar
 from calendarapp.forms import EventForm
@@ -25,6 +24,7 @@ from calendarapp.forms import EventForm
 from django.views.generic import ListView
 
 from sales.decorater import ajax_login_required
+from accounts.email import send_mail
 
 
 def get_date(req_day):
@@ -103,7 +103,8 @@ class CalendarViewNew(LoginRequiredMixin, generic.View):
             is_email = NotificationPrivilege.objects.get(user_id=sender.id).is_email
             description = '<a href="/calender/">Calendar: New event {0} has been created by {1}. You are cordially.</a>'.format(
                 form.title, form.user.first_name)
-            for receiver in User.objects.filter(username=form.user.username):
+            user_status=UserStatus.objects.get(status='resigned')
+            for receiver in User.objects.exclude(status=user_status).filter(username=form.user.username):
                 if receiver.notificationprivilege.project_no_created:
                     notify.send(sender, recipient=receiver, verb='Message', level="success",
                                 description=description)
@@ -243,7 +244,8 @@ def task():
                 # notification send
                 description = '<a href="/event-list/">Calendar: The  event {0} will be held at tomorrow, kindly take note.</a>'.format(
                     event.title)
-                for receiver in User.objects.all():
+                user_status=UserStatus.objects.get(status='resigned')
+                for receiver in User.objects.exclude(status=user_status).all():
                     if receiver.notificationprivilege.maintenance_reminded:
                         notify.send(sender, recipient=receiver, verb='Message', level="success",
                                     description=description)

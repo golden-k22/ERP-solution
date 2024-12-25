@@ -46,6 +46,10 @@
     .btn {
         padding: 0.475rem 0.75rem;
     }
+    .space-custom{
+        padding-left: 5px;
+        padding-right: 5px;
+    }
 </style>
 <div class="container-fluid">
     <div id="loading" style="z-index:1151 !important;font-size: 30px; position: absolute; top: 40%; left: 50%;">
@@ -70,25 +74,25 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="row">
-                                <div class="mt-1 col-md-2 space-custom">
+                            <div class="justify-content-start d-flex">
+                                <div class="mt-1 space-custom">
                                     <button type="button" id="hardwareadd" class="btn btn-primary w-100" style="height: 38px;white-space: nowrap;" ><i class="mdi mdi-calendar-plus me-2"></i> New</button>
                                 </div>
                                 
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 space-custom">
                                     <div class="export_button justify-content-center d-flex"></div>
                                 </div>
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 space-custom">
                                     <button type="button" id="btn_import" class="btn btn-primary w-100" style="height: 38px;white-space: nowrap;" > Import</button>
                                 </div>
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 space-custom">
                                     <a href="{% url 'ajax-export-hardwares' %}" class="btn btn-info" style="height: 38px;white-space: nowrap;" > Template Export</a>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="row">
-                                <div class="mt-1 col-md-3 space-custom">
+                                <div class="mt-1 col-md-4">
                                     <select class="form-control search_filter" id="search_num" required>
                                         <option value="">Hardware No</option>
                                         {% for nums in hardware_nums %}
@@ -96,7 +100,7 @@
                                         {% endfor %}
                                     </select>
                                 </div>
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 col-md-4">
                                     
                                     <select class="form-control search_filter" id="search_hardware" required>
                                         <option value="">Model Name</option>
@@ -106,7 +110,7 @@
                                     </select>
                                     
                                 </div>
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 col-md-4">
                                     <select class="form-control search_filter" id="search_brand" required>
                                         <option value="">Brand</option>
                                         {% for brand in brands %}
@@ -115,12 +119,9 @@
                                     </select>
                                     
                                 </div>
-                                <div class="col-md-1 space-custom">
-<!--                                    <a href="javascript:void(0);" id="hardwaresearch" class="btn btn-primary m-1"><i class="dripicons-search align-middle"></i></a>-->
-                                </div>
-                                <div class="mt-1 col-md-3 space-custom">
-                                    <div id="newSearchPlace"></div>
-                                </div>
+                            </div>
+                            <div class="row justify-content-end d-flex">
+                                <div id="newSearchPlace"></div>
                             </div>
                         </div>
                         

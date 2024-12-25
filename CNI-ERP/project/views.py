@@ -1,8 +1,6 @@
 import base64
 import time
 from functools import partial
-
-from django.conf import settings
 from django.db.models.aggregates import Sum
 from django.http.response import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
@@ -13,16 +11,16 @@ from notifications.signals import notify
 
 from maintenance.models import MainSr, MainSRSignature, Maintenance,Schedule
 from project.models import DOSignature, DoItem, Pc, Project, OT, Do, Bom, BomLog, ProjectFile, \
-    SRSignature, Sr, SrItem, Team, ActivitySchedule, ScheduleUsers, PcDetail
-from accounts.models import Uom, User, NotificationPrivilege
+    SRSignature, Sr, SrItem, Team, ActivitySchedule, ScheduleUsers, PcDetail, InvoiceFormat
+from accounts.models import Uom, User, NotificationPrivilege, UserStatus
 from sales.decorater import ajax_login_required
 from django.db import IntegrityError
+from django.db.utils import DataError
 from django.http import JsonResponse
 import json
 from django.views.generic.detail import DetailView
 from django.views import generic
 from django.db.models import Q
-import datetime
 import pytz
 import decimal
 import requests
@@ -31,7 +29,7 @@ from project.resources import BomResource, DoItemResource, ProjectResource, SrIt
 from accounts.models import Holiday, WorkLog
 import os
 from sales.models import Company, Contact, Quotation, Scope, ProductSalesDo, SalesDOSignature, ProductSales, \
-    ProductSalesDoItem
+    ProductSalesDoItem, GST
 from sales.views import add_default_project_files
 from siteprogress.models import SiteProgress
 from siteprogress.resources import SiteProgressResource
@@ -48,13 +46,11 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from io import BytesIO
 from reportlab.lib.pagesizes import A4, landscape, portrait
 from django.core.files.base import ContentFile
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.application import MIMEApplication
-from email.mime.text import MIMEText
-from email.utils import formatdate
-import datetime
+from datetime import datetime, time, date, timedelta
 from textwrap import wrap
+from accounts.email import send_mail
+from project.whatsapp_msg import send_whatsapp_msg
+import math
 
 
 # Create your views here.
@@ -78,37 +74,178 @@ class ProjectSummaryView(ListView):
         context['proj_incharges'] = Project.objects.exclude(proj_incharge=None).order_by('proj_incharge').values(
             'proj_incharge').distinct()
         context['proj_nos'] = Project.objects.all().order_by('proj_id').values('proj_id').distinct()
-        context['date_years'] = list(set([d.start_date.year for d in Project.objects.all()]))
+        context['date_years'] = sorted(set(d.start_date.year for d in Project.objects.all()), reverse=True)
+        context['proj_status']=Project.Status
 
-        current_year = datetime.datetime.today().year
+        current_year = datetime.today().year
         if current_year in list(set([d.start_date.year for d in Project.objects.all()])):
             context['exist_current_year'] = True
         else:
             context['exist_current_year'] = False
         return context
 
+def haversine(lat1, lon1, lat2, lon2):
+    # Convert latitude and longitude from degrees to radians
+    lat1 = math.radians(lat1)
+    lon1 = math.radians(lon1)
+    lat2 = math.radians(lat2)
+    lon2 = math.radians(lon2)
 
-def send_mail(to_email, subject, message):
-    # For Gmail
-    SMTP_SERVER = "smtp.gmail.com"
-    SMTP_PORT = 587
-    my_email = os.getenv("DJANGO_DEFAULT_EMAIL")
-    my_password = os.getenv("DJANGO_EMAIL_HOST_PASSWORD")
-    msg = MIMEMultipart()
-    msg['From'] = my_email
-    msg['To'] = to_email
-    msg['Date'] = formatdate(localtime=True)
-    msg['Subject'] = subject
-    msg.attach(MIMEText(message, 'html'))
+    # Haversine formula
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
 
-    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as smtpObj:
-        smtpObj.ehlo()
-        smtpObj.starttls()
-        smtpObj.login(my_email, my_password)
-        smtpObj.sendmail(my_email, to_email, msg.as_string())
-        smtpObj.close()
-    # print("********* Sent mail to {0} Successfully! **********".format(to_email))
+    a = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
+    # Radius of Earth in kilometers
+    R = 6371.0
+
+    # Distance in kilometers
+    distance = R * c
+    return distance
+
+def scheduleing_task():
+    sql_query = """
+        Select 
+            tsu.id,
+            tsu.user_id, 
+            tsu.project_id, 
+            tsu.shift, 
+            tu.username, 
+            tu.phone, 
+            tp.proj_name 
+        from tb_schedule_users as tsu
+        LEFT JOIN 
+            tb_user as tu ON tu.id=tsu.user_id
+        LEFT JOIN 
+            tb_project as tp ON tp.id = tsu.project_id
+        WHERE 
+            tsu.date=CURDATE()
+    """
+    users = ScheduleUsers.objects.raw(sql_query)
+    for user in users:
+        message=f"Hi, {user.username}. You have a schedule on the project : {user.proj_name} shift : {user.shift}."
+        send_whatsapp_msg(user.phone, message)
+        
+        
+
+def worklog_task():
+    sender = User.objects.filter(role="Managers").first()
+    is_email = NotificationPrivilege.objects.get(user_id=sender.id).is_email
+    not_resigned_status=UserStatus.objects.get(status="resigned").id
+    # Construct the SQL query with the retrieved status ID
+    sql_query = """
+        SELECT  
+                tu.id,
+                tu.username,
+                tu.empid,
+                tu.email,
+                tw.latest_checkin_time,
+                tw.checkout_time,
+                tp.id as w_proj_id,
+                tp.proj_name,
+                tsu.project_id as s_proj_id,
+                tsp.proj_name as s_proj_name,
+                tp.latitude as p_latitude,
+                tp.longitude as p_longitude,
+                tw.checkout_lat as c_latitude,
+                tw.checkout_lng as c_longitude,
+                tot.approved_hour,
+                CASE 
+                    WHEN tw.projectcode IS NOT NULL THEN 1 
+                    ELSE 0 
+                END AS is_checkin_today,
+                CASE 
+                    WHEN tp.id =tsu.project_id THEN 1 
+                    WHEN tsu.project_id IS Not NULL AND tp.id != tsu.project_id THEN 2 -- checkin Wrong project 
+                    WHEN tsu.project_id IS Not NULL AND tw.latest_checkin_time is NULL THEN 3 -- Didn't checkin
+                    ELSE 0 
+                END AS is_correct
+								
+            FROM 
+                tb_user AS tu
+            LEFT JOIN 
+                (
+                    SELECT 
+                        emp_no,
+                        projectcode,
+                        checkout_time,
+                        MAX(checkin_time) AS latest_checkin_time,
+                        checkout_lat,
+                        checkout_lng
+                    FROM 
+                        tb_worklog
+                            WHERE
+                                DATE(checkin_time) = CURDATE()
+                    GROUP BY 
+                        emp_no
+                ) AS tw ON tu.empid = tw.emp_no
+            LEFT JOIN
+                (
+                    SELECT 
+                        user_id,
+                        project_id,
+                        MAX(date) AS latest_date
+                    FROM 
+                        tb_schedule_users
+                            WHERE
+                                    DATE(date) = CURDATE()
+                    GROUP BY 
+                        user_id
+                ) AS tsu ON tsu.user_id = tu.id
+            LEFT JOIN 
+                tb_project AS tp ON tw.projectcode = tp.proj_id
+            LEFT JOIN 
+                tb_project AS tsp ON tsu.project_id = tsp.id
+            LEFT JOIN 
+                tb_ot AS tot ON tot.proj_id = tp.proj_id and DATE(date)=CURDATE()
+            WHERE
+                (tu.status_id != {} OR tu.status_id IS NULL)
+                AND tu.role IN ('Supervisors', 'Workers');
+    """.format(not_resigned_status)
+    users = User.objects.raw(sql_query)
+    for user in users:
+        worklog_checkin=NotificationPrivilege.objects.get(user_id=user.id).worklog_checkin
+        if worklog_checkin==True:
+            # notification send
+            if user.is_correct==2:
+                description = '<a href="/scheduling/">{0} : Checked in wrong project. {1} instead of {2}</a>'.format(
+                    user.username, user.proj_name, user.s_proj_name)
+                notify.send(sender, recipient=user, verb='Message', level="success",
+                            description=description)
+                if is_email and user.email:
+                    send_mail(user.email, "Notification for Project Schedule Checkin: ", description)
+            if user.is_correct==3:
+                description = '<a href="/scheduling/">{0} : Please check in project - {1}.</a>'.format(
+                    user.username, user.s_proj_name)
+                notify.send(sender, recipient=user, verb='Message', level="success",
+                            description=description)
+                if is_email and user.email:
+                    send_mail(user.email, "Notification for Project Schedule Checkin: ", description)
+            
+            if user.checkout_time:
+                checkout_time = user.checkout_time.time()
+                # Define 5:00 PM as a time object
+                five_pm = time(17, 0)  # 17:00 is 5:00 PM in 24-hour format
+                # Compare the current time with 5:00 PM
+                if checkout_time > five_pm and user.approved_hour>0:
+                    description = '<a href="/project-ot/">{0} : Checked out after 5:00 PM without approved OT for project - {1}.</a>'.format(
+                        user.username, user.proj_name)
+                    notify.send(sender, recipient=user, verb='Message', level="success",
+                                description=description)
+                    if is_email and user.email:
+                        send_mail(user.email, "Notification for Project Schedule Checkin: ", description)
+            if user.c_latitude:
+                distance=haversine(float(user.p_latitude), float(user.p_longitude), float(user.c_latitude), float(user.c_longitude))
+                if distance>0.5:
+                    description = '<a href="/work-log/">{0} : Checked out more than 500m for project - {1}.</a>'.format(
+                        user.username, user.proj_name)
+                    notify.send(sender, recipient=user, verb='Message', level="success",
+                                description=description)
+                    if is_email and user.email:
+                        send_mail(user.email, "Notification for Worklog Checkout distance: ", description)
+            
 
 def task():
     print("--------------- Project view task started. --------------")
@@ -116,7 +253,7 @@ def task():
     reminder_signature = NotificationPrivilege.objects.get(user_id=sender.id).reminder_signature
     reminder_invoice = NotificationPrivilege.objects.get(user_id=sender.id).reminder_invoice
     is_email = NotificationPrivilege.objects.get(user_id=sender.id).is_email
-    now_date = datetime.datetime.now(pytz.timezone(os.getenv("TIME_ZONE"))).date()
+    now_date = datetime.now(pytz.timezone(os.getenv("TIME_ZONE"))).date()
 
     # Notify before Project End Date
     projects=Project.objects.filter(end_date__gte=now_date)
@@ -128,7 +265,8 @@ def task():
             # notification send
             description = '<a href="/project-summary-detail/'+str(project.id)+'">Project No {0} : will be ended in {1} weeks.</a>'.format(
                 project.proj_id, setting_weeks)
-            for receiver in User.objects.filter(Q(username=project.proj_incharge) |Q(role='Managers')).distinct():
+            user_status=UserStatus.objects.get(status='resigned')
+            for receiver in User.objects.exclude(status=user_status).filter(Q(username=project.proj_incharge) |Q(role='Managers')).distinct():
                 if receiver.notificationprivilege.project_end:
                     notify.send(sender, recipient=receiver, verb='Message', level="success",
                                 description=description)
@@ -141,17 +279,19 @@ def task():
         diff_days = (now_date - to_date).days
         diff_mod = diff_days % reminder_signature
         project=do.project
-        print("--------------- Project Do notification time. --------------", datetime.datetime.now(pytz.timezone(os.getenv("TIME_ZONE"))) )
+        print("--------------- Project Do notification time. --------------", datetime.now(pytz.timezone(os.getenv("TIME_ZONE"))) )
         print(diff_days)
+        diff_mod=0
         if diff_mod == 0:
             do_signature = DOSignature.objects.filter(do_id=do.id)
-            if do_signature or do.document:
+            if do.status=="Signed":
                 pass
             else:
                 # notification send
                 description = '<a href="/project-summary-detail/'+str(do.project_id)+'/delivery-order-detail/'+str(do.id)+'">Project Do No : {0} - follow up with customer and get signature.</a>'.format(
                     do.do_no)
-                for receiver in User.objects.filter(Q(username=project.proj_incharge) |Q(role='Managers')).distinct():
+                user_status=UserStatus.objects.get(status='resigned')
+                for receiver in User.objects.exclude(status=user_status).filter(Q(username=project.proj_incharge) |Q(role='Managers')).distinct():
                     if receiver.notificationprivilege.project_no_created:
                         notify.send(sender, recipient=receiver, verb='Message', level="success",
                                     description=description)
@@ -163,15 +303,17 @@ def task():
             do_signature = DOSignature.objects.filter(do_id=do.id)
             if do_signature or do.document:
                 # notification send
-                description = 'Project Do No : {0} - work order completed, please invoice.'.format(
-                    do.do_no)
-                for receiver in User.objects.filter(role__in=['Managers', 'Admins']):
-                    print("--------------- Send notification... --------------",receiver.email)
-                    if receiver.notificationprivilege.project_no_created:
-                        notify.send(sender, recipient=receiver, verb='Message', level="success",
-                                    description=description)
-                        if is_email and receiver.email:
-                            send_mail(receiver.email, "Invoice Notification for Project Do No", description)
+                if not do.invoice_no:
+                    description = 'Project Do No : {0} - work order completed, please invoice.'.format(
+                        do.do_no)
+                    user_status=UserStatus.objects.get(status='resigned')
+                    for receiver in User.objects.exclude(status=user_status).filter(role__in=['Managers', 'Admins']):
+                        print("--------------- Send notification... --------------",receiver.email)
+                        if receiver.notificationprivilege.project_no_created:
+                            notify.send(sender, recipient=receiver, verb='Message', level="success",
+                                        description=description)
+                            if is_email and receiver.email:
+                                send_mail(receiver.email, "Invoice Notification for Project Do No", description)
 
     proj_srs = Sr.objects.all()
     for sr in proj_srs:
@@ -181,13 +323,14 @@ def task():
         diff_mod = diff_days % reminder_signature
         if diff_mod == 0:
             sr_signature = SRSignature.objects.filter(sr_id=sr.id)
-            if sr_signature or sr.document:
+            if sr.status=="Signed":
                 pass
             else:
                 # notification send
                 description = '<a href="/project-detail/'+str(sr.project_id)+'/service-report-detail/'+str(sr.id)+'">Project Sr No : {0} - follow up with customer and get signature</a>'.format(
                     sr.sr_no)
-                for receiver in User.objects.filter(Q(username=project.proj_incharge) |Q(role='Managers')).distinct():
+                user_status=UserStatus.objects.get(status='resigned')
+                for receiver in User.objects.exclude(status=user_status).filter(Q(username=project.proj_incharge) |Q(role='Managers')).distinct():
                     if receiver.notificationprivilege.project_no_created:
                         notify.send(sender, recipient=receiver, verb='Message', level="success",
                                     description=description)
@@ -199,14 +342,16 @@ def task():
             sr_signature = SRSignature.objects.filter(sr_id=sr.id)
             if sr_signature or sr.document:
                 # notification send
-                description = 'Project Sr No : {0} - work order completed, please invoice.'.format(
-                    sr.sr_no)
-                for receiver in User.objects.filter(role__in=['Managers', 'Admins']):
-                    if receiver.notificationprivilege.project_no_created:
-                        notify.send(sender, recipient=receiver, verb='Message', level="success",
-                                    description=description)
-                        if is_email and receiver.email:
-                            send_mail(receiver.email, "Invoice Notification for Project Sr No", description)
+                if not sr.invoice_no:
+                    description = 'Project Sr No : {0} - work order completed, please invoice.'.format(
+                        sr.sr_no)
+                    user_status=UserStatus.objects.get(status='resigned')
+                    for receiver in User.objects.exclude(status=user_status).filter(role__in=['Managers', 'Admins']):
+                        if receiver.notificationprivilege.project_no_created:
+                            notify.send(sender, recipient=receiver, verb='Message', level="success",
+                                        description=description)
+                            if is_email and receiver.email:
+                                send_mail(receiver.email, "Invoice Notification for Project Sr No", description)
     proj_pcs = Pc.objects.all()
     for pc in proj_pcs:
         project=pc.project
@@ -214,13 +359,14 @@ def task():
         diff_days = (now_date - to_date).days
         diff_mod = diff_days % reminder_signature
         if diff_mod == 0:
-            if pc.document:
+            if pc.status=="Signed":
                 pass
             else:
                 # notification send
                 description = '<a href="/project-summary-detail/'+str(pc.project_id)+'">Project Pc No : {0} - follow up with customer and get signature</a>'.format(
                     pc.pc_no)
-                for receiver in User.objects.filter(Q(username=project.proj_incharge) |Q(role='Managers')).distinct():
+                user_status=UserStatus.objects.get(status='resigned')
+                for receiver in User.objects.exclude(status=user_status).filter(Q(username=project.proj_incharge) |Q(role='Managers')).distinct():
                     if receiver.notificationprivilege.project_no_created:
                         notify.send(sender, recipient=receiver, verb='Message', level="success",
                                     description=description)
@@ -231,14 +377,16 @@ def task():
         if diff_mod_invoice == 0:
             if pc.document:
                 # notification send
-                description = 'Project Pc No : {0} - work order completed, please invoice.'.format(
-                    pc.pc_no)
-                for receiver in User.objects.filter(role__in=['Managers', 'Admins']):
-                    if receiver.notificationprivilege.project_no_created:
-                        notify.send(sender, recipient=receiver, verb='Message', level="success",
-                                    description=description)
-                        if is_email and receiver.email:
-                            send_mail(receiver.email, "Invoice Notification for Project Pc No", description)
+                if not pc.invoice_no:
+                    description = 'Project Pc No : {0} - work order completed, please invoice.'.format(
+                        pc.pc_no)
+                    user_status=UserStatus.objects.get(status='resigned')
+                    for receiver in User.objects.exclude(status=user_status).filter(role__in=['Managers', 'Admins']):
+                        if receiver.notificationprivilege.project_no_created:
+                            notify.send(sender, recipient=receiver, verb='Message', level="success",
+                                        description=description)
+                            if is_email and receiver.email:
+                                send_mail(receiver.email, "Invoice Notification for Project Pc No", description)
 
     product_sales_dos = ProductSalesDo.objects.all()
     for psd in product_sales_dos:
@@ -247,13 +395,14 @@ def task():
         diff_mod = diff_days % reminder_signature
         if diff_mod == 0:
             psd_signature = SalesDOSignature.objects.filter(do_id=psd.id)
-            if psd_signature or psd.document:
+            if psd.status=="Signed":
                 pass
             else:
                 # notification send
                 description = '<a href="/sales-detail/'+str(psd.product_sales_id)+'/delivery-order-detail/'+str(psd.id)+'">Sales Do No : {0} - follow up with customer and get signature</a>'.format(
                     psd.do_no)
-                for receiver in User.objects.filter(role='Managers').distinct():
+                user_status=UserStatus.objects.get(status='resigned')
+                for receiver in User.objects.exclude(status=user_status).filter(role='Managers').distinct():
                     if receiver.notificationprivilege.project_no_created:
                         notify.send(sender, recipient=receiver, verb='Message', level="success",
                                     description=description)
@@ -265,14 +414,16 @@ def task():
             psd_signature = SalesDOSignature.objects.filter(do_id=psd.id)
             if psd_signature or psd.document:
                 # notification send
-                description = 'Sales Do No : {0} - work order completed, please invoice.'.format(
-                    psd.do_no)
-                for receiver in User.objects.filter(role__in=['Managers', 'Admins']):
-                    if receiver.notificationprivilege.project_no_created:
-                        notify.send(sender, recipient=receiver, verb='Message', level="success",
-                                    description=description)
-                        if is_email and receiver.email:
-                            send_mail(receiver.email, "Invoice Notification for Sales Do No", description)
+                if not psd.invoice_no:
+                    description = 'Sales Do No : {0} - work order completed, please invoice.'.format(
+                        psd.do_no)
+                    user_status=UserStatus.objects.get(status='resigned')
+                    for receiver in User.objects.exclude(status=user_status).filter(role__in=['Managers', 'Admins']):
+                        if receiver.notificationprivilege.project_no_created:
+                            notify.send(sender, recipient=receiver, verb='Message', level="success",
+                                        description=description)
+                            if is_email and receiver.email:
+                                send_mail(receiver.email, "Invoice Notification for Sales Do No", description)
 
     maintenance_srs = MainSr.objects.all()
     for sr in maintenance_srs:
@@ -282,13 +433,14 @@ def task():
         diff_mod = diff_days % reminder_signature
         if diff_mod == 0:
             sr_signature = MainSRSignature.objects.filter(sr_id=sr.id)
-            if sr_signature or sr.document:
+            if sr.status=="Signed":
                 pass
             else:
                 # notification send
                 description = '<a href="/maintenance-detail/'+str(sr.maintenance_id)+'/service-report-detail/'+str(sr.id)+'">Maintenance Sr No : {0} - follow up with customer and get signature</a>'.format(
                     sr.sr_no)
-                for receiver in User.objects.filter(Q(username=project.proj_incharge) |Q(role='Managers')).distinct():
+                user_status=UserStatus.objects.get(status='resigned')
+                for receiver in User.objects.exclude(status=user_status).filter(Q(username=project.proj_incharge) |Q(role='Managers')).distinct():
                     if receiver.notificationprivilege.project_no_created:
                         notify.send(sender, recipient=receiver, verb='Message', level="success",
                                     description=description)
@@ -300,14 +452,16 @@ def task():
             sr_signature = MainSRSignature.objects.filter(sr_id=sr.id)
             if sr_signature or sr.document:
                 # notification send
-                description = 'Maintenance Sr No : {0} - work order completed, please invoice.'.format(
-                    sr.sr_no)
-                for receiver in User.objects.filter(role__in=['Managers', 'Admins']):
-                    if receiver.notificationprivilege.project_no_created:
-                        notify.send(sender, recipient=receiver, verb='Message', level="success",
-                                    description=description)
-                        if is_email and receiver.email:
-                            send_mail(receiver.email, "Invoice Notification for Maintenance Sr No", description)
+                if not sr.invoice_no:
+                    description = 'Maintenance Sr No : {0} - work order completed, please invoice.'.format(
+                        sr.sr_no)
+                    user_status=UserStatus.objects.get(status='resigned')
+                    for receiver in User.objects.exclude(status=user_status).filter(role__in=['Managers', 'Admins']):
+                        if receiver.notificationprivilege.project_no_created:
+                            notify.send(sender, recipient=receiver, verb='Message', level="success",
+                                        description=description)
+                            if is_email and receiver.email:
+                                send_mail(receiver.email, "Invoice Notification for Maintenance Sr No", description)
 
     maintenance_schedules = Schedule.objects.all()
     for schedule in maintenance_schedules:
@@ -320,7 +474,8 @@ def task():
                 description = '<a href="/maintenance-detail/' + str(
                     schedule.maintenance_id) + '">Maintenance No : {0} -  You have scheduled a reminder for {1}, kindly follow up.</a>'.format(
                     schedule.maintenance.main_no, schedule.description)
-                for receiver in User.objects.all():
+                user_status=UserStatus.objects.get(status='resigned')
+                for receiver in User.objects.exclude(status=user_status).all():
                     if receiver.notificationprivilege.maintenance_reminded:
                         notify.send(sender, recipient=receiver, verb='Message', level="success",
                                     description=description)
@@ -337,7 +492,8 @@ def task():
                 description = '<a href="/maintenance-detail/' + str(
                     maintenance.id) + '">Maintenance No : {0} -  Contract is ending {1} weeks later, kindly inform to customer.</a>'.format(
                     maintenance.main_no, setting_weeks)
-                for receiver in User.objects.all():
+                user_status=UserStatus.objects.get(status='resigned')
+                for receiver in User.objects.exclude(status=user_status).all():
                     if receiver.notificationprivilege.maintenance_reminded:
                         notify.send(sender, recipient=receiver, verb='Message', level="success",
                                     description=description)
@@ -354,7 +510,8 @@ def task():
                 description = '<a href="/maintenance-detail/' + str(
                     device.maintenance_id) + '">Maintenance No : {0} -{1} is expiry {2} weeks later, kindly inform to customer.</a>'.format(
                     device.maintenance.main_no, device.hardware_code, setting_weeks)
-                for receiver in User.objects.all():
+                user_status=UserStatus.objects.get(status='resigned')
+                for receiver in User.objects.exclude(status=user_status).all():
                     if receiver.notificationprivilege.maintenance_reminded:
                         notify.send(sender, recipient=receiver, verb='Message', level="success",
                                     description=description)
@@ -414,9 +571,9 @@ def ajax_import_project(request):
                             proj_id=row["proj_id"],
                             company_nameid=row["company_nameid"],
                             proj_name=row["proj_name"],
-                            start_date=datetime.datetime.strptime(row["start_date"], '%Y-%m-%d').replace(
+                            start_date=datetime.strptime(row["start_date"], '%Y-%m-%d').replace(
                                 tzinfo=pytz.utc),
-                            end_date=datetime.datetime.strptime(row["end_date"], '%Y-%m-%d').replace(tzinfo=pytz.utc),
+                            end_date=datetime.strptime(row["end_date"], '%Y-%m-%d').replace(tzinfo=pytz.utc),
                             proj_incharge=row["proj_incharge"],
                             proj_status=row["proj_status"],
                         )
@@ -431,9 +588,9 @@ def ajax_import_project(request):
                         project.proj_id = row["proj_id"]
                         project.company_nameid = row["company_nameid"]
                         project.proj_name = row["proj_name"]
-                        project.start_date = datetime.datetime.strptime(row["start_date"], '%Y-%m-%d').replace(
+                        project.start_date = datetime.strptime(row["start_date"], '%Y-%m-%d').replace(
                             tzinfo=pytz.utc)
-                        project.end_date = datetime.datetime.strptime(row["end_date"], '%Y-%m-%d').replace(
+                        project.end_date = datetime.strptime(row["end_date"], '%Y-%m-%d').replace(
                             tzinfo=pytz.utc)
                         project.proj_incharge = row["proj_incharge"]
                         project.proj_status = row["proj_status"]
@@ -488,7 +645,7 @@ def ajax_import_projectot(request):
                             proj_id=row["proj_id"],
                             approved_hour=row["approved_hour"],
                             proj_name=row["proj_name"],
-                            date=datetime.datetime.strptime(row["date"], '%Y-%m-%d %H:%M:%S').replace(tzinfo=pytz.utc),
+                            date=datetime.strptime(row["date"], '%Y-%m-%d %H:%M:%S').replace(tzinfo=pytz.utc),
                             approved_by=row["approved_by"]
                         )
                         projectot.save()
@@ -502,7 +659,7 @@ def ajax_import_projectot(request):
                         projectot.proj_id = row["proj_id"]
                         projectot.approved_hour = row["approved_hour"]
                         projectot.proj_name = row["proj_name"]
-                        projectot.start_date = datetime.datetime.strptime(row["date"], '%Y-%m-%d %H:%M:%S').replace(
+                        projectot.start_date = datetime.strptime(row["date"], '%Y-%m-%d %H:%M:%S').replace(
                             tzinfo=pytz.utc)
                         projectot.approved_by = row["approved_by"]
 
@@ -524,7 +681,7 @@ def ajax_import_projectot(request):
 @ajax_login_required
 def ajax_summarys(request):
     if request.method == "POST":
-        current_year = datetime.datetime.today().year
+        current_year = datetime.today().year
         projects = Project.objects.filter(start_date__iso_year=current_year)
 
         return render(request, 'projects/ajax-project.html', {'projects': projects})
@@ -536,19 +693,19 @@ def ajax_summarys_filter(request):
         search_projectno = request.POST.get('search_projectno')
         incharge_filter = request.POST.get('incharge_filter')
         search_customer = request.POST.get('search_customer')
-        search_year = request.POST.get('search_year')
+        search_years = json.loads(request.POST.get('search_years', '[]'))
+        status = request.POST.get('status')
         projects = Project.objects.all()
 
-        if search_year:
-            projects = projects.filter(start_date__iso_year=search_year)
+        projects = projects.filter(start_date__iso_year__in = search_years)
         if search_projectno != "":
             projects = projects.filter(proj_id__iexact=search_projectno)
         if search_customer != "":
             projects = projects.filter(company_nameid_id=search_customer)
         if incharge_filter != "":
             projects = projects.filter(proj_incharge__iexact=incharge_filter)
-        if search_year != "":
-            projects = projects.filter(start_date__iso_year=search_year)
+        if status != "":
+            projects = projects.filter(proj_status=status)
 
         return render(request, 'projects/ajax-project.html', {'projects': projects})
 
@@ -669,8 +826,8 @@ def ajax_get_projectname(request):
 @ajax_login_required
 def ajax_projectots(request):
     if request.method == "POST":
-        current_year = datetime.datetime.today().year
-        current_month = datetime.datetime.today().month
+        current_year = datetime.today().year
+        current_month = datetime.today().month
         projectots = OT.objects.filter(date__year=current_year, date__month=current_month)
 
         return render(request, 'projects/ajax-projectot.html', {'projectots': projectots})
@@ -682,8 +839,8 @@ def ajax_projectots_filter(request):
         search_projectno = request.POST.get('search_projectno')
         daterange = request.POST.get('daterange')
         if daterange:
-            startdate = datetime.datetime.strptime(daterange.split()[0], '%Y.%m.%d').replace(tzinfo=pytz.utc)
-            enddate = datetime.datetime.strptime(daterange.split()[2], '%Y.%m.%d').replace(tzinfo=pytz.utc)
+            startdate = datetime.strptime(daterange.split()[0], '%Y.%m.%d').replace(tzinfo=pytz.utc)
+            enddate = datetime.strptime(daterange.split()[2], '%Y.%m.%d').replace(tzinfo=pytz.utc)
         search_approved = request.POST.get('search_approved')
         if search_projectno != "" and daterange == "" and search_approved == "":
             projectots = OT.objects.filter(proj_id__iexact=search_projectno)
@@ -747,10 +904,11 @@ class ProjectDetailView(DetailView):
         context['summary'] = summary
         context['project_pk'] = content_pk
         context['contacts'] = Contact.objects.all()
-        context['contact_users'] = User.objects.all()
+        context['contact_users'] = User.objects.filter(
+            (Q(role__icontains='Supervisors') | Q(role__icontains='Workers')) & ~Q(status_id=2))
         context['uoms'] = Uom.objects.all()
         context['projects_incharge'] = User.objects.filter(
-            Q(role__icontains='Managers') | Q(role__icontains='Engineers') | Q(is_staff=True))
+            (Q(role__icontains='Managers') | Q(role__icontains='Engineers') | Q(is_staff=True)) & ~Q(status_id=2))
         context['dolist'] = Do.objects.filter(project_id=content_pk)
         context['filelist'] = ProjectFile.objects.filter(project_id=content_pk)
         context['bomlist'] = Bom.objects.filter(project_id=content_pk)
@@ -761,11 +919,11 @@ class ProjectDetailView(DetailView):
         if PcDetail.objects.filter(project_id=content_pk).exists():
             context['pc_detail'] = PcDetail.objects.get(project_id=content_pk)
         quotation = summary.quotation
-        projectitems = Scope.objects.filter(quotation_id=quotation.id, parent=None, subject__is_optional=None)
+        projectitems = Scope.objects.filter(quotation_id=quotation.id,subject__is_optional=None)
 
 
-        if Scope.objects.filter(quotation_id=quotation.id, parent=None, subject__is_optional=None).exists():
-            subtotal = Scope.objects.filter(quotation_id=quotation.id, parent=None, subject__is_optional=None).aggregate(Sum('amount'))[
+        if Scope.objects.filter(quotation_id=quotation.id, subject__is_optional=None).exists():
+            subtotal = Scope.objects.filter(quotation_id=quotation.id, subject__is_optional=None).aggregate(Sum('amount'))[
                 'amount__sum']
             total_gp = 0.0
             total_cost = 0.0
@@ -777,7 +935,13 @@ class ProjectDetailView(DetailView):
                 else:
                     scope.allocation_perc = 100 * scope.amount / subtotal
                 scope.save()
-            gst = (float(subtotal) - float(quotation.discount)) * 0.09
+            gst_default=GST.objects.last()
+            if gst_default:
+                gst_default=float(gst_default.gst)
+            else:
+                gst_default=0.09
+            context['gst_default'] = gst_default*100
+            gst = (float(subtotal) - float(quotation.discount)) * gst_default
             context['subtotal'] = subtotal
             context['gst'] = gst
             final_total = float(subtotal) - float(quotation.discount) + gst
@@ -853,7 +1017,7 @@ def ajax_add_proj_file(request):
                     document=request.FILES.get('document'),
                     uploaded_by_id=request.user.id,
                     project_id=projectid,
-                    date=datetime.datetime.now().date()
+                    date=datetime.now().date()
                 )
                 return JsonResponse({
                     "status": "Success",
@@ -870,7 +1034,7 @@ def ajax_add_proj_file(request):
                 projectfile.name=name
                 projectfile.document=request.FILES.get('document')
                 projectfile.uploaded_by_id=request.user.id
-                projectfile.date=datetime.datetime.now().date()
+                projectfile.date=datetime.now().date()
                 projectfile.save()
                 return JsonResponse({
                     "status": "Success",
@@ -887,8 +1051,8 @@ def ajax_add_proj_file(request):
 def ajax_all_mandays(request):
     if request.method == "POST":
         proj_id = request.POST.get('proj_id')
-        current_year = datetime.datetime.today().year
-        current_month = datetime.datetime.today().month
+        current_year = datetime.today().year
+        current_month = datetime.today().month
         holiday_cnt = Holiday.objects.filter(date__year=current_year, date__month=current_month).count()
 
         str_query = "SELECT F.id, F.projectcode,  F.emp_no, F.estimated_mandays, F.start_date, F.end_date, F.projectcode, F.checkin_time, F.checkout_time, TIMESTAMPDIFF(MINUTE, F.checkin_time, F.checkout_time) as `difference` FROM (SELECT W.id, W.projectcode, W.emp_no, P.estimated_mandays, P.start_date, P.end_date, W.checkin_time, W.checkout_time FROM tb_worklog AS W, tb_project as P WHERE W.projectcode = P.proj_id) AS F WHERE F.projectcode = " + "'" + proj_id + "'" + " ORDER BY Date(F.checkin_time), F.emp_no"
@@ -915,17 +1079,17 @@ def ajax_all_mandays(request):
             q.secondhr = 0
             q.ph = holiday_cnt
             if q.checkout_time is not None and q.checkin_time is not None:
-                modetime = datetime.timedelta(hours=17)
+                modetime = timedelta(hours=17)
 
                 t_out = q.checkout_time
                 t_in = q.checkin_time
                 if q.checkout_time.date() > q.checkin_time.date():
-                    timediff = datetime.timedelta(hours=t_out.hour, minutes=t_out.minute,
-                                                  seconds=t_out.second) + datetime.timedelta(hours=24)
+                    timediff = timedelta(hours=t_out.hour, minutes=t_out.minute,
+                                                  seconds=t_out.second) + timedelta(hours=24)
                 else:
-                    timediff = datetime.timedelta(hours=t_out.hour, minutes=t_out.minute, seconds=t_out.second)
+                    timediff = timedelta(hours=t_out.hour, minutes=t_out.minute, seconds=t_out.second)
 
-                timestart = datetime.timedelta(hours=t_in.hour, minutes=t_in.minute, seconds=t_in.second)
+                timestart = timedelta(hours=t_in.hour, minutes=t_in.minute, seconds=t_in.second)
 
                 check_weekday = q.checkin_time.weekday()
 
@@ -1020,18 +1184,18 @@ def ajax_filter_mandays(request):
         total_2hr = 0
         for q in query_ots:
             if q.checkout_time is not None and q.checkin_time is not None:
-                modetime = datetime.timedelta(hours=17)
-                holiday_modetime = datetime.timedelta(hours=8)
+                modetime = timedelta(hours=17)
+                holiday_modetime = timedelta(hours=8)
 
                 t_out = q.checkout_time
                 t_in = q.checkin_time
                 if q.checkout_time.date() > q.checkin_time.date():
-                    timediff = datetime.timedelta(hours=t_out.hour, minutes=t_out.minute,
-                                                  seconds=t_out.second) + datetime.timedelta(hours=24)
+                    timediff = timedelta(hours=t_out.hour, minutes=t_out.minute,
+                                                  seconds=t_out.second) + timedelta(hours=24)
                 else:
-                    timediff = datetime.timedelta(hours=t_out.hour, minutes=t_out.minute, seconds=t_out.second)
+                    timediff = timedelta(hours=t_out.hour, minutes=t_out.minute, seconds=t_out.second)
 
-                timestart = datetime.timedelta(hours=t_in.hour, minutes=t_in.minute, seconds=t_in.second)
+                timestart = timedelta(hours=t_in.hour, minutes=t_in.minute, seconds=t_in.second)
 
                 check_weekday = q.checkin_time.weekday()
                 check_holiday = Holiday.objects.filter(date=q.checkin_time.date()).exists()
@@ -1174,7 +1338,8 @@ def UpdateSummary(request):
                 is_email = NotificationPrivilege.objects.get(user_id=sender.id).is_email
                 description = '<a href="/project-summary-detail/'+str(summary.id)+'">Project No : {0} - Assigned to you.</a>'.format(
                     summary.proj_name)
-                for receiver in User.objects.filter(username=summary.proj_incharge):
+                user_status=UserStatus.objects.get(status='resigned')
+                for receiver in User.objects.exclude(status=user_status).filter(username=summary.proj_incharge):
                     if receiver.notificationprivilege.project_no_created:
                         notify.send(sender, recipient=receiver, verb='Message', level="success",
                                     description=description)
@@ -1185,7 +1350,8 @@ def UpdateSummary(request):
                 is_email = NotificationPrivilege.objects.get(user_id=sender.id).is_email
                 description = '<a href="/project-summary-detail/'+str(summary.id)+'">Project Name : {0} - Status Changed from {1} to {2}.</a>'.format(
                     summary.proj_name, prev_status, summary.proj_status)
-                for receiver in User.objects.filter(Q(username=summary.proj_incharge) |Q(role='Managers')).distinct():
+                user_status=UserStatus.objects.get(status='resigned')
+                for receiver in User.objects.exclude(status=user_status).filter(Q(username=summary.proj_incharge) |Q(role='Managers')).distinct():
                     if receiver.notificationprivilege.project_no_created:
                         notify.send(sender, recipient=receiver, verb='Message', level="success",
                                     description=description)
@@ -1603,7 +1769,8 @@ def dodocadd(request):
                     description = '<a href="/project-detail/' + str(
                         projectid) + '/delivery-order-detail/'+str(do.id)+'">Project Do No : {0} Status updated from {1} to Signed</a>'.format(
                         do.do_no, do.status)
-                    for receiver in User.objects.filter(
+                    user_status=UserStatus.objects.get(status='resigned')
+                    for receiver in User.objects.exclude(status=user_status).filter(
                             Q(username=do.project.proj_incharge) | Q(role='Managers')).distinct():
                         if receiver.notificationprivilege.do_status:
                             notify.send(sender, recipient=receiver, verb='Message', level="success",
@@ -1645,7 +1812,8 @@ def srdocadd(request):
                         sr.project_id) + '/service-report-detail/' + str(
                         sr.id) + '">Project Sr No : {0} Status updated from {1} to Signed</a>'.format(
                         sr.sr_no, sr.status)
-                    for receiver in User.objects.filter(
+                    user_status=UserStatus.objects.get(status='resigned')
+                    for receiver in User.objects.exclude(status=user_status).filter(
                             Q(username=sr.project.proj_incharge) | Q(role='Managers')).distinct():
                         if receiver.notificationprivilege.do_status:
                             notify.send(sender, recipient=receiver, verb='Message', level="success",
@@ -1912,7 +2080,7 @@ class DoSignatureCreate(generic.CreateView):
                 signature=request.POST.get('signature'),
                 name=sign_name,
                 nric=sign_nric,
-                update_date=datetime.datetime.strptime(sign_date, '%d %b %Y'),
+                update_date=datetime.strptime(sign_date, '%d %b %Y'),
                 do_id=self.kwargs.get('dopk'),
                 project_id=self.kwargs.get('pk')
             )
@@ -1936,7 +2104,7 @@ class DoSignatureUpdate(generic.UpdateView):
             doSignature.signature = request.POST.get('signature')
             doSignature.name = sign_name
             doSignature.nric = sign_nric
-            doSignature.update_date = datetime.datetime.strptime(sign_date.replace(',', ""), '%d %b %Y').date()
+            doSignature.update_date = datetime.strptime(sign_date.replace(',', ""), '%d %b %Y').date()
             doSignature.do_id = self.kwargs.get('dopk')
             doSignature.project_id = self.kwargs.get('pk')
             doSignature.save()
@@ -1960,7 +2128,7 @@ def deliverysignadd(request):
         format, imgstr = default_base64.split(';base64,')
         ext = format.split('/')[-1]
         signature_image = ContentFile(base64.b64decode(imgstr),
-                                      name='delivery-sign-' + datetime.date.today().strftime("%d-%m-%Y") + "." + ext)
+                                      name='delivery-sign-' + date.today().strftime("%d-%m-%Y") + "." + ext)
         if deliveryid == "-1":
             try:
                 DOSignature.objects.create(
@@ -1981,7 +2149,8 @@ def deliverysignadd(request):
                     description = '<a href="/project-detail/' + str(
                         projectid) + '/delivery-order-detail/'+str(do.id)+'">Project Do No : {0} Status updated from {1} to Signed</a>'.format(
                         do.do_no, do.status)
-                    for receiver in User.objects.filter(
+                    user_status=UserStatus.objects.get(status='resigned')
+                    for receiver in User.objects.exclude(status=user_status).filter(
                             Q(username=do.project.proj_incharge) | Q(role='Managers')).distinct():
                         if receiver.notificationprivilege.do_status:
                             notify.send(sender, recipient=receiver, verb='Message', level="success",
@@ -2074,101 +2243,44 @@ def ajax_get_uom_name(request):
 
             return JsonResponse(data)
 
-
-@ajax_login_required
-def ajax_check_sr_invoice_no(request):
-    if request.method == "POST":
-        # make project_id for all auto-increamently.
-        prefix = "CI"
-        currentyear = time.strftime("%y", time.localtime())
-        project_inv = 0
-        maintenance_inv = 0
-        if Sr.objects.all().exists():
-            projSr = Sr.objects.all().order_by('-invoice_no')[0]
-            if projSr.invoice_no is not None:
-                project_inv = int(projSr.invoice_no[2:])
-        if MainSr.objects.all().exists():
-            mainSr = MainSr.objects.all().order_by('-invoice_no')[0]
-            if mainSr.invoice_no is not None:
-                maintenance_inv = int(mainSr.invoice_no[2:])
-        max_sr = max([project_inv, maintenance_inv])
-        if int(str(max_sr)[0:2]) == int(currentyear):
-            invoice_no = prefix + str(currentyear) + str(int(str(max_sr)[2:]) + 1)
-        else:
-            invoice_no = prefix + str(currentyear) + "1000"
-        data = {
-            "invoice_no": invoice_no
-        }
-
-        return JsonResponse(data)
-
-@ajax_login_required
-def ajax_check_do_invoice_no(request):
-    if request.method == "POST":
-        # make project_id for all auto-increamently.
-        prefix = "CI"
-        currentyear = time.strftime("%y", time.localtime())
-        project_inv = 0
-        sales_inv = 0
-        if Do.objects.all().exists():
-            projDo = Do.objects.all().order_by('-invoice_no')[0]
-            if projDo.invoice_no is not None:
-                project_inv = int(projDo.invoice_no[2:])
-        if ProductSalesDo.objects.all().exists():
-            salesDo = ProductSalesDo.objects.all().order_by('-invoice_no')[0]
-            if salesDo.invoice_no is not None:
-                sales_inv = int(salesDo.invoice_no[2:])
-        max_do = max([project_inv, sales_inv])
-        if int(str(max_do)[0:2]) == int(currentyear):
-            invoice_no = prefix + str(currentyear) + str(int(str(max_do)[2:]) + 1)
-        else:
-            invoice_no = prefix + str(currentyear) + "1000"
-        data = {
-            "invoice_no": invoice_no
-        }
-
-        return JsonResponse(data)
-
-@ajax_login_required
-def ajax_check_pc_invoice_no(request):
-    if request.method == "POST":
-        # make project_id for all auto-increamently.
-        prefix = "CI"
-        currentyear = time.strftime("%y", time.localtime())
-        project_inv = 0
-        if Pc.objects.all().exists():
-            projPc = Pc.objects.all().order_by('-invoice_no')[0]
-            if projPc.invoice_no is not None:
-                project_inv = int(projPc.invoice_no[2:])
-        if int(str(project_inv)[0:2]) == int(currentyear):
-            invoice_no = prefix + str(currentyear) + str(int(str(project_inv)[2:]) + 1)
-        else:
-            invoice_no = prefix + str(currentyear) + "1000"
-        data = {
-            "invoice_no": invoice_no
-        }
-
-        return JsonResponse(data)
-
-
 @ajax_login_required
 def ajax_add_sr_invoice_no(request):
     if request.method == "POST":
         proj_type = request.POST.get('proj_type')
         invoice_no = request.POST.get('invoice_no')
         sr_id = request.POST.get('sr_id')
-        if proj_type=="1":
-            projSr=Sr.objects.get(id=sr_id)
-            projSr.invoice_no=invoice_no
-            projSr.save()
-        elif proj_type=="2":
-            mainSr=MainSr.objects.get(id=sr_id)
-            mainSr.invoice_no=invoice_no
-            mainSr.save()
-        return JsonResponse({
-            "status": "Success",
-            "messages": "Invoice Successfully added!"
-        })
+        try:
+            invoice_format=InvoiceFormat.objects.last()
+            prefix_len=len(invoice_format.prefix)
+            input_suffix_len=len(invoice_no)-prefix_len
+            if invoice_format.prefix==invoice_no[:prefix_len] and invoice_format.suffix==input_suffix_len:
+                if proj_type=="1":
+                    projSr=Sr.objects.get(id=sr_id)
+                    projSr.invoice_no=invoice_no
+                    projSr.save()
+                elif proj_type=="2":
+                    mainSr=MainSr.objects.get(id=sr_id)
+                    mainSr.invoice_no=invoice_no
+                    mainSr.save()
+                return JsonResponse({
+                    "status": "Success",
+                    "messages": "Invoice Successfully added!"
+                })
+            else:
+                return JsonResponse({
+                    "status": "Failed",
+                    "messages": f"Invoice No format should be '{invoice_format.prefix}-{invoice_format.suffix} characters'."
+                })
+        except DataError as e:
+            return JsonResponse({
+                "status": "Failed",
+                "messages": f"Invoice No format should be '{invoice_format.prefix}-{invoice_format.suffix} characters'."
+            })
+        except AttributeError as e:
+            return JsonResponse({
+                "status": "Failed",
+                "messages": "Please define invoice format first."
+            })
 
 @ajax_login_required
 def ajax_add_do_invoice_no(request):
@@ -2176,30 +2288,70 @@ def ajax_add_do_invoice_no(request):
         proj_type = request.POST.get('proj_type')
         invoice_no = request.POST.get('invoice_no')
         do_id = request.POST.get('do_id')
-        if proj_type=="1":
-            projDo=Do.objects.get(id=do_id)
-            projDo.invoice_no=invoice_no
-            projDo.save()
-        elif proj_type=="2":
-            salesDo=ProductSalesDo.objects.get(id=do_id)
-            salesDo.invoice_no=invoice_no
-            salesDo.save()
-        return JsonResponse({
-            "status": "Success",
-            "messages": "Invoice Successfully added!"
-        })
+        try:
+            invoice_format=InvoiceFormat.objects.last()
+            prefix_len=len(invoice_format.prefix)
+            input_suffix_len=len(invoice_no)-prefix_len
+            if invoice_format.prefix==invoice_no[:prefix_len] and invoice_format.suffix==input_suffix_len:
+                if proj_type=="1":
+                    projDo=Do.objects.get(id=do_id)
+                    projDo.invoice_no=invoice_no
+                    projDo.save()
+                elif proj_type=="2":
+                    salesDo=ProductSalesDo.objects.get(id=do_id)
+                    salesDo.invoice_no=invoice_no
+                    salesDo.save()
+                return JsonResponse({
+                    "status": "Success",
+                    "messages": "Invoice Successfully added!"
+                })
+            else:
+                return JsonResponse({
+                    "status": "Failed",
+                    "messages": f"Invoice No format should be '{invoice_format.prefix}-{invoice_format.suffix} characters'."
+                })
+        except DataError as e:
+            return JsonResponse({
+                "status": "Failed",
+                "messages": f"Invoice No format should be '{invoice_format.prefix}-{invoice_format.suffix} characters'."
+            })
+        except AttributeError as e:
+            return JsonResponse({
+                "status": "Failed",
+                "messages": "Please define invoice format first."
+            })
 @ajax_login_required
 def ajax_add_pc_invoice_no(request):
     if request.method == "POST":
         invoice_no = request.POST.get('invoice_no')
         pc_id = request.POST.get('pc_id')
-        projPc=Pc.objects.get(id=pc_id)
-        projPc.invoice_no=invoice_no
-        projPc.save()
-        return JsonResponse({
-            "status": "Success",
-            "messages": "Invoice Successfully added!"
-        })
+        try:
+            invoice_format=InvoiceFormat.objects.last()
+            prefix_len=len(invoice_format.prefix)
+            input_suffix_len=len(invoice_no)-prefix_len
+            if invoice_format.prefix==invoice_no[:prefix_len] and invoice_format.suffix==input_suffix_len:
+                projPc=Pc.objects.get(id=pc_id)
+                projPc.invoice_no=invoice_no
+                projPc.save()
+                return JsonResponse({
+                    "status": "Success",
+                    "messages": "Invoice Successfully added!"
+                })
+            else:
+                return JsonResponse({
+                    "status": "Failed",
+                    "messages": f"Invoice No format should be '{invoice_format.prefix}-{invoice_format.suffix} characters'."
+                })
+        except DataError as e:
+            return JsonResponse({
+                "status": "Failed",
+                "messages": f"Invoice No format should be '{invoice_format.prefix}-{invoice_format.suffix} characters'."
+            })
+        except AttributeError as e:
+            return JsonResponse({
+                "status": "Failed",
+                "messages": "Please define invoice format first."
+            })
 
 
 @ajax_login_required
@@ -2217,7 +2369,7 @@ def servicesignadd(request):
         format, imgstr = default_base64.split(';base64,')
         ext = format.split('/')[-1]
         signature_image = ContentFile(base64.b64decode(imgstr),
-                                      name='service-sign-' + datetime.date.today().strftime("%d-%m-%Y") + "." + ext)
+                                      name='service-sign-' + date.today().strftime("%d-%m-%Y") + "." + ext)
         if serviceid == "-1":
             try:
                 SRSignature.objects.create(
@@ -2239,7 +2391,8 @@ def servicesignadd(request):
                         sr.project_id) + '/service-report-detail/' + str(
                         sr.id) + '">Project Sr No : {0} Status updated from {1} to Signed</a>'.format(
                         sr.sr_no, sr.status)
-                    for receiver in User.objects.filter(
+                    user_status=UserStatus.objects.get(status='resigned')
+                    for receiver in User.objects.exclude(status=user_status).filter(
                             Q(username=sr.project.proj_incharge) | Q(role='Managers')).distinct():
                         if receiver.notificationprivilege.do_status:
                             notify.send(sender, recipient=receiver, verb='Message', level="success",
@@ -2548,7 +2701,7 @@ class SrSignatureCreate(generic.CreateView):
                 signature=request.POST.get('signature'),
                 name=sign_name,
                 nric=sign_nric,
-                update_date=datetime.datetime.strptime(sign_date, '%d %b %Y'),
+                update_date=datetime.strptime(sign_date, '%d %b %Y'),
                 sr_id=self.kwargs.get('srpk'),
                 project_id=self.kwargs.get('pk')
             )
@@ -2572,7 +2725,7 @@ class SrSignatureUpdate(generic.UpdateView):
             srSignature.signature = request.POST.get('signature')
             srSignature.name = sign_name
             srSignature.nric = sign_nric
-            srSignature.update_date = datetime.datetime.strptime(sign_date.replace(',', ""), '%d %b %Y').date()
+            srSignature.update_date = datetime.strptime(sign_date.replace(',', ""), '%d %b %Y').date()
             srSignature.sr_id = self.kwargs.get('srpk')
             srSignature.project_id = self.kwargs.get('pk')
             srSignature.save()
@@ -3083,10 +3236,10 @@ def exportSrPDF(request, value):
     quotation = project.quotation
     sritems = SrItem.objects.filter(sr_id=value)
 
-    domain = request.META['HTTP_HOST']
+    domain = os.getenv("DOMAIN")
     logo = Image('http://' + domain + '/static/assets/images/printlogo.png', hAlign='LEFT')
     response = HttpResponse(content_type='application/pdf')
-    currentdate = datetime.date.today().strftime("%d-%m-%Y")
+    currentdate = date.today().strftime("%d-%m-%Y")
     pdfname = sr.sr_no + ".pdf"
     response['Content-Disposition'] = 'attachment; filename={}'.format(pdfname)
     story = []
@@ -3180,9 +3333,9 @@ def exportSrPDF(request, value):
 def exportPcPDF(request, value):
     pc = Pc.objects.get(id=value)
     project = pc.project
-    domain = request.META['HTTP_HOST']
+    domain = os.getenv("DOMAIN")
     response = HttpResponse(content_type='application/pdf')
-    currentdate = datetime.date.today().strftime("%d-%m-%Y")
+    currentdate = date.today().strftime("%d-%m-%Y")
     pdfname = pc.pc_no + ".pdf"
     response['Content-Disposition'] = 'attachment; filename="{}"'.format(pdfname)
     story = []
@@ -3421,10 +3574,11 @@ def exportDoPDF(request, value):
     project = do.project
     quotation = project.quotation
     doitems = DoItem.objects.filter(do_id=value)
-    domain = request.META['HTTP_HOST']
+    # domain = request.META['HTTP_HOST']
+    domain = os.getenv("DOMAIN")
     logo = Image('http://' + domain + '/static/assets/images/printlogo.png', hAlign='LEFT')
     response = HttpResponse(content_type='application/pdf')
-    currentdate = datetime.date.today().strftime("%d-%m-%Y")
+    currentdate = date.today().strftime("%d-%m-%Y")
     pdfname = do.do_no + ".pdf"
     response['Content-Disposition'] = 'attachment; filename="{}"'.format(pdfname)
 
@@ -3506,10 +3660,30 @@ def exportDoPDF(request, value):
 
     doc.build(story, canvasmaker=NumberedCanvas, onFirstPage=partial(header, do=do, value=value, domain=domain), onLaterPages=partial(header, do=do, value=value, domain=domain))
 
-
     response.write(buff.getvalue())
     buff.close()
     return response
+
+
+
+# Function to split the text into lines
+def split_text(text, max_length):
+    words = text.split(' ')
+    lines = []
+    current_line = ""
+    for word in words:
+        if len(current_line) + len(word) + 1 <= max_length:
+            if current_line:
+                current_line += " " + word
+            else:
+                current_line = word
+        else:
+            lines.append(current_line)
+            current_line = word
+    if current_line:
+        lines.append(current_line)
+    return lines
+
 # Header for Do
 def header(canvas, doc, do, value, domain):
     RIGHT_X = 370
@@ -3521,6 +3695,7 @@ def header(canvas, doc, do, value, domain):
     LEFT_X_5 = 300
     TOP_MARGIN = 130
     LINE_SPACE = 15
+    MAX_LINE_LENGTH=50
 
     canvas.saveState()
     project = do.project
@@ -3593,22 +3768,31 @@ def header(canvas, doc, do, value, domain):
         remarks = ""
     canvas.setFont("Helvetica-Bold", 10)
     canvas.drawString(LEFT_X_1, canvas.PAGE_HEIGHT - TOP_MARGIN + 2, "Bill To: ")
-    canvas.drawString(LEFT_X_1, canvas.PAGE_HEIGHT - TOP_MARGIN - 3 * LINE_SPACE, "Ship To:  ")
-    canvas.drawString(LEFT_X_1, canvas.PAGE_HEIGHT - TOP_MARGIN - 5 * LINE_SPACE, "Attn:  ")
-    canvas.drawString(LEFT_X_3, canvas.PAGE_HEIGHT - TOP_MARGIN - 5 * LINE_SPACE, "Tel:  ")
+    canvas.drawString(LEFT_X_1, canvas.PAGE_HEIGHT - TOP_MARGIN - 4 * LINE_SPACE, "Ship To:  ")
+    canvas.drawString(LEFT_X_1, canvas.PAGE_HEIGHT - TOP_MARGIN - 6 * LINE_SPACE, "Attn:  ")
+    canvas.drawString(LEFT_X_3, canvas.PAGE_HEIGHT - TOP_MARGIN - 6 * LINE_SPACE, "Tel:  ")
     canvas.drawString(LEFT_X_1, canvas.PAGE_HEIGHT - TOP_MARGIN - 7 * LINE_SPACE, "Subject: ")
     # canvas.drawString(LEFT_X_1, canvas.PAGE_HEIGHT - TOP_MARGIN - 7 * LINE_SPACE, "Remarks: ")
 
     canvas.setFont("Helvetica", 10)
     canvas.drawString(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN + 2, "%s" % (bill_to1))
-    canvas.drawString(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN - LINE_SPACE, "%s %s" % (address, qunit))
-    canvas.drawString(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN - 2 * LINE_SPACE, "%s %s" % (country, postalcode))
-    shiptoobject = canvas.beginText(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN - 3 * LINE_SPACE)
+
+
+    # Split the text into lines
+    lines = split_text(address+" "+qunit, MAX_LINE_LENGTH)
+    # Draw the text, line by line
+    y_position = canvas.PAGE_HEIGHT - TOP_MARGIN - LINE_SPACE
+    for line in lines:
+        canvas.drawString(LEFT_X_2, y_position, "%s" % (line))
+        y_position -= LINE_SPACE  # Move down for the next line
+
+    canvas.drawString(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN - 3 * LINE_SPACE, "%s %s" % (country, postalcode))
+    shiptoobject = canvas.beginText(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN - 4 * LINE_SPACE)
     for line in shipto.splitlines(False):
         shiptoobject.textLine(line.rstrip())
     canvas.drawText(shiptoobject)
-    canvas.drawString(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN - 5 * LINE_SPACE, "%s" % (project.contact_person.salutation + " " + project.contact_person.contact_person))
-    canvas.drawString(LEFT_X_4, canvas.PAGE_HEIGHT - TOP_MARGIN - 5 * LINE_SPACE, "%s" % (project.tel))
+    canvas.drawString(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN - 6 * LINE_SPACE, "%s" % (project.contact_person.salutation + " " + project.contact_person.contact_person))
+    canvas.drawString(LEFT_X_4, canvas.PAGE_HEIGHT - TOP_MARGIN - 6 * LINE_SPACE, "%s" % (project.tel))
     # canvas.drawString(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN - 6 * LINE_SPACE, "%s" % (project.RE))
     subjectobject = canvas.beginText(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN - 7 * LINE_SPACE)
     for line in project.RE.splitlines(False):
@@ -3674,6 +3858,7 @@ def header_sr(canvas, doc, sr, value, domain):
     LEFT_X_5 = 300
     TOP_MARGIN = 130
     LINE_SPACE = 15
+    MAX_LINE_LENGTH = 60
 
     canvas.saveState()
 
@@ -3741,10 +3926,10 @@ def header_sr(canvas, doc, sr, value, domain):
 
     canvas.setFont("Helvetica-Bold", 10)
     canvas.drawString(LEFT_X_1, canvas.PAGE_HEIGHT - TOP_MARGIN + 2, "To: ")
-    canvas.drawString(LEFT_X_1, canvas.PAGE_HEIGHT - TOP_MARGIN - 3 * LINE_SPACE, "Attn:")
-    canvas.drawString(LEFT_X_3, canvas.PAGE_HEIGHT - TOP_MARGIN - 3 * LINE_SPACE, "Email:")
-    canvas.drawString(LEFT_X_1, canvas.PAGE_HEIGHT - TOP_MARGIN - 4.8 * LINE_SPACE, "Tel:")
-    canvas.drawString(LEFT_X_3, canvas.PAGE_HEIGHT - TOP_MARGIN - 4.8 * LINE_SPACE, "Fax:")
+    canvas.drawString(LEFT_X_1, canvas.PAGE_HEIGHT - TOP_MARGIN - 4 * LINE_SPACE, "Attn:")
+    canvas.drawString(LEFT_X_3, canvas.PAGE_HEIGHT - TOP_MARGIN - 4 * LINE_SPACE, "Email:")
+    canvas.drawString(LEFT_X_1, canvas.PAGE_HEIGHT - TOP_MARGIN - 5 * LINE_SPACE, "Tel:")
+    canvas.drawString(LEFT_X_3, canvas.PAGE_HEIGHT - TOP_MARGIN - 5 * LINE_SPACE, "Fax:")
     canvas.drawString(LEFT_X_1, canvas.PAGE_HEIGHT - TOP_MARGIN - 6 * LINE_SPACE, "Worksite:")
     canvas.drawString(LEFT_X_1, canvas.PAGE_HEIGHT - TOP_MARGIN - 8 * LINE_SPACE, "Service Type:")
     canvas.drawString(LEFT_X_1, canvas.PAGE_HEIGHT - TOP_MARGIN - 9 * LINE_SPACE, "System:")
@@ -3752,16 +3937,24 @@ def header_sr(canvas, doc, sr, value, domain):
     canvas.drawString(LEFT_X_1, canvas.PAGE_HEIGHT - TOP_MARGIN - 11 * LINE_SPACE, "Subject:")
     canvas.setFont("Helvetica", 10)
     canvas.drawString(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN + 2, "%s" % (quotation.company_nameid))
-    canvas.drawString(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN - LINE_SPACE, "%s %s" % (address, qunit))
-    canvas.drawString(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN - 2 * LINE_SPACE, "%s %s" % (country, postalcode))
+    
+    # Split the text into lines
+    lines = split_text(address+" "+qunit, MAX_LINE_LENGTH)
+    # Draw the text, line by line
+    y_position = canvas.PAGE_HEIGHT - TOP_MARGIN - LINE_SPACE
+    for line in lines:
+        canvas.drawString(LEFT_X_2, y_position, "%s" % (line))
+        y_position -= LINE_SPACE  # Move down for the next line
 
-    canvas.drawString(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN - 3 * LINE_SPACE, "%s" % (project.contact_person.salutation + " " + project.contact_person.contact_person))
+    canvas.drawString(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN - 3 * LINE_SPACE, "%s %s" % (country, postalcode))
+
+    canvas.drawString(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN - 4 * LINE_SPACE, "%s" % (project.contact_person.salutation + " " + project.contact_person.contact_person))
     test_email=wrap(project.email, 25)
-    t=canvas.beginText(LEFT_X_4, canvas.PAGE_HEIGHT - TOP_MARGIN - 3 * LINE_SPACE)
+    t=canvas.beginText(LEFT_X_4, canvas.PAGE_HEIGHT - TOP_MARGIN - 4 * LINE_SPACE)
     t.textLines(test_email)
     canvas.drawText(t)
-    canvas.drawString(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN - 4.8 * LINE_SPACE, "%s" % (project.tel))
-    canvas.drawString(LEFT_X_4, canvas.PAGE_HEIGHT - TOP_MARGIN - 4.8 * LINE_SPACE, "%s" % (project.fax))
+    canvas.drawString(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN - 5 * LINE_SPACE, "%s" % (project.tel))
+    canvas.drawString(LEFT_X_4, canvas.PAGE_HEIGHT - TOP_MARGIN - 5 * LINE_SPACE, "%s" % (project.fax))
     canvas.drawString(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN - 6 * LINE_SPACE, "%s" % (worksite_address))
     canvas.drawString(LEFT_X_2+20, canvas.PAGE_HEIGHT - TOP_MARGIN - 8 * LINE_SPACE, "%s" % (srtype))
     canvas.drawString(LEFT_X_2, canvas.PAGE_HEIGHT - TOP_MARGIN - 9 * LINE_SPACE, "%s" % (srsystem))
@@ -3825,7 +4018,8 @@ class NumberedCanvas(canvas.Canvas):
         self._saved_page_states = []
         self.PAGE_HEIGHT = defaultPageSize[1]
         self.PAGE_WIDTH = defaultPageSize[0]
-        self.domain = settings.HOST_NAME
+        # self.domain = settings.HOST_NAME
+        self.domain = os.getenv("DOMAIN")
         self.logo = ImageReader('http://' + self.domain + '/static/assets/images/printlogo.png')
 
     def showPage(self):
@@ -3860,7 +4054,7 @@ class LandScapeNumberedCanvas(canvas.Canvas):
         self._saved_page_states = []
         self.PAGE_HEIGHT = defaultPageSize[0]
         self.PAGE_WIDTH = defaultPageSize[1]
-        self.domain = settings.HOST_NAME
+        self.domain = os.getenv('DOMAIN')
         self.logo = ImageReader('http://' + self.domain + '/static/assets/images/printlogo.png')
 
     def showPage(self):
@@ -3897,7 +4091,7 @@ class ScheduleView(ListView):
     template_name = "projects/schedule-overview.html"
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        current_date = datetime.datetime.now(pytz.timezone(os.getenv("TIME_ZONE")))
+        current_date = datetime.now(pytz.timezone(os.getenv("TIME_ZONE")))
         projects = Project.objects.filter(proj_status="On-going")
         context['proj_nos'] = projects
         return context
@@ -3906,16 +4100,16 @@ def get_planning_table(request):
     if request.method == "POST":
         project_no = request.POST.get('project_no')
         start_date = request.POST.get('start_date')
-        start_date=datetime.datetime.strptime(start_date, '%d/%m/%Y')
+        start_date=datetime.strptime(start_date, '%d/%m/%Y')
         activities=[]
         if project_no is not None:
             project=Project.objects.get(proj_id=project_no)
-            activities=Scope.objects.filter(quotation_id=project.quotation.id, parent_id__isnull=False).order_by('id')
+            activities=Scope.objects.filter(quotation_id=project.quotation.id, parent_id__isnull=True).order_by('id')
         qtys=[[],[],[],[],[],[],[],[]]
         shifts=[]
         users=[[],[],[],[],[],[],[],[]]
         for date_id in range(0,8):
-            plan_date = start_date + datetime.timedelta(days=date_id)
+            plan_date = start_date + timedelta(days=date_id)
             for act_id, activity in enumerate(activities):
                 if ActivitySchedule.objects.filter(scope_id=activity.id, date=plan_date).exists():
                     act_schedule=ActivitySchedule.objects.get(scope_id=activity.id, date=plan_date)
@@ -3938,20 +4132,20 @@ def get_overview_table(request):
     if request.method == "POST":
         view_unit = request.POST.get('view_unit')
         start_date = request.POST.get('start_date')
-        start_date=datetime.datetime.strptime(start_date, '%d/%m/%Y')
+        start_date=datetime.strptime(start_date, '%d/%m/%Y')
         if view_unit=="Week":
             periods=7
         else:
             periods=31
         schedule_projects=[]
-        total_user_cnt=User.objects.filter(is_active=1, role__in=["Workers", "Supervisors"]).count()
+        total_user_cnt = User.objects.filter(role__in=["Workers", "Supervisors"]).exclude(status_id=2).count()
         assigned_cnts=[]
         balanced_cnts=[]
         max_cnt=0
         for date_id in range(0, periods):
-            plan_date = start_date + datetime.timedelta(days=date_id)
+            plan_date = start_date + timedelta(days=date_id)
             assigned_users=ScheduleUsers.objects.filter(date=plan_date).values('user_id').distinct()
-            assigned_user_cnts=User.objects.filter(id__in=assigned_users,is_active=1, role__in=["Workers", "Supervisors"]).count()
+            assigned_user_cnts=User.objects.filter(id__in=assigned_users,role__in=["Workers", "Supervisors"]).exclude(status_id=2).count()
             assigned_cnts.append(assigned_user_cnts)
             balanced_cnt=total_user_cnt-assigned_user_cnts
             balanced_cnts.append(balanced_cnt)
@@ -3960,10 +4154,10 @@ def get_overview_table(request):
             for schedule in schedules:
                 project=Project.objects.get(id=schedule['project_id'])
                 schedule['project']=project
-                scopes=Scope.objects.filter(quotation_id=project.quotation_id, parent_id__isnull=False)
+                scopes=Scope.objects.filter(quotation_id=project.quotation_id, parent_id__isnull=True)
                 activity_schedules=ActivitySchedule.objects.filter(date=plan_date,scope__in=scopes).values('scope', 'qty')
                 for activity in activity_schedules:
-                    scope_description=Scope.objects.get(id=activity['scope'], parent_id__isnull=False).description
+                    scope_description=Scope.objects.get(id=activity['scope'], parent_id__isnull=True).description
                     activity['scope']=scope_description
                 schedule['activities']=activity_schedules
                 assigned_user_ids=ScheduleUsers.objects.filter(date=plan_date, project_id=schedule['project_id']).values('user_id')
@@ -3982,31 +4176,48 @@ def get_planning_modal(request):
     if request.method == "POST":
         project_no = request.POST.get('project_no')
         start_date = request.POST.get('start_date')
-        start_date=datetime.datetime.strptime(start_date, '%d/%m/%Y')
+        start_date=datetime.strptime(start_date, '%d/%m/%Y')
         activities=[]
         if project_no is not None:
             project=Project.objects.get(proj_id=project_no)
-            activities=Scope.objects.filter(quotation_id=project.quotation.id, parent_id__isnull=False).order_by('id')
+            activities=Scope.objects.filter(quotation_id=project.quotation.id, parent_id__isnull=True).order_by('id')
             teams=Team.objects.filter(project_id=project.id)
 
         return render(request, 'projects/ajax-planning-modal.html', {'start_date': start_date, 'activities':activities, 'teams': teams})
+
+@ajax_login_required
+def get_overview_modal(request):
+    if request.method == "POST":
+        project_id = request.POST.get('project_id')
+        plan_date = request.POST.get('plan_date')
+        plan_date=datetime.strptime(plan_date, '%d/%m/%Y')
+        activities=[]
+        project=Project.objects.get(id=project_id)
+        scopes=Scope.objects.filter(quotation_id=project.quotation_id, parent_id__isnull=True)
+        activity_schedules=ActivitySchedule.objects.filter(date=plan_date,scope__in=scopes).values('scope', 'qty')
+        for activity in activity_schedules:
+            scope_description=Scope.objects.get(id=activity['scope'], parent_id__isnull=True).description
+            activity['scope']=scope_description
+            activities.append(activity)
+
+        return render(request, 'projects/ajax-overview-modal.html', {'activities':activities})
 
 @ajax_login_required
 def edit_planning_modal(request):
     if request.method == "POST":
         project_no = request.POST.get('project_no')
         start_date = request.POST.get('start_date')
-        start_date=datetime.datetime.strptime(start_date, '%d/%m/%Y')
+        start_date=datetime.strptime(start_date, '%d/%m/%Y')
         activities=[]
         if project_no is not None:
             project=Project.objects.get(proj_id=project_no)
-            activities=Scope.objects.filter(quotation_id=project.quotation.id, parent_id__isnull=False).order_by('id')
+            activities=Scope.objects.filter(quotation_id=project.quotation.id, parent_id__isnull=True).order_by('id')
             teams=Team.objects.filter(project_id=project.id)
         qtys = [[], [], [], [], [], [], [], []]
         shifts = []
         users = [[], [], [], [], [], [], [], []]
         for date_id in range(0, 8):
-            plan_date = start_date + datetime.timedelta(days=date_id)
+            plan_date = start_date + timedelta(days=date_id)
             for act_id, activity in enumerate(activities):
                 if ActivitySchedule.objects.filter(scope_id=activity.id, date=plan_date).exists():
                     act_schedule = ActivitySchedule.objects.get(scope_id=activity.id, date=plan_date)
@@ -4023,7 +4234,7 @@ def edit_planning_modal(request):
                 shifts.append(schedule_users[0].shift)
             else:
                 users[date_id].append("")
-                shifts.append("")
+                shifts.append("Day")
         return render(request, 'projects/ajax-edit-planning-modal.html', {'start_date': start_date, 'activities':activities, 'teams': teams, 'qtys':qtys , 'edit_shifts': shifts, 'edit_users': users})
 @ajax_login_required
 def get_activity_ids(request):
@@ -4031,7 +4242,7 @@ def get_activity_ids(request):
         project_no = request.POST.get('project_no')
         if project_no is not None:
             project=Project.objects.get(proj_id=project_no)
-            activities=Scope.objects.filter(quotation_id=project.quotation.id, parent_id__isnull=False).order_by('id')
+            activities=Scope.objects.filter(quotation_id=project.quotation.id, parent_id__isnull=True).order_by('id')
             data=[]
             for activity in activities:
                 activity_id = {
@@ -4046,19 +4257,19 @@ def add_activities(request):
         is_edit = request.POST.get('is_edit')
         project_no = request.POST.get('project_no')
         start_date = request.POST.get('start_date')
-        start_date = datetime.datetime.strptime(start_date, '%d/%m/%Y')
+        start_date = datetime.strptime(start_date, '%d/%m/%Y')
         plans = request.POST.get('plans')
         team_users = request.POST.get('team_users')
         plans=eval(plans)
         team_users=eval(team_users)
         if project_no is not None:
             project=Project.objects.get(proj_id=project_no)
-            activities=Scope.objects.filter(quotation_id=project.quotation.id, parent_id__isnull=False).order_by('id')
+            activities=Scope.objects.filter(quotation_id=project.quotation.id, parent_id__isnull=True).order_by('id')
             try:
                 for act_id, activity in enumerate(activities):
                     for date_id in range(0,8):
                         scope_id=activity.id
-                        plan_date=start_date+datetime.timedelta(days=date_id)
+                        plan_date=start_date+timedelta(days=date_id)
                         proj_users=team_users[date_id]
                         shift=plans[date_id][-1]
                         qty=plans[date_id][act_id]

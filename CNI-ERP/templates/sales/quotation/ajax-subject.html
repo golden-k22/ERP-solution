@@ -29,8 +29,8 @@
             <tr>
                 <th width="5%">SN</th>
                 <th width="29%">Description</th>
-                <th width="8%">QTY</th>
                 <th width="8%">UOM</th>
+                <th width="8%">QTY</th>
                 <th width="8%">UNIT PRICE(S$)</th>
                 <th width="8%">AMT(S$)</th>
                 <th width="8%">UNIT COST(S$)</th>
@@ -49,8 +49,8 @@
                 <!-- {% else %}
                 <td class="align-middle"></td>
                 {% endif %} -->
-                <td class="align-middle">{{scope.qty|default_if_none:""}}</td>
                 <td class="align-middle">{{scope.uom|default_if_none:""}}</td>
+                <td class="align-middle">{{scope.qty|default_if_none:""}}</td>
                 {% if scope.unitprice == 0.00 %}
                 <td class="align-middle">{{""}}</td>
                 {% else %}
@@ -107,7 +107,6 @@
         if (optional==='true'){
             $("#is_optional").val(1);
         }
-
         $("#scopemodal").modal('show')
     });
 

@@ -3,9 +3,10 @@
     <table id="datatable-buttons" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
         <thead>
             <tr>
+                <th>Emp No</th>
+                <th>User Name</th>
                 <th>First Name</th>
                 <th>Last Name</th>
-                <th>Emp No</th>
                 <th>Nationality</th>
                 <th>NRIC/FIN</th>
                 <th>Role</th>
@@ -16,9 +17,10 @@
         <tbody>
             {% for user in users %}
                 <tr>
+                    <td class="align-middle">{{user.empid|default_if_none:""}}</td>
+                    <td class="align-middle">{{user.username|default_if_none:""}}</td>
                     <td class="align-middle">{{user.first_name|default_if_none:""}}</td>
                     <td class="align-middle">{{user.last_name|default_if_none:""}}</td>
-                    <td class="align-middle">{{user.empid|default_if_none:""}}</td>
                     <td class="align-middle">{{user.nationality|default_if_none:""}}</td>
                     <td class="align-middle">{{user.nric|default_if_none:""}}</td>
                     <td class="align-middle">{{user.role|default_if_none:""}}</td>

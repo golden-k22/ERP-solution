@@ -22,6 +22,11 @@ def content_file(instance, filename):
     return 'quotation/%s/files/%s' % (instance.quotation.qtt_id, filename)
 
 
+class GST(models.Model):
+    gst = models.DecimalField(max_digits=20, decimal_places=2, null=True)
+    class Meta:
+        db_table = "tb_gst"
+
 # Create your models here.
 class Payment(models.Model):
     method = models.CharField(max_length=255, blank=True, null=True)

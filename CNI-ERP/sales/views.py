@@ -1,11 +1,5 @@
 import base64
-import smtplib
-import textwrap
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.utils import formatdate
 from functools import partial
-
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core import serializers
@@ -16,10 +10,10 @@ from django.utils.decorators import method_decorator
 from django.views.generic.list import ListView
 
 from sales.models import ProductSales, Company, Payment, Quotation, SaleReport, SaleReportComment, Contact, Scope, \
-    Signature, QFile, \
+    Signature, QFile, GST, \
     Validity, ProductSalesDo, ProductSalesDoItem, SalesDOSignature, ParentSubject, Position, Salutation
 from cities_light.models import Country
-from accounts.models import Privilege, Uom, User, Role, NotificationPrivilege
+from accounts.models import Privilege, Uom, User, Role, NotificationPrivilege, UserStatus
 from django.http import JsonResponse
 from django.db import IntegrityError
 import json
@@ -53,6 +47,7 @@ from django.db.models import Q
 from siteprogress.models import SiteProgress
 from toolbox.models import ToolBoxDescription, ToolBoxItem, ToolBoxObjective
 from textwrap import wrap
+from accounts.email import send_mail
 
 
 @method_decorator(login_required, name='dispatch')
@@ -105,7 +100,8 @@ class SalesDetailView(DetailView):
         projectitems = Scope.objects.filter(quotation_id=quotation.id, parent=None)
         subtotal = 0
         for obj in projectitems:
-            obj.childs = Scope.objects.filter(quotation_id=quotation.id, parent_id=obj.id)
+            # obj.childs = Scope.objects.filter(quotation_id=quotation.id, parent_id=obj.id)
+            obj.childs = Scope.objects.filter(quotation_id=quotation.id)
             obj.cumulativeqty = \
                 SiteProgress.objects.filter(project_id=content_pk, description__iexact=obj.description).aggregate(
                     Sum('qty'))['qty__sum']
@@ -357,7 +353,8 @@ def deliverysignadd(request):
                         projectid) + '/delivery-order-detail/' + str(
                         salesDo.id) + '">Project Do No : {0} Status updated from {1} to Signed</a>'.format(
                         salesDo.do_no, salesDo.status)
-                    for receiver in User.objects.filter(Q(role='Managers')).distinct():
+                    user_status=UserStatus.objects.get(status='resigned')
+                    for receiver in User.objects.exclude(status=user_status).filter(Q(role='Managers')).distinct():
                         if receiver.notificationprivilege.do_status:
                             notify.send(sender, recipient=receiver, verb='Message', level="success",
                                         description=description)
@@ -432,7 +429,8 @@ def dodocadd(request):
                         product_sales_id) + '/delivery-order-detail/' + str(
                         do.id) + '">Project Do No : {0} Status updated from {1} to Signed</a>'.format(
                         do.do_no, do.status)
-                    for receiver in User.objects.filter(Q(role='Managers')).distinct():
+                    user_status=UserStatus.objects.get(status='resigned')
+                    for receiver in User.objects.exclude(status=user_status).filter(Q(role='Managers')).distinct():
                         if receiver.notificationprivilege.do_status:
                             notify.send(sender, recipient=receiver, verb='Message', level="success",
                                         description=description)
@@ -1105,13 +1103,16 @@ class QuotationList(ListView):
             context['exist_current_year'] = True
         else:
             context['exist_current_year'] = False
-        context['date_years'] = list(set([d.date.year for d in Quotation.objects.all()]))
+        context['date_years'] = sorted(set(d.date.year for d in Quotation.objects.all()), reverse=True)
+        
         # context['customers'] = Quotation.objects.exclude(company_nameid=None).order_by('company_nameid').values(
         #     'company_nameid').distinct()
 
         context['customers'] = Company.objects.distinct().filter(
             quotation__in=Quotation.objects.exclude(company_nameid=None).order_by('company_nameid'))
 
+        context['sales_persons']=Quotation.objects.all().values('sale_person').distinct()
+        context['quotation_status']=Quotation.Status
         return context
 
 
@@ -1157,69 +1158,21 @@ def ajax_quotations_filter(request):
             startdate = datetime.datetime.strptime(daterange.split()[0], '%Y.%m.%d').replace(tzinfo=pytz.utc)
             enddate = datetime.datetime.strptime(daterange.split()[2], '%Y.%m.%d').replace(tzinfo=pytz.utc)
         search_customer = request.POST.get('search_customer')
-        search_year = request.POST.get('search_year')
-        if search_year:
-            if search_quotation != "" and daterange == "" and search_customer == "":
-                quotations = Quotation.objects.filter(qtt_id__iexact=search_quotation, date__iso_year=search_year)
+        search_year = json.loads(request.POST.get('search_year', '[]'))
+        sales_person = request.POST.get('sales_person')
+        status = request.POST.get('status')
 
-            elif search_quotation != "" and daterange != "" and search_customer == "":
-                quotations = Quotation.objects.filter(qtt_id__iexact=search_quotation, date__gte=startdate,
-                                                      date__lte=enddate, date__iso_year=search_year)
-
-            elif search_quotation != "" and daterange != "" and search_customer != "":
-                quotations = Quotation.objects.filter(qtt_id__iexact=search_quotation, date__gte=startdate,
-                                                      date__lte=enddate, company_nameid_id=search_customer,
-                                                      date__iso_year=search_year)
-
-            elif search_quotation == "" and daterange != "" and search_customer == "":
-                quotations = Quotation.objects.filter(date__gte=startdate, date__lte=enddate,
-                                                      date__iso_year=search_year)
-
-            elif search_quotation == "" and daterange != "" and search_customer != "":
-                quotations = Quotation.objects.filter(date__gte=startdate, date__lte=enddate,
-                                                      company_nameid_id=search_customer,
-                                                      date__iso_year=search_year)
-
-            elif search_quotation == "" and daterange == "" and search_customer != "":
-                quotations = Quotation.objects.filter(company_nameid_id=search_customer)
-
-            elif search_quotation != "" and daterange == "" and search_customer != "":
-                quotations = Quotation.objects.filter(qtt_id__iexact=search_quotation,
-                                                      company_nameid_id=search_customer,
-                                                      date__iso_year=search_year)
-
-            elif search_quotation == "" and daterange == "" and search_customer == "":
-                quotations = Quotation.objects.filter(date__iso_year=search_year)
-
-        else:
-
-            if search_quotation != "" and daterange == "" and search_customer == "":
-                quotations = Quotation.objects.filter(qtt_id__iexact=search_quotation)
-
-            elif search_quotation != "" and daterange != "" and search_customer == "":
-                quotations = Quotation.objects.filter(qtt_id__iexact=search_quotation, date__gte=startdate,
-                                                      date__lte=enddate)
-
-            elif search_quotation != "" and daterange != "" and search_customer != "":
-                quotations = Quotation.objects.filter(qtt_id__iexact=search_quotation, date__gte=startdate,
-                                                      date__lte=enddate, company_nameid_id=search_customer)
-
-            elif search_quotation == "" and daterange != "" and search_customer == "":
-                quotations = Quotation.objects.filter(date__gte=startdate, date__lte=enddate)
-
-            elif search_quotation == "" and daterange != "" and search_customer != "":
-                quotations = Quotation.objects.filter(date__gte=startdate, date__lte=enddate,
-                                                      company_nameid_id=search_customer)
-
-            elif search_quotation == "" and daterange == "" and search_customer != "":
-                quotations = Quotation.objects.filter(company_nameid_id=search_customer)
-
-            elif search_quotation != "" and daterange == "" and search_customer != "":
-                quotations = Quotation.objects.filter(qtt_id__iexact=search_quotation,
-                                                      company_nameid_id=search_customer)
-
-            elif search_quotation == "" and daterange == "" and search_customer == "":
-                quotations = Quotation.objects.all()
+        quotations = Quotation.objects.filter(date__iso_year__in = search_year)
+        if search_quotation:
+            quotations = quotations.filter(qtt_id__iexact=search_quotation)
+        if daterange:
+            quotations = quotations.filter(date__gte=startdate, date__lte=enddate)
+        if search_customer:
+            quotations = quotations.filter(company_nameid_id=search_customer)
+        if sales_person:
+            quotations = quotations.filter(sale_person=sales_person)
+        if status:
+            quotations = quotations.filter(qtt_status=status)
 
         if user_role == "Sales":
             quotations = quotations.filter(sale_person=user_name)
@@ -1444,6 +1397,12 @@ class QuotationDetailView(DetailView):
         context['companies'] = Company.objects.all()
         context['uoms'] = Uom.objects.all()
         context['validities'] = Validity.objects.all()
+        gst_default=GST.objects.last()
+        if gst_default:
+            gst_default=float(gst_default.gst)
+        else:
+            gst_default=0.09
+        context['gst_default']=gst_default*100
         data = []
         p_id = [p.id for p in Privilege.objects.all()]
         managers = User.objects.filter(role="Managers").exclude(id__in=p_id)
@@ -1467,7 +1426,7 @@ class QuotationDetailView(DetailView):
                     scope.allocation_perc = 100 * scope.amount / subtotal
                 scope.save()
             context['scope_list'] = scopes
-            gst = (float(subtotal) - float(quotation.discount)) * 0.09
+            gst = (float(subtotal) - float(quotation.discount)) * gst_default
             context['subtotal'] = subtotal
             context['gst'] = gst
             final_total = float(subtotal) - float(quotation.discount) + gst
@@ -1630,6 +1589,12 @@ def scopeadd(request):
     if request.method == "POST":
         subject_id = request.POST.get('sub_id')
         items = json.loads(request.POST.get('items'))
+        gst_default=GST.objects.last()
+        if gst_default:
+            gst_default=float(gst_default.gst)
+        else:
+            gst_default=0.09
+        
         for item in items:
             sn = item.get('sn')
             qty = item.get('qty')
@@ -1691,7 +1656,7 @@ def scopeadd(request):
                             subtotal = Scope.objects.filter(quotation_id=quotationid).aggregate(Sum('amount'))[
                                 'amount__sum']
                             quotation = Quotation.objects.get(id=quotationid)
-                            gst = (float(subtotal) - float(quotation.discount)) * 0.09
+                            gst = (float(subtotal) - float(quotation.discount)) * gst_default
                             total_detail = float(subtotal) + gst
                             quotation.total = Decimal(total_detail)
 
@@ -1746,7 +1711,7 @@ def scopeadd(request):
                             subtotal = Scope.objects.filter(quotation_id=quotationid).aggregate(Sum('amount'))[
                                 'amount__sum']
                             quotation = Quotation.objects.get(id=quotationid)
-                            gst = (float(subtotal) - float(quotation.discount)) * 0.09
+                            gst = (float(subtotal) - float(quotation.discount)) * gst_default
                             total_detail = float(subtotal) + gst
                             quotation.total = Decimal(total_detail)
                             quotation.save()
@@ -1894,7 +1859,6 @@ def ajax_get_subjects(request):
 def ajax_get_scopedata(request):
     if request.method == "POST":
         description = request.POST.get('description')
-        scopes = Scope.objects.all()
         scope = Scope.objects.filter(description=description).first()
         if scope is not None:
             data = {
@@ -2023,28 +1987,6 @@ def qfiledelete(request):
         return JsonResponse({'status': 'ok'})
 
 
-def send_mail(to_email, subject, message):
-    # For Gmail
-    SMTP_SERVER = "smtp.gmail.com"
-    SMTP_PORT = 587
-    my_email = os.getenv("DJANGO_DEFAULT_EMAIL")
-    my_password = os.getenv("DJANGO_EMAIL_HOST_PASSWORD")
-    msg = MIMEMultipart()
-    msg['From'] = my_email
-    msg['To'] = to_email
-    msg['Date'] = formatdate(localtime=True)
-    msg['Subject'] = subject
-    msg.attach(MIMEText(message, 'html'))
-
-    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as smtpObj:
-        smtpObj.ehlo()
-        smtpObj.starttls()
-        smtpObj.login(my_email, my_password)
-        smtpObj.sendmail(my_email, to_email, msg.as_string())
-        smtpObj.close()
-    # print("********* Sent mail to {0} Successfully! **********".format(to_email))
-
-
 @ajax_login_required
 def UpdateQuotation(request):
     if request.method == "POST":
@@ -2075,7 +2017,8 @@ def UpdateQuotation(request):
             if quotation.qtt_status != qtt_status:
                 sender = request.user
                 description = 'Quotation No : ' + quotation.qtt_id + ' - status was changed as ' + qtt_status
-                for receiver in User.objects.filter(role__in=["Admins", "Managers", "Sales"]):
+                user_status=UserStatus.objects.get(status='resigned')
+                for receiver in User.objects.exclude(status=user_status).filter(role__in=["Admins", "Managers", "Sales"]):
                     notify.send(sender, recipient=receiver, verb='Message', level="success", description=description)
 
             quotation.company_nameid_id = company_nameid
@@ -2173,7 +2116,8 @@ def UpdateQuotation(request):
                         project_name=""
 
                     description = '<a href="/project-summary-detail/' + str(newproject.id) + '">Project Name : ' + project_name + ' - New Project was created by ' + request.user.username + '</a>'
-                    for receiver in User.objects.filter(role__iexact="Managers"):
+                    user_status=UserStatus.objects.get(status='resigned')
+                    for receiver in User.objects.exclude(status=user_status).filter(role__iexact="Managers"):
                         if receiver.notificationprivilege.project_no_created:
                             notify.send(sender, recipient=receiver, verb='Message', level="success",
                                         description=description)
@@ -2250,6 +2194,11 @@ def UpdateQuotation(request):
                         contact_person_id=contact_person
                     )
 
+            gst_default=GST.objects.last()
+            if gst_default:
+                gst_default=float(gst_default.gst)
+            else:
+                gst_default=0.09
             if SaleReport.objects.filter(qtt_id=qtt_id).exists():
                 salereport = SaleReport.objects.get(qtt_id__iexact=qtt_id)
                 salereport.qtt_id = qtt_id
@@ -2264,7 +2213,7 @@ def UpdateQuotation(request):
                 salereport.contact_person_id = contact_person
                 if Scope.objects.filter(quotation_id=quotation.id).exists():
                     subtotal = Scope.objects.filter(quotation_id=quotation.id).aggregate(Sum('amount'))['amount__sum']
-                    gst = (float(subtotal) - float(quotation.discount)) * 0.09
+                    gst = (float(subtotal) - float(quotation.discount)) * gst_default
                     total_detail = float(subtotal) + gst
                     salereport.finaltotal = Decimal(total_detail)
                     salereport.margin = Decimal(quotation.margin)
@@ -2285,7 +2234,7 @@ def UpdateQuotation(request):
                 )
                 if Scope.objects.filter(quotation_id=quotation.id).exists():
                     subtotal = Scope.objects.filter(quotation_id=quotation.id).aggregate(Sum('amount'))['amount__sum']
-                    gst = (float(subtotal) - float(quotation.discount)) * 0.09
+                    gst = (float(subtotal) - float(quotation.discount)) * gst_default
                     total_detail = float(subtotal) + gst
                     sale.finaltotal = Decimal(total_detail)
                     sale.margin = Decimal(quotation.margin)
@@ -2486,14 +2435,22 @@ def UpdateQuotationOverride(request):
                     unitprice=Decimal(scoped.unitprice),
                     quotation_id=new.id,
                     qtt_id=new_qtt_id,
+                    cost=scoped.cost,
+                    unitcost=scoped.unitcost,
+                    gp=scoped.gp,
                     subject_id=parent_sub.id
                 )
             if scopedata:
 
                 subtotal = Scope.objects.filter(quotation_id=new.id).aggregate(Sum('amount'))['amount__sum']
                 quotation = Quotation.objects.get(id=new.id)
-                gst = (float(subtotal) - float(quotation.discount)) * 0.09
-                total_detail = float(subtotal) + gst
+                gst_default=GST.objects.last()
+                if gst_default:
+                    gst_default=float(gst_default.gst)
+                else:
+                    gst_default=0.09
+                gst = (float(subtotal) - float(quotation.discount)) * gst_default
+                total_detail = float(subtotal)
                 quotation.total = Decimal(total_detail)
                 quotation.save()
 
@@ -3050,7 +3007,7 @@ class NumberedCanvas(canvas.Canvas):
         self._saved_page_states = []
         self.PAGE_HEIGHT = defaultPageSize[1]
         self.PAGE_WIDTH = defaultPageSize[0]
-        self.domain = settings.HOST_NAME
+        self.domain = os.getenv("DOMAIN")
         self.logo = ImageReader('http://' + self.domain + '/static/assets/images/printlogo.png')
 
     def showPage(self):
@@ -3326,7 +3283,7 @@ def exportDoPDF(request, value):
     project = do.product_sales
     quotation = project.quotation
     doitems = ProductSalesDoItem.objects.filter(do_id=value)
-    domain = request.META['HTTP_HOST']
+    domain = os.getenv("DOMAIN")
     logo = Image('http://' + domain + '/static/assets/images/printlogo.png', hAlign='LEFT')
     response = HttpResponse(content_type='application/pdf')
     currentdate = datetime.date.today().strftime("%d-%m-%Y")
@@ -3419,10 +3376,15 @@ def exportDoPDF(request, value):
 def exportQuotationPDF(request, value):
     quotation = Quotation.objects.get(id=value)
     quotationitems = Scope.objects.filter(quotation_id=value).order_by('sn')
-    domain = request.META['HTTP_HOST']
+    domain = os.getenv("DOMAIN")
     logo = Image('http://' + domain + '/static/assets/images/printlogo.png', hAlign='LEFT')
     response = HttpResponse(content_type='application/pdf')
     currentdate = date.today()
+    gst_default=GST.objects.last()
+    if gst_default:
+        gst_default=float(gst_default.gst)
+    else:
+        gst_default=0.09
     pdfname = quotation.qtt_id + ".pdf"
     response['Content-Disposition'] = 'attachment; filename="{}"'.format(pdfname)
 
@@ -3512,7 +3474,7 @@ def exportQuotationPDF(request, value):
     if Scope.objects.filter(quotation_id=value, parent=None).exists():
         statistic = []
         subtotal = Scope.objects.filter(quotation_id=value, parent=None).aggregate(Sum('amount'))['amount__sum']
-        gst = (float(subtotal) - float(quotation.discount)) * 0.09
+        gst = (float(subtotal) - float(quotation.discount)) * gst_default
         statistic.append("")
         statistic.append("")
         statistic.append("")
@@ -3538,7 +3500,7 @@ def exportQuotationPDF(request, value):
         statistic.append("")
         statistic.append("")
         statistic.append("")
-        statistic.append(Paragraph('''<para align=left><font size=9><b>ADD GST 9%</b></font></para>'''))
+        statistic.append(Paragraph('''<para align=left><font size=9><b>ADD GST '''+str(gst_default*100)+'''%</b></font></para>'''))
         statistic.append('{:,.2f}'.format(gst))
         data.append(statistic)
         statistic = []

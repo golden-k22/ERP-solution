@@ -2,6 +2,7 @@
 {% load i18n %}
 
 {% block content %}
+<div class="profile-container">
   <h1>{% block title %}{% trans "Disable Two-factor Authentication" %}{% endblock %}</h1>
   <p>{% blocktrans trimmed %}You are about to disable two-factor authentication. This
     weakens your account security, are you sure?{% endblocktrans %}</p>
@@ -11,4 +12,13 @@
     <button class="btn btn-danger"
             type="submit">{% trans "Disable" %}</button>
   </form>
+</div>
+  
+<style>    
+  .profile-container {
+      margin-left: 30%;
+      flex: 0 0 40%;
+      max-width: 40%;
+  }
+</style>
 {% endblock %}

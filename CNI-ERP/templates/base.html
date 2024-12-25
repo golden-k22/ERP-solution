@@ -121,7 +121,8 @@
                                 <a class="dropdown-item d-block" href="javascript:void(0);">{{request.user.username|default_if_none:request.user.first_name}}</a>
                                 <a class="dropdown-item" href="{% url 'change_password' %}"><i class="mdi mdi-tooltip-edit font-size-17 text-muted align-middle me-1"></i> Change Password</a>
                                 <a class="dropdown-item" href="{% url 'all_expenses_claim' %}"><i class="mdi mdi-wallet font-size-17 text-muted align-middle me-1"></i> EXPENSES CLAIM</a>
-                                <a class="dropdown-item d-block" href="{% url 'about' %}"><i class="mdi mdi-cog font-size-17 text-muted align-middle me-1"></i> ABOUT</a>
+                                <a class="dropdown-item d-block"  href="/account/two_factor/setup/"><i class="mdi mdi-cog font-size-17 text-muted align-middle me-1"></i> 2FA CONFIGURATION</a>
+                                <a class="dropdown-item d-block" href="{% url 'about' %}"><i class="mdi mdi-information font-size-17 text-muted align-middle me-1"></i> ABOUT</a>
                                 <a class="dropdown-item d-block" href="{% url 'notification_information' %}"><i class="ti-bell font-size-17 text-muted align-middle me-1"></i> NOTIFICATION</a>                               
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item text-danger" href="{% url 'view_logout' %}"><i class="mdi mdi-power font-size-17 text-muted align-middle me-1 text-danger"></i> LOGOUT</a>

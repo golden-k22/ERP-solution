@@ -131,23 +131,20 @@
                             <hr class="my-auto flex-grow-1 mt-3 mb-3" style="height:2px;">
 
                             <div class="button-items mb-3" style="margin-left:10px;">
-                                <div class="mt-1 col-md-3 row">
-                                    <label class="col-md-4 col-form-label" for="projectno">Project : </label>
-                                    <div class="col-md-8">
-                                        <select class="form-control search_filter" id="projectno" required>
-                                            <option value="">Select Project </option>
+                                <div class="mt-1 d-flex align-items-start" style="width:400px;">
+                                    <label class="col-form-label me-2" for="projectno">Project:</label>
+                                    <select class="form-control search_filter" id="projectno" required>
+                                        <option value="">Select Project</option>
                                         {% for proj_no in proj_nos %}
                                             <option value="{{proj_no.proj_id}}">{{proj_no.proj_name|truncatechars:30}}</option>
                                         {% endfor %}
                                     </select>
-                                    </div>
                                 </div>
-
-                                <div class="mt-1 col-md-3 row">
-                                    <label class="col-md-4 col-form-label" for="start_date">Date : </label>
-                                    <div class="col-md-8">
-                                        <input type="text" class="form-control" id="start_date"  name="start_date" value="{{summary.start_date|date:'d M, Y'|default_if_none:''}}" autocomplete="off" data-date-autoclose="true" required>
-                                    </div>
+                                <div class="d-flex align-items-start mt-1" style="width: 400px;">
+                                    <label class="col-form-label me-4" for="start_date">Date:</label>
+                                    <input type="text" class="form-control" id="start_date" name="start_date" 
+                                           value="{{ summary.start_date|date:'d M, Y'|default_if_none:'' }}" 
+                                           autocomplete="off" data-date-autoclose="true" required>
                                 </div>
                             </div>
 
@@ -157,26 +154,23 @@
 
                         <div class="tab-pane p-3" id="overview" role="tabpanel">
 
-                            <div class="button-items mb-3" style="margin-left:10px; display: flex;">
-                                <div class="mt-1 col-md-2 row">
-                                    <label class="col-md-3 col-form-label" for="overview_start_date">Date :</label>
-                                    <div class="col-md-9">
-                                        <input type="text" class="form-control" id="overview_start_date"  name="overview_start_date" value="{{summary.start_date|date:'d M, Y'|default_if_none:''}}" autocomplete="off" data-date-autoclose="true" required>
+                                <div class="mt-1 d-flex align-items-start">
+                                    <div class="d-flex align-items-start" style="width:200px; height: 40px;">
+                                        <label class="col-form-label me-3" for="overview_start_date">Date:</label>
+                                        <input type="text" class="form-control" style="height: 38px;" id="overview_start_date"  name="overview_start_date" value="{{summary.start_date|date:'d M, Y'|default_if_none:''}}" autocomplete="off" data-date-autoclose="true" required>
                                     </div>
-                                </div>
-                                <div class="mt-1 col-md-2 row" style="margin-left:20px;">
-                                    <label class="col-md-3 col-form-label" for="projectno">View :</label>
-                                    <div class="col-md-9">
+                                    <div class="d-flex align-items-start" style="width:200px;margin-left:20px;">
+                                        <label class="col-form-label me-3" for="projectno">View:</label>
                                         <select class="form-control search_filter" id="view_unit" required>
                                             <option value="Week">Week</option>
                                             <option value="Month">Month</option>
                                         </select>
                                     </div>
+                                    
+                                    <div style="margin-left:20px; margin-top:6px;">
+                                        <a href="{% url 'scheduling'%} " class="btn btn-outline-secondary btn-sm salesdetail" title="Refresh"><i class="ion ion-md-refresh"></i></a>
+                                    </div>
                                 </div>
-                                <div style="margin-left:20px; margin-top:6px;">
-                                    <a href="{% url 'scheduling'%} " class="btn btn-outline-secondary btn-sm salesdetail" title="Refresh"><i class="ion ion-md-refresh"></i></a>
-                                </div>
-                            </div>
 
                             <div id="overview_table" style="display: flex;"></div>
                         </div>
@@ -356,8 +350,8 @@
     $("#edit_plan").on('click', function(e){
         let startDate=formatDate($('#start_date').val()) ;
         let project_no=$('#projectno').val();
-        $("#head_title_planning").text("Edit Plan");
-        $(".btn_planadd").text("Edit");
+        $("#head_title_planning").text("Add Plan");
+        $(".btn_planadd").text("Add");
         $("#is_edit").val("1");
         $("#text_error_planning").html("");
         $("#text_error_planning").hide();

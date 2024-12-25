@@ -1,3 +1,4 @@
+import os
 from django.conf import settings
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
@@ -16,7 +17,7 @@ import base64
 from django.core.files.base import ContentFile
 from dateutil import parser as date_parser
 from sales.decorater import ajax_login_required
-from accounts.models import User, Role
+from accounts.models import User, Role, UserStatus
 from django.utils import timezone
 from notifications.signals import notify
 from reportlab.platypus import SimpleDocTemplate, Table, Image, Spacer, TableStyle, PageBreak, Paragraph
@@ -117,7 +118,8 @@ def toolboxadd(request):
                 #notification send
                 sender = request.user
                 description = '<a href="/toolbox-detail/'+str(toolbox.id)+'">ToolBox No : ' + toolbox.tbm_no +  ' - New ToolBox was created by ' + request.user.username + '</a>'
-                for receiver in User.objects.filter(username=project.proj_incharge):
+                user_status=UserStatus.objects.get(status='resigned')
+                for receiver in User.objects.exclude(status=user_status).filter(username=project.proj_incharge):
                     if receiver.notificationprivilege.tbm_no_created:
                         notify.send(sender, recipient=receiver, verb='Message', level="success", description=description)
                 return JsonResponse({
@@ -251,11 +253,11 @@ class ToolBoxDetailView(DetailView):
                 team_rows=Team.objects.filter(project_id=project_id)
                 for team_row in team_rows:
                     context['attend_users'].append(team_row.user)
-            for active_user in User.objects.filter(is_active="1"):
+            for active_user in User.objects.exclude(status_id=2):
                 if active_user not in context['attend_users']:
                     context['attend_users'].append(active_user)
         else:
-            context['attend_users']=User.objects.filter(is_active="1")
+            context['attend_users']=User.objects.exclude(status_id=2)
         return context
 @ajax_login_required
 def UpdateToolbox(request):
@@ -365,7 +367,7 @@ class NumberedCanvas(canvas.Canvas):
         self._saved_page_states = []
         self.PAGE_HEIGHT=defaultPageSize[1]
         self.PAGE_WIDTH=defaultPageSize[0]
-        self.domain = settings.HOST_NAME
+        self.domain = os.getenv("DOMAIN")
         self.logo = ImageReader('http://' + self.domain + '/static/assets/images/printlogo.png')
 
     def showPage(self):
@@ -394,7 +396,7 @@ class NumberedCanvas(canvas.Canvas):
             "Page %d of %d" % (self._pageNumber, page_count))
 
 def exportTbmPDF(request, value):
-    domain = request.META['HTTP_HOST']
+    domain = os.getenv("DOMAIN")
     response = HttpResponse(content_type='application/pdf')
     currentdate = datetime.date.today().strftime("%d-%m-%Y")
     pdfname = "ToolBox-" + str(value) + ".pdf"

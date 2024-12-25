@@ -1,0 +1,616 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block page-title %}Expenses Claim Detail{% endblock%}
+{% block css %}
+    <link href="{% static 'assets/libs/select2/css/select2.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" rel="stylesheet">
+    <!-- DataTables -->
+    <link href="{% static 'assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'assets/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" /> 
+    <link rel="stylesheet" href="{% static 'assets/dropify/dist/css/dropify.min.css' %}">
+{% endblock %}
+{% block content %}
+<style type="text/css">
+    .datepicker {
+        z-index:1151 !important;
+    }
+    .dropify-wrapper .dropify-message span.file-icon p {
+        font-size:14px!important;
+        color: #CCC;
+    }
+    .table {
+        table-layout: fixed; /* Ensures fixed column width */
+        word-wrap: break-word; /* Enables word wrapping */
+    }
+    
+    th, td {
+        white-space: normal; /* Allows wrapping */
+        word-wrap: break-word; /* Ensures long words wrap correctly */
+        overflow-wrap: break-word; /* Handles overflow for long words */
+        text-overflow: ellipsis; /* Optionally, truncates long text with ellipsis */
+    }
+</style>
+<div class="container-fluid">
+    <div id="loading" style="z-index:1151 !important;font-size: 30px; position: absolute; top: 40%; left: 50%;">
+        <img src="{% static 'assets/images/spinning-circles.svg' %}" width="80" alt="" style="background: transparent;">
+    </div>
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="page-title-box">
+                <h4>Invoice Details
+                </h4>
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a class="text-primary" href="{% url 'all_expenses_claim' %}"><b>Expenses Claim</b></a></li>
+                    <li class="breadcrumb-item"><a class="text-primary" href="{% url 'expenses_claim_detail' expenseclaim.id%}"><b>Expenses Claim Detail</b></a></li>
+                    <li class="breadcrumb-item active">Invoice Details</li>
+                </ol>                
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                            <div class="row mt-3">
+                                <div class="p-2">
+                                    <ol class="breadcrumb m-0">
+                                        <h5 >Vendor : {{invoice_summary.vendor}} ,</h5>
+                                        <h5 style="margin-left: 10px;">Invoice No : {{invoice_summary.invoice_no}}</h5>
+                                    </ol>
+                                </div>
+                                <div class="p-2">
+                                    <button type="button" id="expensedetailadd" class="btn btn-primary btn-sm"><i class="mdi mdi-content-save-move"></i> Add</button>
+                                    <button type="button" id="invoiceupload" class="btn btn-primary btn-sm"><i class="mdi mdi-content-save-move"></i> Upload Invoice</button>
+                                </div>
+                                <div class="table-responsive pt-1">
+                                    <table id="detaildatatable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                                        <colgroup>
+                                            <col style="width: 3%;">
+                                            <col style="width: 8%;">
+                                            <col style="width: 48%;">
+                                            <col style="width: 15%;">
+                                            <col style="width: 5%;">
+                                            <col style="width: 5%;">
+                                            <col style="width: 5%;">
+                                            <col style="width: 6%;">
+                                            <col style="width: 6%;">
+                                        </colgroup>
+                                        <thead>
+                                            <tr>
+                                                <th>SN</th>
+                                                <th>Project No</th>
+                                                <th>Description</th>
+                                                <th>Remark</th>
+                                                <th>GST {{gst_default|floatformat:0}}%</th>
+                                                <th>Qty</th>
+                                                <th>Unit price</th>
+                                                <th>Amount (w/o GST)</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for i_detail in invoice_details %}
+                                            <tr>
+                                                <td>{{forloop.counter}}</td>
+                                                <td>{{i_detail.proj_id|default_if_none:""}}</td>
+                                                <td>{{i_detail.description|default_if_none:""}}</td>
+                                                <td>{{i_detail.remark|default_if_none:"--"}}</td>
+                                                <td>{% if i_detail.gst %}{{ i_detail.gstamount }}{% else %}-{% endif %}</td>
+                                                <td>{{i_detail.qty|default_if_none:"--"}}</td>
+                                                <td>{{i_detail.unit_price|default_if_none:"--"}}</td>
+                                                <td>$ {{i_detail.amount|floatformat:2|default_if_none:""}}</td>
+                                                <td>
+                                                    <a href="javascript:void(0);" onclick="updateexitem('{{i_detail.id}}')" class='btn btn-outline-primary btn-sm edit {% if expenseclaim.status != "Open" %} disabled {% endif %}' title="Edit">
+                                                        <i class="fas fa-pencil-alt"></i>
+                                                    </a>
+                                                    <a href="javascript:void(0);" onclick="deleteexitem('{{i_detail.id}}')" class='btn btn-outline-danger btn-sm delete {% if expenseclaim.status != "Open" %} disabled {% endif %}' title="Delete">
+                                                        <i class="far fa-trash-alt"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                            {% if invoice_details %}
+                                            <tr>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td class="align-middle">Subtotal</td>
+                                                <td class="align-middle">$ {{subtotal|floatformat:2}}</td>   
+                                                <td></td>  
+                                            </tr>
+                                            <tr>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td class="align-middle">GST {{gst_default|floatformat:0}}%</td>
+                                                <td class="align-middle">$ {{gst|floatformat:2}}</td> 
+                                                <td></td>    
+                                            </tr>
+                                            <tr>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td class="align-middle">Total</td>
+                                                <td class="align-middle">$ {{total_detail|floatformat:2}}</td> 
+                                                <td></td>    
+                                            </tr>
+                                            {% endif %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>              
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <canvas id="combined-canvas" style="display: none;"></canvas>
+</div>
+<!--Expense Claim Detail modal content -->
+<div id="expenseclaimdetailmodal" class="modal fade" role="dialog" aria-labelledby="expenseclaimdetail1ModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_item">Add New Invoice Detail</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_info_detail">
+                <form class="needs-validation p-3" id="EDetailForm">
+                    {% csrf_token %}
+
+                    <div id="text_error_detail" class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+                    </div>
+                    
+                    <div class="mb-3 row">
+                        <label for="proj_id" class="col-md-4 col-form-label">Project No:</label>
+                        <div class="col-md-8">
+                            <select class="form-control select2" id="proj_id" required>
+                                <option value="">Select Project No</option>
+                                {% for project in projects %}
+                                    <option value="{{project.id}}">{{project.proj_name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="description" class="col-md-4 col-form-label">Description:</label>
+                        <div class="col-md-8">
+                            <textarea class="form-control" rows="4" type="text" id="description" required></textarea>
+                        </div>                        
+                    </div>
+                    
+                    <div class="mb-3 row">
+                        <label for="detail_qty" class="col-md-4 col-form-label">Qty:</label>
+                        <div class="col-md-8">
+                            <input class="form-control js-number" type="text" id="detail_qty" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="detail_unitprice" class="col-md-4 col-form-label">Unit Price:</label>
+                        <div class="col-md-8">
+                            <input class="form-control js-number" type="text" id="detail_unitprice" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="remark" class="col-md-4 col-form-label">Remark:</label>
+                        <div class="col-md-8">
+                            <textarea class="form-control" rows="4" type="text" id="remark"></textarea>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <div class="col-md-6">
+                            <input type="checkbox" class="form-check-input me-2 p-2" id="gststatus">
+                            <label class="form-check-label" for="gststatus" style="margin-top: 3px;"> GST {{gst_default|floatformat:0}}%
+                            </label>
+                        </div>
+                    </div>
+                    
+                </form>
+                <input type="hidden" id="detailid" value="-1" />
+                <input type="hidden" id="gstbool" value="0" />
+            
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_detailadd">Add</button>
+                
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+
+<!--Expense Claim invoice upload modal content -->
+<div id="expenseclaiminvoicemodal" class="modal fade" role="dialog" aria-labelledby="expenseclaiminvoiceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="head_title_invoice">Upload invoice</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body" id="manage_info_invoice">
+                <form class="needs-validation p-3" id="EInvoiceForm">
+                    {% csrf_token %}
+
+                    <div id="text_error_invoice" class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+                    </div>
+                    
+                    <div class="mb-3 mt-3 row">
+                        <label for="invoice_proj_id" class="col-md-4 col-form-label">Project No:</label>
+                        <div class="col-md-8">
+                            <select class="form-control select2" id="invoice_proj_id" required>
+                                <option value="">Select Project No</option>
+                                {% for project in projects %}
+                                    <option value="{{project.id}}">{{project.proj_name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="invoice_receipt" class="col-md-4 col-form-label">Invoice :</label>
+                        <div class="col-md-8">
+                            <input class="dropify" type="file" id="invoice_receipt" required>
+                        </div>
+                        
+                    </div>
+                    
+                </form>
+                <input type="hidden" id="invoicefileid" value="-1" />
+            
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light btn-sm btn_invoiceupload">Add</button>
+                
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- Delete Expense Claim Detail modal content -->
+<div id="EXpenseDetaildeleteModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="delModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="edelModalLabel">Delete Invoice Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-hidden="true"></button>
+            </div>
+            <div class="modal-body">
+                <h5>Are you sure you want to delete this record?</h5>
+                <input type="hidden" id="eitemdel_id" value="-1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary waves-effect btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button id="eitem_del_confirm" type="button" class="btn btn-primary waves-effect btn-sm waves-light">OK</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'assets/libs/select2/js/select2.full.min.js' %}"></script>
+<script src="{% static 'assets/libs/bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+<!-- Responsive examples -->
+<script src="{% static 'assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+<script src="{% static 'assets/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js' %}"></script>
+<script src="{% static 'assets/dropify/dist/js/dropify.min.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.9.359/pdf.min.js"></script>
+
+<script>
+//    $('.dropify').dropify();
+    $('#loading').hide();
+//    $("#ExpensesClaimDetailForm input").prop("disabled", true);
+//    $("#ExpensesClaimDetailForm textarea").prop("disabled", true);
+//    $("#ExpensesClaimDetailForm select").prop("disabled", true);
+    $("#amount").prop('disabled', false);
+
+    if ('{{expenseclaim.status}}'!= "Open"){
+        $("#ExpensesClaimDetailForm input").prop("disabled", true);
+        $("#ExpensesClaimDetailForm textarea").prop("disabled", true);
+        $('#claim_submit').prop('disabled', true);
+        $('select').prop('disabled', true);
+        $('#exp_status').prop('disabled', true);
+        $('#expensedetailadd').prop('disabled', true);
+        $('#expensedetailadd').hide();
+        $('#invoiceupload').prop('disabled', true);
+        $('#invoiceupload').hide();
+        $('#expensefileadd').prop('disabled', true);
+        $('#expensefileadd').hide();
+<!--        $(".edit").addClass('disabled');-->
+        $(".delete").hide();
+    }
+    
+//    $("#detaildatatable").DataTable({ordering: false,searching: false, paging: false, info: false});
+    $('#expensesclaimcancel').hide();
+<!--    $('select').prop('disabled', true);-->
+    $("#text_error").hide();
+    $("#text_error_detail").hide();
+    $("#text_error_file").hide();
+    $(".select2").select2({width: '100%'});
+    $("#proj_id").select2({width: '100%', dropdownParent: $("#EDetailForm")});
+    $("#invoice_proj_id").select2({width: '100%', dropdownParent: $("#EInvoiceForm")});
+
+    $(".js-number").keydown(function (event) {
+        if (event.shiftKey == true) {
+            event.preventDefault();
+        }
+
+        if ((event.keyCode >= 48 && event.keyCode <= 57) || 
+            (event.keyCode >= 96 && event.keyCode <= 105) || 
+            event.keyCode == 8 || event.keyCode == 9 || event.keyCode == 37 ||
+            event.keyCode == 39 || event.keyCode == 46 || event.keyCode == 190) {
+
+        } else {
+            event.preventDefault();
+        }
+
+        if($(this).val().indexOf('.') !== -1 && event.keyCode == 190)
+            event.preventDefault(); 
+        //if a decimal has been added, disable the "."-button
+
+    });
+    
+    let combinedImage;
+    $('#invoice_receipt').on('change', function(e) {
+        const file = e.target.files[0];
+        if (file.type === 'application/pdf') {
+            const fileReader = new FileReader();
+
+            fileReader.onload = function() {
+                const typedArray = new Uint8Array(this.result);
+
+                // Load the PDF document
+                pdfjsLib.getDocument(typedArray).promise.then(async function(pdf) {
+                    const scale = 2; // Adjust scale for higher resolution
+                    const canvases = [];
+
+                    // Loop through all pages to render each one
+                    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+                        const page = await pdf.getPage(pageNumber);
+                        const viewport = page.getViewport({ scale });
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.width = viewport.width;
+                        canvas.height = viewport.height;
+
+                        await page.render({ canvasContext: context, viewport }).promise;
+
+                        // Store each rendered canvas
+                        canvases.push(canvas);
+                    }
+
+                    // Combine all canvases into one image
+                    combineCanvases(canvases);
+                });
+            };
+            fileReader.readAsArrayBuffer(file);
+        } else {
+            combinedImage = $("#invoice_receipt").prop('files')[0];
+        }
+    });
+
+
+    // Combine all PDF canvases into one large canvas
+    function combineCanvases(canvases) {
+        // Calculate the total height of the combined canvas
+        const totalHeight = canvases.reduce((height, canvas) => height + canvas.height, 0);
+        const maxWidth = Math.max(...canvases.map(canvas => canvas.width));
+
+        // Create a new canvas for the combined image
+        const combinedCanvas = document.getElementById('combined-canvas');
+        const context = combinedCanvas.getContext('2d');
+        combinedCanvas.width = maxWidth;
+        combinedCanvas.height = totalHeight;
+
+        // Draw each page onto the combined canvas
+        let currentY = 0;
+        canvases.forEach((canvas) => {
+            context.drawImage(canvas, 0, currentY);
+            currentY += canvas.height;
+        });
+
+        // Convert the combined canvas to an image (JPG or PNG)
+        combinedImage = combinedCanvas.toDataURL('image/jpeg');
+        combinedImage = dataURLToBlob(combinedImage);
+    }
+    // Helper function to convert base64 Data URL to Blob
+    function dataURLToBlob(dataURL) {
+        const byteString = atob(dataURL.split(',')[1]);
+        const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+        return new Blob([ab], { type: mimeString });
+    }
+
+    $(".btn_invoiceupload").on('click', function(e){
+        $('#loading').show();
+        $('#EInvoiceForm').parsley().validate();
+        if ($('#EInvoiceForm').parsley().validate() === false) {         
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            //var receipt_data = $("#invoice_receipt").prop('files')[0];
+            var form_data = new FormData();
+            form_data.append('receipt_file', combinedImage);
+            form_data.append('fileid', $("#invoicefileid").val());
+            form_data.append('projid', $("#invoice_proj_id").val());
+            form_data.append('invoice_summary_id', `{{invoice_summary_id}}`)
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_update_invoice_file" %}',
+                data: form_data,
+                cache: false,
+                contentType: false,
+                processData: false,
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_invoice").hide();
+                        location.reload();
+                    } else {
+                        $('#loading').hide();
+                        $("#text_error_invoice").html(data.messages);
+                        $("#text_error_invoice").show();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    // Handle the error here
+                    console.error('AJAX Request Failed');
+                    $('#loading').hide();
+                    $("#text_error_invoice").html("Cannot detect in OCR. Need to input manually!");
+                    $("#text_error_invoice").show();
+                }
+            });
+        }
+    });
+
+    $("#del_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_expenses_claim_file" %}',
+            data: {
+                'fileid': $("#del_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload(); 
+                }
+            }
+        });
+        $('#deletModal').modal('hide');
+    });
+        
+    $("#expensedetailadd").on('click', function(e){        
+        $("#head_title_item").html('Add New Invoice Detail');
+        $(".btn_detailadd").html('Add');
+        $("#proj_id").val('');
+        $('#proj_id').trigger('change');
+        $("#description").val('');
+        $("#detailid").val('-1');
+        $("#detail_qty").val('');
+        $("#detail_unitprice").val('');
+        $("#remark").val('');
+        $("#gststatus").prop("checked", false);
+        $("#expenseclaimdetailmodal").modal('show')
+    });
+    $("#invoiceupload").on('click', function(e){
+        $("#text_error_invoice").hide();
+        $("#invoice_proj_id").val('');
+        $('#invoice_proj_id').trigger('change');
+        $("#expenseclaiminvoicemodal").modal('show')
+    });
+    $('#gststatus').change(function() {
+        if ( !this.checked) { 
+            $("#gstbool").val(this.checked)
+        } else {
+            $("#gstbool").val(this.checked)
+        }
+     
+     });
+
+    $(".btn_detailadd").on('click', function(e){
+        $('#EDetailForm').parsley().validate();
+        if ($('#EDetailForm').parsley().validate() === false) {         
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        } else {
+            $.ajax({
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                url: '{% url "ajax_add_invoice_details" %}',
+                data: {
+                    proj_id: $("#proj_id").val(),
+                    description: $("#description").val(),
+                    remark: $("#remark").val(),
+                    detail_qty: $("#detail_qty").val(),
+                    detail_unitprice: $("#detail_unitprice").val(),
+                    detail_gst: $("#gstbool").val(),
+                    detailid: $("#detailid").val(),
+                    invoice_summary_id: `{{invoice_summary_id}}`,
+                },
+                type: 'POST',
+                success: function (data) {
+                    if(data.status=="Success"){
+                        $("#text_error_detail").hide();
+                        location.reload();
+                    } else {
+                        $("#text_error_detail").html(data.messages);
+                        $("#text_error_detail").show();
+                    }
+                }
+            });
+        }
+    });
+    function updateexitem(id) {
+        $("#detailid").val(id);
+        $("#head_title_item").html('Update Invoice Item');
+        $(".btn_detailadd").html('Update');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_get_invoice_item" %}',
+            data: {
+                invoicedetailid: $("#detailid").val()
+            },
+            type: 'POST',
+            success: function (data) {
+                up_data = JSON.parse(data);
+                $('#proj_id').val(up_data.proj_id);
+                $('#proj_id').trigger('change');
+                $("#description").val(up_data.description);
+                $("#detail_qty").val(up_data.qty);
+                $("#detail_unitprice").val(up_data.unit_price);
+                $("#remark").val(up_data.remark);
+                $("#gststatus").prop("checked", up_data.gst);
+                $("#gstbool").val(up_data.gst);
+            }
+        });
+        $("#expenseclaimdetailmodal").modal('show');
+    }
+    function deleteexitem(id) {
+        $("#eitemdel_id").val(id);
+        $("#EXpenseDetaildeleteModal").modal('show');
+    }
+
+    $("#eitem_del_confirm").on('click', function(event){
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_delete_invoice_item" %}',
+            data: {
+                'itemdetailid': $("#eitemdel_id").val(),
+            },
+            type: 'POST',
+            success: function (data) {
+                if (data.status == "ok") {
+                    location.reload(); 
+                }
+            }
+        });
+        $('#EXpenseDetaildeleteModal').modal('hide');
+    });
+</script>
+
+{% endblock %}

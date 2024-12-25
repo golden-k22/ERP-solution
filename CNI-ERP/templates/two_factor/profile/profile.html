@@ -1,8 +1,9 @@
-{% extends "two_factor/_base.html" %}
+{% extends "two_factor/_base_focus.html" %}
 {% load i18n %}
 {% load two_factor_tags %}
 
 {% block content %}
+<div class="profile-container">
   <h1>{% block title %}{% trans "Account Security" %}{% endblock %}</h1>
 
   {% if default_device %}
@@ -57,4 +58,13 @@
       {% trans "Enable Two-Factor Authentication" %}</a>
     </p>
   {% endif %}
+</div>
+       
+<style>    
+  .profile-container {
+      margin-left: 30%;
+      flex: 0 0 40%;
+      max-width: 40%;
+  }
+</style>
 {% endblock %}

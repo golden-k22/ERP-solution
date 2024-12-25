@@ -1,0 +1,27 @@
+{% load static %}
+<style>
+</style>
+<div class="table-responsive" style="border-collapse: collapse; border-spacing: 0;max-height: 600px;">
+    <table class="table table-bordered align-middle dt-responsive nowrap">
+        <thead>
+            <tr>
+                <th width="10%">SN</th>
+                <th width="80%">Description</th>
+                <th width="10%">QTY</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for activity in activities %}
+            {% with forloop.counter as outer_counter %}
+            <tr>
+                <td class="align-middle align-center"> {{outer_counter}} </td>
+                <td>{{activity.scope|wordwrap:60|linebreaksbr|default_if_none:""}}</td>
+                <td class="align-middle align-center">{{activity.qty|default_if_none:""}}</td>
+            </tr>
+            {% endwith %}
+            {% endfor %}            
+        </tbody>
+    </table>
+</div>
+<script>
+</script>

@@ -4,12 +4,7 @@ import json
 import os
 import random
 import re
-import smtplib
 import string
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.utils import formatdate
-
 import pandas as pd
 import pytz
 from activity_log.models import ActivityLog
@@ -30,7 +25,7 @@ from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.utils.encoding import force_bytes, force_text
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.views.generic import FormView, RedirectView
+from django.views.generic import FormView, RedirectView,TemplateView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView
 from django.views.generic.list import ListView
@@ -40,7 +35,7 @@ from notifications.signals import notify
 from accounts.email import send_active_mail
 from accounts.forms import SingupForm
 from accounts.models import NotificationPrivilege, User, Role, WorkLog, MaterialLog, AssetLog, Holiday, OTCalculation, \
-    Privilege, UserCert, UserAddress, UserItemIssued, UserItemTool, Uom, PPELog, StationaryLog
+    Privilege, UserCert, UserAddress, UserItemIssued, UserItemTool, Uom, PPELog, StationaryLog, WPType, UserStatus
 from accounts.resources import WorkLogResource
 from inventory.models import Material, PPE, Stationary
 from maintenance.models import MainSr
@@ -49,25 +44,37 @@ from sales.decorater import ajax_login_required, admin_required
 # Create your views here.
 from sales.models import ProductSalesDo
 from django.core.files.base import ContentFile
+from django.shortcuts import redirect
+from two_factor.views.core import LoginView
+from accounts.email import send_mail
 
-
-class LoginView(FormView):
-    form_class = AuthenticationForm
-    template_name = "accounts/sign-in.html"
+class Custom2faLoginView(LoginView):
 
     def get_success_url(self):
-        return reverse_lazy("dashboard")
+        # Customize the URL to redirect to after a successful login
+        if self.get_user().status_id==2:
+            return reverse_lazy('view_logout')        
+        # return reverse_lazy('dashboard')
+        next_url = self.request.GET.get('next', '/')  # Fallback to default URL
+        return next_url
+    
+# class LoginView(FormView):
+#     form_class = AuthenticationForm
+#     template_name = "accounts/sign-in.html"
 
-    def dispatch(self, request, *args, **kwargs):
-        if request.user.is_authenticated:
-            return HttpResponseRedirect(self.get_success_url())
-        else:
-            return super(LoginView, self).dispatch(request, *args, **kwargs)
+#     def get_success_url(self):
+#         return reverse_lazy("dashboard")
 
-    def form_valid(self, form):
-        login(self.request, form.get_user())
+#     def dispatch(self, request, *args, **kwargs):
+#         if request.user.is_authenticated:
+#             return HttpResponseRedirect(self.get_success_url())
+#         else:
+#             return super(LoginView, self).dispatch(request, *args, **kwargs)
 
-        return super(LoginView, self).form_valid(form)
+#     def form_valid(self, form):
+#         login(self.request, form.get_user())
+
+#         return super(LoginView, self).form_valid(form)
 
 
 class LogoutView(RedirectView):
@@ -82,7 +89,9 @@ class SignupView(CreateView):
     model = User
     form_class = SingupForm
     template_name = 'accounts/sign-up.html'
-    success_url = reverse_lazy('view_login')
+    # success_url = reverse_lazy('view_login')
+    success_url = '/account/two_factor/setup/'
+
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object
@@ -144,7 +153,18 @@ class SrSummary(ListView):
         context = super().get_context_data(**kwargs)
         context['projSrlist'] = Sr.objects.all()
         context['maintenanceSrlist'] = MainSr.objects.all()
+        context['sr_status']=Sr.Status
         return context
+@ajax_login_required
+def ajax_filter_sr_summary(request):
+    sr_status = request.GET.get('status', '')
+    projSrlist=Sr.objects.all()
+    maintenanceSrlist=MainSr.objects.all()
+    if sr_status:
+        projSrlist=projSrlist.filter(status=sr_status)
+        maintenanceSrlist=maintenanceSrlist.filter(status=sr_status)
+
+    return render(request, 'accounts/sr-summary-table.html', {'projSrlist': projSrlist, 'maintenanceSrlist':maintenanceSrlist})
 
 @method_decorator(login_required, name='dispatch')
 class DoSummary(ListView):
@@ -154,8 +174,21 @@ class DoSummary(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['projDolist'] = Do.objects.all()
+        context['do_status'] = Do.Status
         context['salesDolist'] = ProductSalesDo.objects.all()
         return context
+
+@ajax_login_required
+def ajax_filter_do_summary(request):
+    do_status = request.GET.get('status', '')
+    do_list=Do.objects.all()
+    sales_do_list=ProductSalesDo.objects.all()
+    if do_status:
+        do_list=do_list.filter(status=do_status)
+        sales_do_list=sales_do_list.filter(status=do_status)
+
+    return render(request, 'accounts/do-summary-table.html', {'projDolist': do_list, 'salesDolist':sales_do_list})
+
 
 @method_decorator(login_required, name='dispatch')
 class PcSummary(ListView):
@@ -165,7 +198,17 @@ class PcSummary(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['projPclist'] = Pc.objects.all()
+        context['pc_status']=Pc.Status
         return context
+
+@ajax_login_required
+def ajax_filter_pc_summary(request):
+    pc_status = request.GET.get('status', '')
+    projPclist=Pc.objects.all()
+    if pc_status:
+        projPclist=projPclist.filter(status=pc_status)
+
+    return render(request, 'accounts/pc-summary-table.html', {'projPclist': projPclist})
 
 # Users part =================================
 @method_decorator(login_required, name='dispatch')
@@ -179,6 +222,7 @@ class UsersList(ListView):
         context['users'] = User.objects.all().exclude(is_staff=True)
         context['nrics'] = User.objects.exclude(nric=None).order_by('nric').values('nric').distinct()
         context['empids'] = User.objects.exclude(empid=None).order_by('empid').values('empid').distinct()
+        context['countrys'] = Country.objects.all()
         context['roles'] = Role.objects.all()
 
         return context
@@ -259,10 +303,11 @@ class NotificationConfiguration(ListView):
         role_lists = []
         notification_classify = [[]]
         notification_classify.clear()
+        status=UserStatus.objects.get(status='resigned')
         for role in roles:
             temp_data = []
             role_lists.append(role.name)
-            classify_notification = User.objects.exclude(is_staff=True).filter(role=role.name)
+            classify_notification = User.objects.exclude(is_staff=True).exclude(status=status).filter(role=role.name)
             temp_data.append(role.name)
             temp_data.append(classify_notification)
             notification_classify.append(temp_data)
@@ -291,7 +336,8 @@ def ajaxaddRole(request):
             sender = request.user
             is_email = NotificationPrivilege.objects.get(user_id=sender.id).is_email
             description = '<a href="/users/">'+request.user.username + ' - was created New Role ' + role_name+'</a>'
-            for receiver in User.objects.filter(role__in=['Admins', 'Managers']):
+            user_status=UserStatus.objects.get(status='resigned')
+            for receiver in User.objects.exclude(status=user_status).filter(role__in=['Admins', 'Managers']):
                 if receiver.notificationprivilege.usergroup_created:
                     notify.send(sender, recipient=receiver, verb='Message', level="success", description=description)
                     if is_email and receiver.email:
@@ -305,40 +351,17 @@ def ajaxaddRole(request):
 def id_generator(size=8, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
-
-def send_mail(to_email, subject, message):
-    # For Gmail
-    SMTP_SERVER = "smtp.gmail.com"
-    SMTP_PORT = 587
-    my_email = os.getenv("DJANGO_DEFAULT_EMAIL")
-    my_password = os.getenv("DJANGO_EMAIL_HOST_PASSWORD")
-    msg = MIMEMultipart()
-    msg['From'] = my_email
-    msg['To'] = to_email
-    msg['Date'] = formatdate(localtime=True)
-    msg['Subject'] = subject
-    msg.attach(MIMEText(message, 'html'))
-
-    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as smtpObj:
-        smtpObj.ehlo()
-        smtpObj.starttls()
-        smtpObj.login(my_email, my_password)
-        smtpObj.sendmail(my_email, to_email, msg.as_string())
-        smtpObj.close()
-    # print("********* Sent mail to {0} Successfully! **********".format(to_email))
-
-
 @ajax_login_required
 def newUser(request):
     if request.method == "POST":
         empno = request.POST.get('empno')
+        username = request.POST.get('username')
         firstname = request.POST.get('firstname')
         lastname = request.POST.get('lastname')
         nationality = request.POST.get('nationality')
         nric = request.POST.get('nric')
         role = request.POST.get('role')
         phone = request.POST.get('phone')
-
         userid = request.POST.get('userid')
         password = make_password(id_generator())
 
@@ -359,8 +382,8 @@ def newUser(request):
                         role=role,
                         phone=phone,
                         password=password,
-                        is_active=False,
-                        username=firstname + lastname,
+                        is_active=True,
+                        username=username,
                         signature="user/signature/default_sign.jpg"
                     )
                     if role == "Managers":
@@ -454,7 +477,8 @@ def newUser(request):
                     sender = request.user
                     is_email = NotificationPrivilege.objects.get(user_id=sender.id).is_email
                     description = '<a href="/user-detail/'+str(user.id)+'">User Emp No : ' + user.empid + ' - New User was created by ' + request.user.username +'</a>'
-                    for receiver in User.objects.filter(role='Admins'):
+                    user_status=UserStatus.objects.get(status='resigned')
+                    for receiver in User.objects.exclude(status=user_status).filter(role='Admins'):
                         if receiver.notificationprivilege.user_no_created:
                             notify.send(sender, recipient=receiver, verb='Message', level="success",
                                         description=description)
@@ -470,7 +494,7 @@ def newUser(request):
                 print(e)
                 return JsonResponse({
                     "status": "Error",
-                    "messages": "Error is existed!"
+                    "messages": "Error is existed! "+str(e)
                 })
 
         else:
@@ -484,7 +508,7 @@ def newUser(request):
                 user.role = role
                 user.phone = phone
                 user.password = password
-                user.username = firstname + lastname
+                user.username = username
                 user.save()
                 return JsonResponse({
                     "status": "Success",
@@ -513,6 +537,8 @@ class UserDetailView(DetailView):
         context['countrys'] = Country.objects.all()
         context['roles'] = Role.objects.all()
         context['uoms'] = Uom.objects.all()
+        context['wp_types'] = WPType.objects.all()
+        context['user_status'] = UserStatus.objects.all()
         context['certificates'] = UserCert.objects.filter(emp_id__iexact=current_user.username)
         context['issuedtools'] = UserItemTool.objects.filter(emp_id__iexact=current_user.username)
         context['selected_user'] = content_pk
@@ -554,6 +580,10 @@ def UpdateUser(request):
         country = request.POST.get('country')
         username = request.POST.get('username')
         basic_salary = request.POST.get('basic_salary')
+        status = request.POST.get('status')
+        is_active=True
+        if int(status)==2:
+            is_active=False
         password = request.POST.get('password')
         userid = request.POST.get('userid')
         pincode = request.POST.get('pincode')
@@ -573,16 +603,16 @@ def UpdateUser(request):
             user.password = password
             user.password_box = passwordbox
             user.basic_salary = basic_salary
+            user.status_id=status
             user.username = username
             user.dob = dob
             user.email = email
             user.passport_expiry = passport_expiry
             user.passport_no = passport_no
-            user.is_active = True
+            user.is_active = is_active
             user.wp_type = wp_type
             user.wp_no = wp_no
             user.wp_expiry = wp_expiry
-
             user.pincode = pincode
             user.fcm_token = fcm_token
             user.save()
@@ -601,7 +631,7 @@ def UpdateUser(request):
                     country_id=country,
                     emp_id_id=user.id
                 )
-            if user.is_active != True:
+            if int(user.status_id) != 1:
                 mail_subject = "YOU'RE INVITED TO BECOME A FELLOW MEMBER OF ERP SOLUTION"
                 mail_context = {
                     'email_title': "YOU'RE INVITED TO BECOME A FELLOW MEMBER OF",
@@ -622,7 +652,7 @@ def UpdateUser(request):
             print(e)
             return JsonResponse({
                 "status": "Error",
-                "messages": "Error is existed!"
+                "messages": "Error is existed! "+str(e)
             })
 
 
@@ -633,17 +663,24 @@ class WorkLogList(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['emp_nos'] = WorkLog.objects.exclude(emp_no=None).order_by('emp_no').values('emp_no').distinct()
-        for emp in context['emp_nos']:
-            if User.objects.filter(empid=emp['emp_no']).exists():
-                first_name=User.objects.get(empid=emp['emp_no']).first_name
-            else:
-                first_name=""
-            emp['first_name']=first_name
+        context['all_emp_nos'] = WorkLog.objects.exclude(emp_no=None).order_by('emp_no').values('emp_no').distinct()
+        context['emp_nos']=[]
+        # for emp in context['emp_nos']:
+        #     if User.objects.filter(Q(empid=emp['emp_no'])).exists():
+        #         first_name=User.objects.filter(Q(empid=emp['emp_no'])).first_name
+        #     else:
+        #         first_name=""
+        #     emp['first_name']=first_name
+        
+        for emp in context['all_emp_nos']:
+            if User.objects.filter(Q(empid=emp['emp_no']) & ~Q(status_id=2)).exists():
+                first_name=User.objects.get(Q(empid=emp['emp_no']) & ~Q(status_id=2)).first_name
+                emp['first_name']=first_name
+                context['emp_nos'].append(emp)
 
         context['emp_users'] = User.objects.all()
         context['projects'] = Project.objects.order_by('proj_id').values('proj_id').distinct()
-        context['date_years'] = list(set([d.checkin_time.year for d in WorkLog.objects.all()]))
+        context['date_years'] = sorted(set(d.checkin_time.year for d in WorkLog.objects.all()), reverse=True)        
         current_year = datetime.datetime.today().year
         if current_year in list(set([d.start_date.year for d in Project.objects.all()])):
             context['exist_current_year'] = True
@@ -778,30 +815,24 @@ def ajax_worklog_filter(request):
     if request.method == "POST":
         daterange = request.POST.get('daterange')
         search_empno = request.POST.get('search_empno')
-        search_year = request.POST.get('search_year')
+        search_years = json.loads(request.POST.get('search_years', '[]'))
         if daterange != "":
             startdate = datetime.datetime.strptime(daterange.split('-')[0].strip(), '%Y.%m.%d %H:%M').replace(
                 tzinfo=pytz.utc)
             enddate = datetime.datetime.strptime(daterange.split('-')[1].strip(), '%Y.%m.%d %H:%M').replace(
                 tzinfo=pytz.utc)
-        if search_year:
-            if search_empno != "" and daterange != "":
-                worklogs = WorkLog.objects.filter(emp_no__iexact=search_empno, checkin_time__gte=startdate,
-                                                  checkout_time__lte=enddate)
-            elif search_empno != "" and daterange == "":
-                worklogs = WorkLog.objects.filter(emp_no__iexact=search_empno)
-            elif search_empno == "" and daterange != "":
-                worklogs = WorkLog.objects.filter(checkin_time__gte=startdate, checkout_time__lte=enddate)
-            elif search_empno == "" and daterange == "":
-                worklogs = WorkLog.objects.filter(checkin_time__iso_year=search_year)
-        else:
-            if search_empno != "" and daterange != "":
-                worklogs = WorkLog.objects.filter(emp_no__iexact=search_empno, checkin_time__gte=startdate,
-                                                  checkout_time__lte=enddate)
-            elif search_empno != "" and daterange == "":
-                worklogs = WorkLog.objects.filter(emp_no__iexact=search_empno)
-            elif search_empno == "" and daterange != "":
-                worklogs = WorkLog.objects.filter(checkin_time__gte=startdate, checkout_time__lte=enddate)
+        
+        if(len(search_years)==0):
+            return render(request, 'accounts/ajax-worklog.html', {'worklogs': []})
+        query = Q()
+        for search_year in search_years:
+            query |= Q(checkin_time__year=search_year)
+        worklogs=WorkLog.objects.filter(query)
+        
+        if daterange!="":
+            worklogs=worklogs.filter(checkin_time__gte=startdate, checkout_time__lte=enddate)
+        if search_empno != "":
+            worklogs=worklogs.filter(emp_no__iexact=search_empno)
 
         return render(request, 'accounts/ajax-worklog.html', {'worklogs': worklogs})
 
@@ -1078,7 +1109,7 @@ class PPElogList(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['emps'] = User.objects.filter(
+        context['emps'] = User.objects.exclude(status_id=2).filter(
             Q(role__icontains='Supervisors') | Q(role__icontains='Managers') | Q(role__icontains='Engineers') | Q(
                 role__icontains='Admin')) \
             .order_by('empid').values('empid','first_name').distinct()
@@ -2175,6 +2206,7 @@ def ajax_notification_privilege(request):
         tbm_no_created = request.POST.get('tbm_no_created')
         reminder_signature = request.POST.get('reminder_signature')
         reminder_invoice = request.POST.get('reminder_invoice')
+        worklog_checkin = request.POST.get('worklog_checkin')
         inventory_item_deleted = request.POST.get('delete_item')
         stock_equal_restock = request.POST.get('restockqty')
         do_status = request.POST.get('do_status')
@@ -2197,6 +2229,7 @@ def ajax_notification_privilege(request):
             noprivilege.tbm_no_created = tbm_no_created
             noprivilege.reminder_signature = reminder_signature
             noprivilege.reminder_invoice = reminder_invoice
+            noprivilege.worklog_checkin = worklog_checkin
             noprivilege.inventory_item_deleted = inventory_item_deleted
             noprivilege.stock_equal_restock = stock_equal_restock
             noprivilege.do_status = do_status
@@ -2220,6 +2253,7 @@ def ajax_notification_privilege(request):
                 tbm_no_created=tbm_no_created,
                 reminder_signature=reminder_signature,
                 reminder_invoice=reminder_invoice,
+                worklog_checkin=worklog_checkin,
                 inventory_item_deleted=inventory_item_deleted,
                 stock_equal_restock=stock_equal_restock,
                 do_status=do_status,
@@ -2264,6 +2298,9 @@ def ajax_notification_privilege_user_check(request):
             noprivilege = NotificationPrivilege.objects.get(user_id=userid)
             data = {
                 'project_no_created': int(noprivilege.project_no_created),
+                'maintenance_reminded': int(noprivilege.maintenance_reminded),
+                'reminder_invoice': int(noprivilege.reminder_invoice),
+                'worklog_checkin': int(noprivilege.worklog_checkin),
                 'project_status': int(noprivilege.project_status),
                 'project_end': int(noprivilege.project_end),
                 'tbm_no_created': int(noprivilege.tbm_no_created),
@@ -2326,7 +2363,7 @@ def activateAccount(request, uidb64, token):
     except(TypeError, ValueError, OverflowError, User.DoesNotExist):
         user = None
     if user is not None and default_token_generator.check_token(user, token):
-        user.is_active = True
+        user.status_id = 1
         user.save()
         # login(request, user,backend="django.contrib.auth.backends.ModelBackend")
         return redirect('/')
@@ -2641,3 +2678,11 @@ def getToolItem(request):
             'tissued_date': userItemIssued.issue_date.strftime('%d %b %Y'),
         }
         return JsonResponse(json.dumps(data), safe=False)
+
+
+from two_factor.views.core import SetupView
+from .forms import CustomDeviceValidationForm
+
+class CustomSetupView(SetupView):
+    def get_form_class(self):
+        return CustomDeviceValidationForm

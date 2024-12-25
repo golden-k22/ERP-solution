@@ -79,6 +79,12 @@
     }).buttons().container().appendTo(".export_button");
     $(".dataTables_length select").addClass("form-select form-select-sm");
     $("#newSearchPlace").html($(".dataTables_filter"));
+    // Now, target the search input and set a placeholder
+    $("#newSearchPlace input[type='search']").attr("placeholder", "Search...");
+    // Remove the "Search:" label
+    $("#newSearchPlace label").contents().filter(function() {
+        return this.nodeType === 3; // Node type 3 is text
+    }).remove();
 
     jQuery.fn.dataTableExt.oSort['date-asc']  = function(a,b) {
         var usDatea = a.split('/');

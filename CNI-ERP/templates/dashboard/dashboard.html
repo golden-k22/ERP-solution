@@ -1,6 +1,16 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
+<style>
+    .fixed-width-table {
+        table-layout: fixed; /* Ensures the columns have fixed width */
+    }
+
+    .fixed-width-table td {
+        word-wrap: break-word; /* Ensures text wraps within cells */
+        padding: 3px; 
+    }
+</style>
 <div class="container-fluid">
 
     <!-- start page title -->
@@ -18,21 +28,16 @@
     <!-- end page title -->
 
     <div class="row">
-        <div class="col-xl-3 col-sm-6">
+        <div class="col-xl-6 col-sm-6">
             <div class="card mini-stat bg-primary">
                 <div class="card-body mini-stat-img">
-                    <div class="mini-stat-icon">
-                        <i class="mdi mdi-cube-outline float-end"></i>
-                    </div>
                     <div class="text-white">
-                        <h6 class="text-uppercase mb-3 font-size-16 text-white">Sales</h6>
-                        <h2 class="mb-4 text-white">1,587</h2>
-                        <span class="badge bg-info"> +11% </span> <span class="ms-2">From previous period</span>
+                        <h2 class="mt-3 mb-3 text-white text-center">Attendance</h2>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-xl-3 col-sm-6">
+        <!-- <div class="col-xl-3 col-sm-6">
             <div class="card mini-stat bg-primary">
                 <div class="card-body mini-stat-img">
                     <div class="mini-stat-icon">
@@ -59,48 +64,36 @@
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="col-xl-3 col-sm-6">
-            <div class="card mini-stat bg-primary">
-                <div class="card-body mini-stat-img">
-                    <div class="mini-stat-icon">
-                        <i class="mdi mdi-briefcase-check float-end"></i>
-                    </div>
-                    <div class="text-white">
-                        <h6 class="text-uppercase mb-3 font-size-16 text-white">Maintenance</h6>
-                        <h2 class="mb-4 text-white">1890</h2>
-                        <span class="badge bg-info"> +89% </span> <span class="ms-2">From previous period</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+        </div> -->
     </div>
     <!-- end row -->
 
     <div class="row">
 
-        <div class="col-xl-3">
+        <div class="col-xl-6">
             <div class="card">
                 <div class="card-body">
-                    <h4 class="card-title mb-4">Monthly Earnings</h4>
-
-                    <div class="row text-center mt-4">
-                        <div class="col-6">
-                            <h5 class="font-size-20">$56241</h5>
-                            <p class="text-muted">Marketplace</p>
-                        </div>
-                        <div class="col-6">
-                            <h5 class="font-size-20">$23651</h5>
-                            <p class="text-muted">Total Income</p>
-                        </div>
+                    <div class="table-responsive pt-1" style="height:410px;">
+                        <table id="datatable-buttons" class="table align-middle dt-responsive nowrap fixed-width-table">                            
+                            <tbody>
+                             {% for user in users %}
+                             {% with forloop.counter as outer_counter %}
+                                <tr style="border-style: hidden;">
+                                    <td width="10%" class="align-middle">{{outer_counter}}</td>
+                                    <td width="40%" class="align-middle">{{user.empid|linebreaksbr|default_if_none:""}} - {{user.username|linebreaksbr|default_if_none:""}}</td>
+                                    <td width="50%" class="align-middle">{% if user.is_checkin_today == 1 %}{{user.proj_name|linebreaksbr|default_if_none:""}}{% else %}Not Sign In{% endif %}</td>
+                                </tr>
+                                {% endwith %}
+                            {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
-
-                    <div id="morris-donut-example" class="morris-charts morris-charts-height" dir="ltr"></div>
+                    
                 </div>
             </div>
         </div>
 
-        <div class="col-xl-6">
+        <!-- <div class="col-xl-6">
             <div class="card">
                 <div class="card-body">
                     <h4 class="card-title mb-4">Email Sent</h4>
@@ -123,9 +116,9 @@
                     <div id="morris-area-example" class="morris-charts morris-charts-height" dir="ltr"></div>
                 </div>
             </div>
-        </div>
+        </div> -->
 
-        <div class="col-xl-3">
+        {% comment %} <div class="col-xl-3">
             <div class="card">
                 <div class="card-body">
                     <h4 class="card-title mb-4">Monthly Earnings</h4>
@@ -144,7 +137,7 @@
                     <div id="morris-bar-stacked" class="morris-charts morris-charts-height" dir="ltr"></div>
                 </div>
             </div>
-        </div>
+        </div> {% endcomment %}
 
     </div>
     <!-- end row -->

@@ -9,7 +9,8 @@
     <link href="{% static 'assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" />
     <!-- Responsive datatable examples -->
     <link href="{% static 'assets/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css' %}" rel="stylesheet" type="text/css" /> 
-    <link href="{% static 'assets/css/daterangepicker-bs3.css' %}" rel="stylesheet"> 
+    <link href="{% static 'assets/css/daterangepicker-bs3.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/css/custom-dropdown.css' %}" rel="stylesheet" type="text/css" />
 
 {% endblock %}
 {% block content %}
@@ -91,51 +92,81 @@
             <div class="card">   
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-12 col-lg-12 col-xl-5 col-sm-12 pb-1">
-                            <div class="row">
-                                <div class="mt-1 col-md-2 col-lg-2 col-sm-3 col-xs-3 space-custom">
+                        <div class="col-md-12 col-lg-12 col-xl-4 col-sm-12 pb-1">
+                            <div class="row justify-content-start">
+                                <div class="mt-1 col-md-6 space-custom">
+                                    <div class="export_button "></div>
+                                </div>
+                                <div class="mt-1 col-md-6 space-custom">
                                     <button type="button" id="quotationadd" class="btn btn-primary new-button" style="height: 38px;"><i class="mdi mdi-calendar-plus"></i> New</button>
                                 </div>
-                                <div class="mt-1 col-md-10 col-lg-10 col-sm-9 col-xs-9 space-custom">
-                                    <div class="export_button justify-content-start d-flex"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-12 col-lg-12 col-xl-8 col-sm-12 pt-1">
+                            <div>
+                                <div class="row justify-content-start">
+                                    <div class="mt-1 col-md-3 space-custom">
+                                        <select class="form-control search_filter" id="search_quotation" required>
+                                            <option value="">Quotation No</option>
+                                            {% for qqtt_id in qqtt_ids %}
+                                                <option value="{{qqtt_id.qtt_id}}">{{qqtt_id.qtt_id}}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="mt-1 col-md-4 space-custom">
+                                        <input class="form-control input-daterange-datepicker" style="height: 38px;" type="text" placeholder="Date"  id="daterange" autocomplete="off" required>
+                                    </div>
+                                    <div class="mt-1 col-md-3 space-custom">
+                                        <select class="form-control search_filter" id="status" required>
+                                            <option value="">Status</option>
+                                            {% for key, value in quotation_status %}
+                                                <option value="{{value}}">{{value}}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="mt-1 col-md-2 space-custom">                                        
+                                        <div class="dropdown custom-dropdown">
+                                            <button class="dropbtn">Year</button>
+                                            <div class="dropdown-content" id="year-drop-content">
+                                                <label><input type="checkbox" value="0">All</label>
+                                                {% for date_year in date_years %}
+                                                <label><input type="checkbox" value="{{date_year}}">{{date_year}}</label>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="col-md-12 col-lg-12 col-xl-12 col-sm-12 pt-1">
+                                    <div class="row justify-content-start">
+                                        <div class="mt-1 col-md-3 space-custom">
+                                            <select class="form-control search_filter" id="sales_person" required>
+                                                <option value="">Sales person</option>
+                                                {% for person in sales_persons %}
+                                                    <option value="{{person.sale_person}}">{{person.sale_person}}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="mt-1 col-md-4 space-custom">
+                                            <select class="form-control search_filter" id="search_customer" required>
+                                                <option value="">Customer</option>
+                                                {% for cust in customers %}
+                                                    <option value="{{cust.id}}">{{cust.name}}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="mt-1 col-md-5">
+                                            <div id="newSearchPlace"></div>
+                                        </div>
+                                        
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-12 col-lg-12 col-xl-7 col-sm-12 pt-1">
-                            <div class="row justify-content-start">
-                                <div class="mt-1 col-md-2 space-custom">
-                                    <select class="form-control search_filter" id="search_quotation" required>
-                                        <option value="">Quotation No</option>
-                                        {% for qqtt_id in qqtt_ids %}
-                                            <option value="{{qqtt_id.qtt_id}}">{{qqtt_id.qtt_id}}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="mt-1 col-md-2 space-custom">
-                                    <input class="form-control input-daterange-datepicker" style="height: 38px;" type="text" placeholder="Date"  id="daterange" autocomplete="off" required>
-                                </div>
-                                <div class="mt-1 col-md-2 space-custom">
-                                    <select class="form-control search_filter" id="search_customer" required>
-                                        <option value="">Customer</option>
-                                        {% for cust in customers %}
-                                            <option value="{{cust.id}}">{{cust.name}}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="mt-1 col-md-2 space-custom">
-                                    <select class="form-control search_filter" id="year" required>
-                                        <option value="">Year</option>
-                                        {% for date_year in date_years %}
-                                            <option value="{{date_year}}">{{date_year}}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="mt-1 col-md-3">
-                                    <div id="newSearchPlace"></div>
-                                </div>
-                                
-                            </div>
-                        </div>
+                        
                         
                     </div>
                     <div id="quotation_data"></div>
@@ -479,50 +510,7 @@
         $("#text_contact_error").hide();
         $("#text_error_com").hide();
         
-        // $('.dt-button-collection .buttons-columnVisibility').each(function(){
-        //     var $li = $(this),
-        //     $cb = $('<input>', {
-        //             type:'checkbox',
-        //             style:'margin:0 .25em 0 0; vertical-align:middle'}
-        //             ).prop('checked', $(this).hasClass('active') );
-        //     $li.find('a').prepend($cb);
-        // });
-    
-        // $('.dt-button-collection .buttons-columnVisibility').on('click', 'input:checkbox,li', function(){
-        //     var $li = $(this).closest('li'),
-        //         $cb = $li.find('input:checkbox');
-        //     $cb.prop('checked', $li.hasClass('active') );
-        // });
     });
-
-    //yearpicker 
-    {% comment %} $('.yearpicker').yearpicker({
-        onChange : function(value){
-            if($("#search_quotation").val() == "" &&  $("#daterange").val() == "" && $("#search_customer").val() == "" && $("#year").val() == "") {
-                //location.reload();
-            } else {
-                $(".export_button").html('');
-                $("#newSearchPlace").html('');
-                $.ajax({
-                    headers: { "X-CSRFToken": '{{csrf_token}}' },
-                    url: '{% url "ajax_filter_quotation" %}',
-                    data: {
-                        search_quotation: $("#search_quotation").val(),
-                        daterange: $("#daterange").val(),
-                        search_customer: $("#search_customer").val(),
-                        search_year: $("#year").val(),
-                        user_name:'{{request.user.username}}',
-                        user_role: '{{request.user.role}}',
-                    },
-                    type: 'POST',
-                    success: function (data) {
-                        $("#quotation_data").html(data);
-                        
-                    }
-                });
-            }
-        }
-    }); {% endcomment %}
     
     $("#company").on('change', function(e){
         var company = $("#company").val();
@@ -591,8 +579,8 @@
         $("#contactmodal").modal('hide');
         $("#quotationmodal").modal('show');
     });
-    $('select#search_quotation, select#search_customer, select#year').on('change', function(){
-        if($("#search_quotation").val() == "" &&  $("#daterange").val() == "" && $("#search_customer").val() == "" && $("#year").val() == "") {
+    $('select#search_quotation, select#search_customer, select#sales_person, select#status').on('change', function(){
+        if($("#search_quotation").val() == "" &&  $("#daterange").val() == "" && $("#search_customer").val() == "" && $("#sales_person").val()=="" && $("#status").val()=="") {
             location.reload();
         } else {
             $(".export_button").html('');
@@ -604,7 +592,9 @@
                     search_quotation: $("#search_quotation").val(),
                     daterange: $("#daterange").val(),
                     search_customer: $("#search_customer").val(),
-                    search_year: $("#year").val(),
+                    sales_person: $("#sales_person").val(),
+                    status: $("#status").val(),
+                    search_year: JSON.stringify(selected_years),
                     user_name:'{{request.user.username}}',
                     user_role: '{{request.user.role}}',
                 },
@@ -668,29 +658,27 @@
         
     });
     function filterGroup() {
-        if($("#search_quotation").val() == "" &&  $("#daterange").val() == "" && $("#search_customer").val() == "" && $("#year").val() == "") {
-            location.reload();
-        } else {
-            $(".export_button").html('');
-            $("#newSearchPlace").html('');
-            $.ajax({
-                headers: { "X-CSRFToken": '{{csrf_token}}' },
-                url: '{% url "ajax_filter_quotation" %}',
-                data: {
-                    search_quotation: $("#search_quotation").val(),
-                    daterange: $("#daterange").val(),
-                    search_customer: $("#search_customer").val(),
-                    search_year: $("#year").val(),
-                    user_name:'{{request.user.username}}',
-                    user_role: '{{request.user.role}}',
-                },
-                type: 'POST',
-                success: function (data) {
-                    $("#quotation_data").html(data);
-                    
-                }
-            });
-        }
+        $(".export_button").html('');
+        $("#newSearchPlace").html('');
+        $.ajax({
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            url: '{% url "ajax_filter_quotation" %}',
+            data: {
+                search_quotation: $("#search_quotation").val(),
+                daterange: $("#daterange").val(),
+                search_customer: $("#search_customer").val(),
+                sales_person: $("#sales_person").val(),
+                status: $("#status").val(),
+                search_year: JSON.stringify(selected_years),
+                user_name:'{{request.user.username}}',
+                user_role: '{{request.user.role}}',
+            },
+            type: 'POST',
+            success: function (data) {
+                $("#quotation_data").html(data);
+                
+            }
+        });
     }
     $('#daterange').on('apply.daterangepicker', function (ev, picker) {
         filterGroup();
@@ -955,33 +943,80 @@
     $('#ccompany option').each(function(idx) {
         options_concompany.push({id: $(this).val(), text: $(this).text()});
     });
-
-    //year Part 
+    
+    
     var current = new Date();
-    var currentyear = current.getFullYear(); 
+    var currentyear = current.getFullYear();
     var yearvalue = `{{exist_current_year}}`;
-    options_year = [];
-    if(yearvalue) {
-        var option_lenth = ($('#year option').length);
-        if (option_lenth == 0) {
-            options_year.push({value: currentyear, text: currentyear})
-            var newOption = new Option(currentyear, currentyear, true, true);
-            $('#year').append(newOption).trigger('change');
-        } else if(option_lenth > 0) {
-            $('#year').val(currentyear);
-            $("#year").trigger('change');
-        }
-        
-    } else {
-        
-        
-        $('#year option').each(function(idx) {
-            options_year.push({value: $(this).val(), text: $(this).text()});
+    selected_years=[];
+
+    if(!yearvalue) {
+        const newLabel = document.createElement('label');
+        const newCheckbox = document.createElement('input');
+        newCheckbox.type = 'checkbox';
+        newCheckbox.value = currentyear;
+        newLabel.appendChild(newCheckbox);
+        newLabel.appendChild(document.createTextNode(currentyear));
+        $('#year-drop-content').prepend(newLabel);
+    };
+    checkCheckbox(currentyear);
+    function checkCheckbox(value) {
+        const checkboxes = document.querySelectorAll('#year-drop-content input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            if (checkbox.value == value) {
+                checkbox.checked = true; // Check the checkbox
+                selected_years.push(value);
+            }
         });
-        
-        options_year.push({value: currentyear, text: currentyear})
-        var newOption = new Option(currentyear, currentyear, true, true);
-        $('#year').append(newOption).trigger('change');
+    };
+    function uncheckCheckbox(value) {
+        const checkboxes = document.querySelectorAll('#year-drop-content input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            if (checkbox.value == value) {
+                checkbox.checked = false;
+                selected_years = selected_years.filter(item => item !== value);
+            }
+        });
+    };
+
+    function checkAll(){
+        const checkboxes = document.querySelectorAll('#year-drop-content input[type="checkbox"]');
+        selected_years=[];
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = true; // Check the checkbox
+            const value = parseInt(checkbox.value, 10); // Get the checkbox value 
+            selected_years.push(value);
+        });
     }
+    function uncheckAll(){
+        const checkboxes = document.querySelectorAll('#year-drop-content input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false; // UnCheck the checkbox            
+        });
+        selected_years=[];
+    }
+
+    const checkboxes = document.querySelectorAll('#year-drop-content input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const value = parseInt(this.value, 10); // Get the checkbox value            
+            if (this.checked) {
+                if(this.value==0){
+                    checkAll();
+                }else{
+                    selected_years.push(value);
+                    uncheckCheckbox(0);
+                }
+            } else {
+                if(this.value==0){
+                    uncheckAll();
+                }else{
+                    selected_years = selected_years.filter(item => item !== value);
+                    uncheckCheckbox(0);
+                }
+            }
+            filterGroup();
+        });
+    });
 </script>
 {% endblock %}

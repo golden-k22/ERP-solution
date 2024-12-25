@@ -1,5 +1,5 @@
 from django.contrib import admin
-from sales.models import Company, SaleReport, SaleReportComment, Quotation, Contact, Scope, Signature, QFile, Payment, Validity, Salutation, Position
+from sales.models import Company, SaleReport, SaleReportComment, Quotation, Contact, Scope, Signature, QFile, Payment, Validity, Salutation, Position, GST
 # Register your models here.
 
 class CompanyAdmin(admin.ModelAdmin):
@@ -19,3 +19,4 @@ admin.site.register(Payment)
 admin.site.register(Validity)
 admin.site.register(Salutation)
 admin.site.register(Position)
+admin.site.register(GST)

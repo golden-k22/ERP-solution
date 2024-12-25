@@ -1,0 +1,82 @@
+{% load static %}
+<div class="table-responsive mt-2">
+    <table id="mainsrtable" class="table table-bordered align-middle dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+        <thead>
+            <tr>
+                <th width="5%">SN</th>
+                <th width="10%">Sr No</th>
+                <th width="10%">Date</th>
+                <th width="10%">Status</th>
+                <th width="35%">Customer Signed SR</th>
+                <th width="10%">Project Id</th>
+                <th width="10%">Invoice No</th>
+                <th width="10%">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for service in projSrlist %}
+                <tr>
+                    <td class="align-middle">{{forloop.counter}}</td>
+                    <td class="align-middle">{{service.sr_no|default_if_none:""}}</td>
+                    <td class="align-middle">{{service.date|date:"d M, Y"|default_if_none:""}}</td>
+                    <td class="align-middle">{{service.status|default_if_none:""}}</td>
+                    <td class="align-middle">{{service.filename|default_if_none:""}}</td>
+                    <td class="align-middle">
+                        <a href="{% url 'project_summary_detail' service.project_id %}">
+                            {{service.project.proj_id|default_if_none:""}}
+                        </a>
+                    </td>
+                    <td class="align-middle">{{service.invoice_no|default_if_none:""}}</td>
+
+                    <td class="align-middle">
+                        <a href="{% url 'project_sr_detail' service.project_id service.id %}" class="btn btn-outline-primary btn-sm" title="View">
+                            <i class="ion ion-md-eye"></i>
+                        </a>
+                        <a href="javascript:void(0);" onclick="addProjInvoiceNo('{{service.id}}')" class="btn btn-outline-primary btn-sm srInvoiceUpdate" title="Add invoice No">
+                            <i class="fas fa-pencil-alt mr-2"></i>
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+            {% with projSrCount=projSrlist|length %}
+            {% for service in maintenanceSrlist %}
+                <tr>
+                    <td class="align-middle">{{forloop.counter|add:projSrCount}}</td>
+                    <td class="align-middle">{{service.sr_no|default_if_none:""}}</td>
+                    <td class="align-middle">{{service.date|date:"d M, Y"|default_if_none:""}}</td>
+                    <td class="align-middle">{{service.status|default_if_none:""}}</td>
+                    <td class="align-middle">{{service.filename|default_if_none:""}}</td>
+                    <td class="align-middle">
+                        <a href="{% url 'maintenance_detail' service.maintenance_id %}">
+                            {{service.maintenance.main_no|default_if_none:""}}
+                        </a>
+                    </td>
+                    <td class="align-middle">{{service.invoice_no|default_if_none:""}}</td>
+
+                    <td class="align-middle">
+                        <a href="{% url 'maintenance_sr_detail' service.maintenance_id service.id %}" class="btn btn-outline-primary btn-sm" title="View">
+                            <i class="ion ion-md-eye"></i>
+                        </a>
+                        <a href="javascript:void(0);" onclick="addMainInvoiceNo('{{service.id}}')" class="btn btn-outline-primary btn-sm srInvoiceUpdate" title="Add invoice No">
+                            <i class="fas fa-pencil-alt mr-2"></i>
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+            {% endwith %}
+        </tbody>
+    </table>
+</div>
+<script>
+    
+    $(".select2").select2({width: '100%'});
+    $("#mainsrtable").DataTable({
+        "aaSorting": [[ 0, "asc" ]],
+        paging: true,
+        info: true,
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-2 text-start'i><'col-sm-2 mt-2 text-start'l><'col-sm-8 mt-2'p>>",
+    });
+    $("#searchServicePlace").html($(".dataTables_filter"));
+</script>

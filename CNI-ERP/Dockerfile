@@ -2,7 +2,7 @@
 FROM python:3.9-slim-buster
 
 # create the appropriate directories
-ENV APP_HOME=/home/old-erp/web
+ENV APP_HOME=/home/live-erp/web
 RUN mkdir -p $APP_HOME
 RUN mkdir $APP_HOME/staticfiles
 WORKDIR $APP_HOME
@@ -16,6 +16,8 @@ RUN apt-get update && \
     gcc \
     build-essential \
     default-libmysqlclient-dev \
+    tesseract-ocr \
+    libtesseract-dev \
     pkg-config && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -32,7 +34,7 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 # Copy Gunicorn config
-COPY gunicorn.conf.py /home/old-erp/web/gunicorn.conf.py
+COPY gunicorn.conf.py /home/live-erp/web/gunicorn.conf.py
 
 CMD ["gunicorn", "-c", "gunicorn.conf.py", "erpSolution.wsgi:application"]
 

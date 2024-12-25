@@ -39,6 +39,10 @@
         text-decoration: none;
         background-color: #7a6fbe;
     }
+    .space-custom{
+        padding-left: 5px;
+        padding-right: 5px;
+    }
 </style>
 <div class="container-fluid">
     <!-- start page title -->
@@ -62,65 +66,60 @@
             <div class="card">     
                 <div class="card-body">
                     <div class="row mb-1">
-                        <div class="col-md-6">
-                            <div class="row">
-                                <div class="mt-1 col-md-2 space-custom">
-                                    <button type="button" id="companyadd" class="btn btn-primary w-100" style="height: 38px;"><i class="mdi mdi-calendar-plus"></i> New</button>
+                        <div class="col-sm-12 col-md-7">
+                            <div class="row justify-content-start d-flex">
+                                <div class="mt-1 col-md-3 space-custom">
+                                    <div class="export_button"></div>
                                 </div>
-                                <div class="mt-1 col-md-2 space-custom">
-                                    <div class="export_button justify-content-center d-flex"></div>
+                                <div class="mt-1 col-md-3 space-custom">
+                                    <button type="button" id="companyadd" class="btn btn-primary w-100" style="height: 38px;white-space: nowrap;"><i class="mdi mdi-calendar-plus"></i> New</button>
                                 </div>
                                 {% if request.user.role == "Managers" %}
                                 <div class="mt-1 col-md-2 space-custom">
                                     <button type="button" id="btn_import" class="btn btn-primary w-100" style="height: 38px;white-space: nowrap;" > Import</button>
                                 </div>
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 col-md-3 space-custom">
                                     <a href="{% url 'ajax-export-company' %}" class="btn btn-info" style="height: 38px;white-space: nowrap;" > Template Export</a>
+                                </div>
+                                <div class="mt-1 col-md-1 space-custom">
                                 </div>
                                 {% endif %}
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="row justify-content-end">
-                                <div class="mt-1 col-md-2 space-custom">
+                        <div class="col-sm-12 col-md-5">
+                            <div class="row justify-content-end d-flex">
+                                <div class="mt-1 col-md-4 space-custom">
                                     <select class="form-control search_filter" id="company" required>
                                         <option value="">Company</option>
                                         {% for company in companies %}
                                             <option value="{{company.name}}">{{company.name}}</option>
                                         {% endfor %}
-                                    </select>
-                                    
+                                    </select>                                    
                                 </div>
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 col-md-4 space-custom">
                                     <select class="form-control search_filter" id="search_country" required>
                                         <option value="">Country</option>
                                         {% for country in countrys %}
                                             <option value="{{country.id}}">{{country.name}}</option>
                                         {% endfor %}
-                                    </select>
-                                    
+                                    </select>                                    
                                 </div>
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 col-md-4 space-custom">
                                     <select class="form-control search_filter" id="associate_filter" required>
                                         <option value="">Associate</option>
                                         <option value="Customer">Customer</option>
                                         <option value="Supplier">Supplier</option>
                                         <option value="Partner">Partner</option>
-                                    </select>
-                                    
-                                </div>
-                                <div class="col-md-1 justify-content-start space-custom">
-<!--                                    <a href="javascript:void(0);" id="companysearch" class="btn btn-primary m-1"><i class="dripicons-search align-middle"></i></a>-->
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="mt-1 d-flex justify-content-end">
-                                        <div id="newSearchPlace"></div>
-                                    </div>
-                                    
+                                    </select>                                    
                                 </div>
                             </div>
                         </div>
                         
+                        <div class="col-md-12">
+                            <div class="mt-1 d-flex justify-content-end">
+                                <div id="newSearchPlace"></div>
+                            </div>                                
+                        </div>
                         
                     </div>
                     <div id="company_data"></div>

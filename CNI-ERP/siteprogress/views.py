@@ -38,7 +38,7 @@ def ajax_get_activity(request):
         project_id = request.POST.get("proj_id")
         prject = Project.objects.get(id=project_id)
         quotation = Quotation.objects.get(qtt_id__iexact=prject.qtt_id)
-        projectitems = Scope.objects.filter(quotation_id=quotation.id).exclude(parent_id=None)
+        projectitems = Scope.objects.filter(quotation_id=quotation.id)
         return render(request, 'siteprogress/ajax-description.html', {'scopedescriptions': projectitems})
 
 
@@ -149,7 +149,7 @@ def ajax_plog_items(request):
         project_id = request.POST.get('proj_id')
         project = Project.objects.get(id=project_id)
         quotation = project.quotation
-        scopedescriptions=Scope.objects.filter(quotation_id=quotation.id, parent_id__isnull=False)
+        scopedescriptions=Scope.objects.filter(quotation_id=quotation.id, parent_id__isnull=True)
         uoms = Uom.objects.all()
         item_cnt = request.POST.get('item_cnt')
         return render(request, 'siteprogress/ajax-log-modal.html',
@@ -161,7 +161,7 @@ def ajax_planning_items(request):
         project_id = request.POST.get('proj_id')
         project = Project.objects.get(id=project_id)
         quotation = project.quotation
-        scopedescriptions=Scope.objects.filter(quotation_id=quotation.id, parent_id__isnull=False)
+        scopedescriptions=Scope.objects.filter(quotation_id=quotation.id, parent_id__isnull=True)
         uoms = Uom.objects.all()
         item_cnt = request.POST.get('item_cnt')
         return render(request, 'siteprogress/ajax-planning-modal.html',

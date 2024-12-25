@@ -1,19 +1,14 @@
 import datetime
 import os
-import smtplib
-import time
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.utils import formatdate
 from functools import partial
-
 from django.conf import settings
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.views.generic.list import ListView
-from accounts.models import User, NotificationPrivilege
-from expenseclaim.models import ExpensesClaim, ExpensesClaimDetail, ExpensesClaimRecipt
+from accounts.models import User, NotificationPrivilege, UserStatus
+from expenseclaim.models import ExpensesClaim, ExpensesClaimDetail, ExpensesClaimRecipt, InvoiceSummary, InvoiceDetail
+from sales.models import Company, GST
 from project.models import Project
 from sales.decorater import ajax_login_required
 from django.db import IntegrityError
@@ -31,6 +26,157 @@ from reportlab.lib.pagesizes import A4, landscape, portrait
 from reportlab.pdfgen import canvas
 from reportlab.rl_config import defaultPageSize
 from reportlab.lib.utils import ImageReader
+from accounts.email import send_mail
+import numpy as np
+import cv2
+import pytesseract
+# pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
+
+
+
+
+def resize_image(image, resize_width):
+    height, width, channels = image.shape
+    target_width = resize_width
+    target_height=int(target_width*height/width)
+    image = cv2.resize(image, (target_width, target_height), interpolation=cv2.INTER_LANCZOS4)
+    return image
+
+def get_highlighted_area(img, original_mask, resize_width):
+    kernel = np.ones((7, 7), np.uint8)  # Adjust the size for larger/smaller gaps
+    # Apply closing to fill the gaps
+    mask = cv2.morphologyEx(original_mask, cv2.MORPH_CLOSE, kernel)
+    # Find contours in the masked image
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    h_areas=[]
+
+    # Iterate over contours and filter by rectangular shape
+    for contour in contours:
+        # Approximate the contour to a polygon
+        epsilon = 0.02 * cv2.arcLength(contour, True)
+        approx = cv2.approxPolyDP(contour, epsilon, True)
+        min_contour_area = 500  # You can adjust this value as needed
+        # Check if the polygon has 4 vertices (rectangle)
+        if cv2.contourArea(contour) > min_contour_area and len(approx) == 4:
+            # Get the bounding box of the rectangle
+            x, y, w, h = cv2.boundingRect(approx) 
+            roi = img[y:y+h, x:x+w]
+            roi=resize_image(roi, resize_width)
+
+            # Create a kernel
+            kernel_size=int(resize_width)
+            h_kernel = np.ones((1, kernel_size), np.uint8)
+            h_mask = cv2.morphologyEx(roi, cv2.MORPH_CLOSE, h_kernel)
+            h_mask = cv2.cvtColor(h_mask, cv2.COLOR_BGR2GRAY)
+
+            v_kernel = np.ones((kernel_size, 1), np.uint8)
+            v_mask = cv2.morphologyEx(roi, cv2.MORPH_CLOSE, v_kernel)
+            v_mask = cv2.cvtColor(v_mask, cv2.COLOR_BGR2GRAY)
+            # Subtract the closed image from the original to remove the lines
+            roi[h_mask <240] = [255, 255, 255]  # Set to white (BGR format)
+            roi[v_mask <240] = [255, 255, 255]  # Set to white (BGR format)
+            
+            gray_roi=cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+            # Apply Gaussian blur to smooth the image
+            blurred = cv2.GaussianBlur(gray_roi, (5, 5), 0)
+            h_areas.append(blurred)
+    return h_areas
+
+def parse_text(img):
+    
+    hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)    
+    string_config = r'--oem 3 --psm 6' 
+    digit_config = r'--oem 3 --psm 6 outputbase digits'
+    # ------------For Price----------------
+    lower_price = np.array([70, 50, 150])
+    upper_price = np.array([120, 255, 255])    
+    price_mask = cv2.inRange(hsv_img, lower_price, upper_price)
+    price_areas=get_highlighted_area(img, price_mask, 256)
+    
+    # ------------For Qty----------------            
+    lower_qty = np.array([20, 50, 150])
+    upper_qty = np.array([35, 255, 255])
+    qty_mask = cv2.inRange(hsv_img, lower_qty, upper_qty)
+    qty_areas= get_highlighted_area(img, qty_mask, 128)
+
+    # ------------For Description----------------            
+    lower_description = np.array([150, 50, 150])
+    upper_description = np.array([170, 255, 255])   
+    description_mask = cv2.inRange(hsv_img, lower_description, upper_description)
+    description_areas= get_highlighted_area(img, description_mask, 1024)
+
+    prices=[]
+    qtys=[]
+    descriptions=[]
+
+    if len(price_areas)>=2:
+        for i, price_area in enumerate(price_areas):
+            price_text = pytesseract.image_to_string(price_areas[i], config=digit_config).strip()
+            qty_text = pytesseract.image_to_string(qty_areas[i], config=digit_config).strip()
+            description_text = pytesseract.image_to_string(description_areas[i], config=string_config).strip()
+            prices.append(price_text)
+            qtys.append(qty_text)
+            descriptions.append(description_text)
+    else:
+        price_data = pytesseract.image_to_data(price_areas[0], config=digit_config, output_type=pytesseract.Output.DICT)
+        n_boxes = len(price_data['level'])
+        y_qty_positions=[]        
+        y_desc_positions=[]        
+        h_price, w_price=price_areas[0].shape
+        h_qty, w_qty =qty_areas[0].shape
+        h_desc, w_desc=description_areas[0].shape
+
+        # For price & set y_positions
+        for i in range(n_boxes):
+            if price_data['text'][i].strip():  # Check if the line contains text
+                y_price=price_data['top'][i]
+                y_qty_positions.append(max(0, int(y_price*h_qty/h_price)-20))
+                y_desc_positions.append(max(0, int(y_price*h_desc/h_price)-20))
+
+                prices.append(price_data['text'][i])
+        
+        # For qty
+        # qty_data = pytesseract.image_to_data(qty_areas[0], config=digit_config, output_type=pytesseract.Output.DICT)
+        # n_boxes = len(qty_data['level'])        
+        # for i in range(n_boxes):
+        #     if price_data['text'][i].strip():
+        #         qtys.append(qty_data['text'][i])
+
+        for index, y_position in enumerate(y_qty_positions):
+            if index>=len(y_qty_positions)-1:
+                height=y_position-y_qty_positions[index-1]
+            else:
+                height= y_qty_positions[index+1]-y_position
+            qty_snap = qty_areas[0][y_position:y_position+height, 0:w_qty]
+            text = pytesseract.image_to_string(qty_snap, config=digit_config).strip()
+            text=text.replace('\n', ' ')
+            qtys.append(text)
+
+        # For descriptions
+        for index, y_position in enumerate(y_desc_positions):
+            if index>=len(y_desc_positions)-1:
+                height=h_desc-y_position
+            else:
+                height= y_desc_positions[index+1]-y_position
+            description_snap = description_areas[0][y_position:y_position+height, 0:w_desc]
+            text = pytesseract.image_to_string(description_snap, config=string_config).strip()
+            text=text.replace('\n', ' ')
+            descriptions.append(text)
+
+    return prices, qtys, descriptions
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Create your views here.
 @method_decorator(login_required, name='dispatch')
@@ -46,7 +192,7 @@ class ExpenseClaimView(ListView):
             emp_user=User.objects.get(empid=emp_id)
             result_str=str(emp_id)+"-"+emp_user.first_name
             expensesclaim.emp_id=result_str
-        context['expensesclaims'] =expensesclaims
+        context['expensesclaims'] = expensesclaims
         return context
 
 @method_decorator(login_required, name='dispatch')
@@ -82,6 +228,12 @@ class ExpenseAdminClaimDetailView(DetailView):
         context['expense_claim_pk'] = content_pk
         expensesclaim_details = ExpensesClaimDetail.objects.filter(expensesclaim_id=content_pk)
         context['expensesclaim_details'] = expensesclaim_details
+        gst_default=GST.objects.last()
+        if gst_default:
+            gst_default=float(gst_default.gst)
+        else:
+            gst_default=0.09
+        context['gst_default']=gst_default*100
         for claim_detail in expensesclaim_details:
             proj=Project.objects.get(id=int(claim_detail.proj_id))
             claim_detail.proj_id=proj.proj_id
@@ -90,35 +242,14 @@ class ExpenseAdminClaimDetailView(DetailView):
             gst_sum = 0
             for gstrow in expensesclaim_details:
                 if gstrow.gst:
-                    gst_sum += float('{0:.2f}'.format(gstrow.amount * 0.09))
-                    gstrow.gstamount = '{0:.2f}'.format(gstrow.amount * 0.09)
+                    gst_sum += float('{0:.2f}'.format(gstrow.amount * gst_default))
+                    gstrow.gstamount = '{0:.2f}'.format(gstrow.amount * gst_default)
             context['subtotal'] = subtotal
             context['gst'] = gst_sum
             context['total_detail'] = subtotal + gst_sum
         context['expensesclaim_files'] = ExpensesClaimRecipt.objects.filter(emp_id_id=content_pk)
         return context
-
-def send_mail(to_email, subject, message):
-    # For Gmail
-    SMTP_SERVER = "smtp.gmail.com"
-    SMTP_PORT = 587
-    my_email = os.getenv("DJANGO_DEFAULT_EMAIL")
-    my_password=os.getenv("DJANGO_EMAIL_HOST_PASSWORD")
-    msg = MIMEMultipart()
-    msg['From'] = my_email
-    msg['To'] = to_email
-    msg['Date'] = formatdate(localtime=True)
-    msg['Subject'] = subject
-    msg.attach(MIMEText(message, 'html'))
-
-    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as smtpObj:
-        smtpObj.ehlo()
-        smtpObj.starttls()
-        smtpObj.login(my_email, my_password)
-        smtpObj.sendmail(my_email, to_email, msg.as_string())
-        smtpObj.close()
-    # print("********* Sent mail to {0} Successfully! **********".format(to_email))
-
+ 
 
 @ajax_login_required
 def expensesclaimadd(request):
@@ -194,28 +325,65 @@ def expenseClaimdelete(request):
         return JsonResponse({'status': 'ok'})
 
 @ajax_login_required
-def expenseClaimItemdelete(request):
+def invoiceItemdelete(request):
     if request.method == "POST":
         itemdetailid = request.POST.get('itemdetailid')
-        expensesitem = ExpensesClaimDetail.objects.get(id=itemdetailid)
-        expensesitem.delete()
-        if ExpensesClaimDetail.objects.filter(expensesclaim_id=expensesitem.expensesclaim_id).exists():
-            subtotal = ExpensesClaimDetail.objects.filter(expensesclaim_id=expensesitem.expensesclaim_id).aggregate(Sum('amount'))['amount__sum']
+        invoiceitem = InvoiceDetail.objects.get(id=itemdetailid)
+        invoiceitem.delete()
+        if InvoiceDetail.objects.filter(invoicesummary_id=invoiceitem.invoicesummary_id).exists():
+            subtotal = InvoiceDetail.objects.filter(invoicesummary_id=invoiceitem.invoicesummary_id).aggregate(Sum('amount'))['amount__sum']
             gst_sum = 0
-            for gstrow in ExpensesClaimDetail.objects.filter(id=expensesitem.expensesclaim_id):
-                if gstrow.gst:
-                    gst_sum += gstrow.amount * 0.09
-            if ExpensesClaim.objects.filter(id=expensesitem.expensesclaim_id):
-                expense_amount = ExpensesClaim.objects.get(id=expensesitem.expensesclaim_id)
-                expense_amount.total = subtotal + gst_sum
+            for gstrow in InvoiceDetail.objects.filter(invoicesummary_id=invoiceitem.invoicesummary_id):
+                if gstrow.gst:                    
+                    gst_default=GST.objects.last()
+                    if gst_default:
+                        gst_default=float(gst_default.gst)
+                    else:
+                        gst_default=0.09
+                    gst_sum += gstrow.amount * gst_default
+            
+            if InvoiceSummary.objects.filter(id=invoiceitem.invoicesummary_id):
+                invoice_summary=InvoiceSummary.objects.get(id=invoiceitem.invoicesummary_id)
+                invoice_summary.total = subtotal + gst_sum
+                invoice_summary.gstamount = gst_sum
+                invoice_summary.save()
+            if ExpensesClaim.objects.filter(id=invoiceitem.invoicesummary.expensesclaim_id):
+                expense_amount = ExpensesClaim.objects.get(id=invoiceitem.invoicesummary.expensesclaim_id)
+                subtotal = InvoiceSummary.objects.filter(expensesclaim_id=invoiceitem.invoicesummary.expensesclaim_id).aggregate(Sum('total'))['total__sum']
+                expense_amount.total = subtotal
                 expense_amount.save()
         else:
-            if ExpensesClaim.objects.filter(id=expensesitem.expensesclaim_id):
-                expense_amount = ExpensesClaim.objects.get(id=expensesitem.expensesclaim_id)
+            if InvoiceSummary.objects.filter(id=invoiceitem.invoicesummary_id):
+                invoice_summary=InvoiceSummary.objects.get(id=invoiceitem.invoicesummary_id)
+                invoice_summary.total = 0
+                invoice_summary.gstamount = 0
+                invoice_summary.save()
+            if ExpensesClaim.objects.filter(id=invoiceitem.invoicesummary.expensesclaim_id):
+                expense_amount = ExpensesClaim.objects.get(id=invoiceitem.invoicesummary.expensesclaim_id)
                 expense_amount.total = 0
                 expense_amount.save()
         
 
+        return JsonResponse({'status': 'ok'})
+
+@ajax_login_required
+def expenseClaimItemdelete(request):
+    if request.method == "POST":
+        itemdetailid = request.POST.get('itemdetailid')
+        invoicesummary = InvoiceSummary.objects.get(id=itemdetailid)
+        invoicesummary.delete()
+        if InvoiceSummary.objects.filter(expensesclaim_id=invoicesummary.expensesclaim_id).exists():
+            subtotal = InvoiceSummary.objects.filter(expensesclaim_id=invoicesummary.expensesclaim_id).aggregate(Sum('total'))['total__sum']
+            
+            if ExpensesClaim.objects.filter(id=invoicesummary.expensesclaim_id):
+                expense_amount = ExpensesClaim.objects.get(id=invoicesummary.expensesclaim_id)
+                expense_amount.total = subtotal
+                expense_amount.save()
+        else:
+            if ExpensesClaim.objects.filter(id=invoicesummary.expensesclaim_id):
+                expense_amount = ExpensesClaim.objects.get(id=invoicesummary.expensesclaim_id)
+                expense_amount.total = 0
+                expense_amount.save()
         return JsonResponse({'status': 'ok'})
 
 @ajax_login_required
@@ -234,7 +402,6 @@ def getExpensesClaim(request):
         expenses = ExpensesClaim.objects.get(id=expensesid)
         emp_user = User.objects.get(empid=expenses.emp_id)
         result_empid = str(expenses.emp_id) + "-" + emp_user.first_name
-        context['expensesclaims'] =expensesclaims
         data = {
             'submission_date': expenses.submission_date.strftime('%d %b, %Y'),
             'emp_id': result_empid,
@@ -242,6 +409,43 @@ def getExpensesClaim(request):
             'claim_no': expenses.ec_id,
         }
         return JsonResponse(json.dumps(data), safe=False)
+
+@method_decorator(login_required, name='dispatch')
+class ExpenseInvoiceDetailView(DetailView):
+    model = InvoiceSummary
+    template_name="userprofile/expenses-invoice-detail.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        content_pk = self.kwargs.get('pk')
+        context['invoice_summary_id'] = content_pk
+        context['projects'] = Project.objects.filter(proj_status__in=["On-going", "Completed"])
+        context['invoice_summary']= InvoiceSummary.objects.get(id=content_pk)
+        context['expenseclaim'] = InvoiceSummary.objects.get(id=content_pk).expensesclaim
+        invoice_details = InvoiceDetail.objects.filter(invoicesummary_id=content_pk)
+
+        gst_default=GST.objects.last()
+        if gst_default:
+            gst_default=float(gst_default.gst)
+        else:
+            gst_default=0.09
+        context['gst_default']=gst_default*100
+
+        if InvoiceDetail.objects.filter(invoicesummary_id=content_pk).exists():
+            subtotal = InvoiceDetail.objects.filter(invoicesummary_id=content_pk).aggregate(Sum('amount'))['amount__sum']
+            gst_sum = 0
+            for invoice_detail in invoice_details:
+                proj=Project.objects.get(id=int(invoice_detail.proj_id))
+                invoice_detail.proj_id=proj.proj_id            
+                if invoice_detail.gst:
+                    gst_sum += invoice_detail.amount * gst_default
+                    invoice_detail.gstamount = '{0:.2f}'.format(invoice_detail.amount * gst_default)
+            
+            context['subtotal'] = subtotal
+            context['gst'] = gst_sum
+            context['total_detail'] = subtotal + gst_sum
+        context['invoice_details'] = invoice_details
+        return context
 
 @method_decorator(login_required, name='dispatch')
 class ExpenseClaimDetailView(DetailView):
@@ -258,25 +462,54 @@ class ExpenseClaimDetailView(DetailView):
         context['managerusers'] = User.objects.filter(role__exact="Managers")
         context['admin_manager_users'] = User.objects.filter(role__in=["Managers", "Admins"])
         context['expense_claim_pk'] = content_pk
-        expensesclaim_details = ExpensesClaimDetail.objects.filter(expensesclaim_id=content_pk)
-        for claim_detail in expensesclaim_details:
-            proj=Project.objects.get(id=int(claim_detail.proj_id))
-            claim_detail.proj_id=proj.proj_id
-
-        if ExpensesClaimDetail.objects.filter(expensesclaim_id=content_pk).exists():
-            subtotal = ExpensesClaimDetail.objects.filter(expensesclaim_id=content_pk).aggregate(Sum('amount'))['amount__sum']
-            gst_sum = 0
-            for gstrow in expensesclaim_details:
-                if gstrow.gst:
-                    gst_sum += gstrow.amount * 0.09
-                    gstrow.gstamount = '{0:.2f}'.format(gstrow.amount * 0.09)
-            
-            context['subtotal'] = subtotal
-            context['gst'] = gst_sum
-            context['total_detail'] = subtotal + gst_sum
-        context['expensesclaim_details'] = expensesclaim_details
+        invoice_summaries = InvoiceSummary.objects.filter(expensesclaim_id=content_pk)
+        context['invoice_summaries'] = invoice_summaries
         context['expensesclaim_files'] = ExpensesClaimRecipt.objects.filter(emp_id_id=content_pk)
+        context['vendors']=Company.objects.order_by('name').values('name').distinct()
+        gst_default=GST.objects.last()
+        if gst_default:
+            gst_default=float(gst_default.gst)
+        else:
+            gst_default=0.09
+        context['gst_default']=gst_default*100
         return context
+
+
+# @method_decorator(login_required, name='dispatch')
+# class ExpenseClaimDetailView(DetailView):
+#     model = ExpensesClaim
+#     template_name="userprofile/expenses-claim-detail.html"
+
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         content_pk = self.kwargs.get('pk')
+#         context['projects'] = Project.objects.filter(proj_status__in=["On-going", "Completed"])
+#         expenseclaim= ExpensesClaim.objects.get(id=content_pk)
+#         context['expenseclaim'] = expenseclaim
+#         context['submitedUser'] = User.objects.get(empid=expenseclaim.emp_id)
+#         context['managerusers'] = User.objects.filter(role__exact="Managers")
+#         context['admin_manager_users'] = User.objects.filter(role__in=["Managers", "Admins"])
+#         context['expense_claim_pk'] = content_pk
+#         expensesclaim_details = ExpensesClaimDetail.objects.filter(expensesclaim_id=content_pk)
+#         for claim_detail in expensesclaim_details:
+#             proj=Project.objects.get(id=int(claim_detail.proj_id))
+#             claim_detail.proj_id=proj.proj_id
+
+#         if ExpensesClaimDetail.objects.filter(expensesclaim_id=content_pk).exists():
+#             subtotal = ExpensesClaimDetail.objects.filter(expensesclaim_id=content_pk).aggregate(Sum('amount'))['amount__sum']
+#             gst_sum = 0
+#             for gstrow in expensesclaim_details:
+#                 if gstrow.gst:
+#                     gst_sum += gstrow.amount * 0.09
+#                     gstrow.gstamount = '{0:.2f}'.format(gstrow.amount * 0.09)
+            
+#             context['subtotal'] = subtotal
+#             context['gst'] = gst_sum
+#             context['total_detail'] = subtotal + gst_sum
+#         context['expensesclaim_details'] = expensesclaim_details
+#         context['expensesclaim_files'] = ExpensesClaimRecipt.objects.filter(emp_id_id=content_pk)
+#         return context
+
 
 @ajax_login_required
 def check_expenses_number(request):
@@ -328,7 +561,8 @@ def UpdateExpenses(request):
                 sender = request.user
                 is_email = NotificationPrivilege.objects.get(user_id=sender.id).is_email
                 description = '<a href="/expenses-claim-detail/'+str(expenseid)+'">New Claim No : ' + ec_id +  ' was created by ' + request.user.username+'</a>'
-                for receiver in User.objects.filter(role__in=['Managers', 'Admins']):
+                user_status=UserStatus.objects.get(status='resigned')
+                for receiver in User.objects.exclude(status=user_status).filter(role__in=['Managers', 'Admins']):
                     if receiver.notificationprivilege.claim_submitted:
                         notify.send(sender, recipient=receiver, verb='Message', level="success", description=description)
                         if is_email and receiver.email:
@@ -346,49 +580,62 @@ def UpdateExpenses(request):
             })
 
 @ajax_login_required
-def expensesclaimdetailsadd(request):
+def expensesinvoicedetailsadd(request):
     if request.method == "POST":
         proj_id = request.POST.get('proj_id')
-        vendor = request.POST.get('vendor')
         description = request.POST.get('description')
-        detail_amount = request.POST.get('detail_amount')
-        detail_date = request.POST.get('detail_date')
         remark = request.POST.get('remark')
+        detail_qty = request.POST.get('detail_qty')
+        detail_unitprice = request.POST.get('detail_unitprice')
         gstst = request.POST.get('detail_gst')
         detailid = request.POST.get('detailid')
+        invoice_summary_id = request.POST.get('invoice_summary_id')
         if gstst == "true":
             gststatus = True
         else:
             gststatus = False
         
-        expenseid = request.POST.get('expenseid')
+        gst_default=GST.objects.last()
+        if gst_default:
+            gst_default=float(gst_default.gst)
+        else:
+            gst_default=0.09
+
         if detailid == "-1":
             try:
-                ExpensesClaimDetail.objects.create(
+                InvoiceDetail.objects.create(
                     proj_id=proj_id,
-                    vendor=vendor,
                     description=description,
-                    amount=detail_amount,
-                    date=detail_date,
-                    gst=gststatus,
                     remark=remark,
-                    expensesclaim_id=expenseid
+                    qty=detail_qty,
+                    unit_price=detail_unitprice,
+                    amount=float(detail_qty)*float(detail_unitprice),
+                    gst=gststatus,
+                    invoicesummary_id=invoice_summary_id
                 )
-                if ExpensesClaimDetail.objects.filter(expensesclaim_id=expenseid).exists():
-                    subtotal = ExpensesClaimDetail.objects.filter(expensesclaim_id=expenseid).aggregate(Sum('amount'))['amount__sum']
+                if InvoiceDetail.objects.filter(invoicesummary_id=invoice_summary_id).exists():
+                    subtotal = InvoiceDetail.objects.filter(invoicesummary_id=invoice_summary_id).aggregate(Sum('amount'))['amount__sum']
                     gst_sum = 0
-                    for gstrow in ExpensesClaimDetail.objects.filter(expensesclaim_id=expenseid):
+                    for gstrow in InvoiceDetail.objects.filter(invoicesummary_id=invoice_summary_id):
                         if gstrow.gst:
-                            gst_sum += gstrow.amount * 0.09
-                            gstrow.gstval = gstrow.amount * 0.09
+                            gst_sum += gstrow.amount * gst_default
+                    gst_sum = float('{0:.2f}'.format(gst_sum))
+                    expenseid=-1
+                    if InvoiceSummary.objects.filter(id=invoice_summary_id):
+                        invoice_summary=InvoiceSummary.objects.get(id=invoice_summary_id)
+                        invoice_summary.total = subtotal + gst_sum
+                        invoice_summary.gstamount = gst_sum
+                        invoice_summary.save()
+                        expenseid=invoice_summary.expensesclaim_id
                     
+                    subtotal = InvoiceSummary.objects.filter(expensesclaim_id=expenseid).aggregate(Sum('total'))['total__sum']
                     if ExpensesClaim.objects.filter(id=expenseid):
                         expense_amount = ExpensesClaim.objects.get(id=expenseid)
-                        expense_amount.total = subtotal + gst_sum
+                        expense_amount.total = subtotal
                         expense_amount.save()
                 return JsonResponse({
                     "status": "Success",
-                    "messages": "Expenses Claim Detail information added!"
+                    "messages": "Invoice Detail information added!"
                 })
             except IntegrityError as e: 
                 return JsonResponse({
@@ -397,35 +644,187 @@ def expensesclaimdetailsadd(request):
                 })
         else:
             try:
-                expensedetail = ExpensesClaimDetail.objects.get(id=detailid)
-                expensedetail.proj_id=proj_id
-                expensedetail.vendor=vendor
-                expensedetail.description=description
-                expensedetail.amount=detail_amount
-                expensedetail.date=detail_date
-                expensedetail.gst=gststatus
-                expensedetail.remark=remark
-                expensedetail.expensesclaim_id=expenseid
-                expensedetail.save()
+                invoicedetail = InvoiceDetail.objects.get(id=detailid)
+                invoicedetail.proj_id=proj_id
+                invoicedetail.description=description
+                invoicedetail.remark=remark
+                invoicedetail.qty=detail_qty
+                invoicedetail.unit_price=detail_unitprice
+                invoicedetail.amount=float(detail_qty)*float(detail_unitprice)
+                invoicedetail.gst=gststatus
+                invoicedetail.invoicesummary_id=invoice_summary_id
+                invoicedetail.save()
                 
-                if ExpensesClaimDetail.objects.filter(expensesclaim_id=expenseid).exists():
-                    subtotal = ExpensesClaimDetail.objects.filter(expensesclaim_id=expenseid).aggregate(Sum('amount'))['amount__sum']
-                    gst = subtotal * 0.09
-                    
+                if InvoiceDetail.objects.filter(invoicesummary_id=invoice_summary_id).exists():
+                    subtotal = InvoiceDetail.objects.filter(invoicesummary_id=invoice_summary_id).aggregate(Sum('amount'))['amount__sum']
+                    gst = 0
+                    for gstrow in InvoiceDetail.objects.filter(invoicesummary_id=invoice_summary_id):
+                        if gstrow.gst:
+                            gst += gstrow.amount * gst_default
+                    gst = float('{0:.2f}'.format(gst))
+                    expenseid=-1
+                    if InvoiceSummary.objects.filter(id=invoice_summary_id):
+                        invoice_summary=InvoiceSummary.objects.get(id=invoice_summary_id)
+                        invoice_summary.total = subtotal + gst                        
+                        invoice_summary.gstamount = gst
+                        invoice_summary.save()
+                        expenseid=invoice_summary.expensesclaim_id
+                    subtotal = InvoiceSummary.objects.filter(expensesclaim_id=expenseid).aggregate(Sum('total'))['total__sum']
                     if ExpensesClaim.objects.filter(id=expenseid):
                         expense_amount = ExpensesClaim.objects.get(id=expenseid)
-                        expense_amount.total = subtotal + gst
+                        expense_amount.total = subtotal
                         expense_amount.save()
                 return JsonResponse({
                     "status": "Success",
-                    "messages": "Expenses Claim Detail information Updated!"
+                    "messages": "Invoice Detail information Updated!"
                 })
             except IntegrityError as e: 
                 return JsonResponse({
                     "status": "Error",
                     "messages": "Error is existed!"
                 })
+
+@ajax_login_required
+def expensesclaimdetailsadd(request):
+    if request.method == "POST":
+        vendor = request.POST.get('vendor')
+        invoice_no = request.POST.get('invoice_no')
+        detail_date = request.POST.get('detail_date')
+        detailid = request.POST.get('detailid')
         
+        expenseid = request.POST.get('expenseid')
+        if detailid == "-1":
+            try:
+                InvoiceSummary.objects.create(
+                    vendor=vendor,
+                    invoice_no=invoice_no,
+                    total=0,
+                    date=detail_date,
+                    expensesclaim_id=expenseid
+                )
+                if InvoiceSummary.objects.filter(expensesclaim_id=expenseid).exists():
+                    subtotal = InvoiceSummary.objects.filter(expensesclaim_id=expenseid).aggregate(Sum('total'))['total__sum']                    
+                    if ExpensesClaim.objects.filter(id=expenseid):
+                        expense_amount = ExpensesClaim.objects.get(id=expenseid)
+                        expense_amount.total = subtotal
+                        expense_amount.save()
+                return JsonResponse({
+                    "status": "Success",
+                    "messages": "Invoice summary information added!"
+                })
+            except IntegrityError as e: 
+                return JsonResponse({
+                    "status": "Error",
+                    "messages": "Error is existed!"
+                })
+        else:
+            try:
+                i_summary = InvoiceSummary.objects.get(id=detailid)
+                i_summary.vendor=vendor
+                i_summary.invoice_no=invoice_no
+                i_summary.date=detail_date
+                i_summary.expensesclaim_id=expenseid
+                i_summary.save()
+                
+                if InvoiceSummary.objects.filter(expensesclaim_id=expenseid).exists():
+                    subtotal = InvoiceSummary.objects.filter(expensesclaim_id=expenseid).aggregate(Sum('total'))['total__sum']                    
+                    if ExpensesClaim.objects.filter(id=expenseid):
+                        expense_amount = ExpensesClaim.objects.get(id=expenseid)
+                        expense_amount.total = subtotal
+                        expense_amount.save()
+                return JsonResponse({
+                    "status": "Success",
+                    "messages": "Invoice summary information Updated!"
+                })
+            except IntegrityError as e: 
+                return JsonResponse({
+                    "status": "Error",
+                    "messages": "Error is existed!"
+                })
+
+
+# @ajax_login_required
+# def expensesclaimdetailsadd(request):
+#     if request.method == "POST":
+#         proj_id = request.POST.get('proj_id')
+#         vendor = request.POST.get('vendor')
+#         description = request.POST.get('description')
+#         detail_amount = request.POST.get('detail_amount')
+#         detail_date = request.POST.get('detail_date')
+#         remark = request.POST.get('remark')
+#         gstst = request.POST.get('detail_gst')
+#         detailid = request.POST.get('detailid')
+#         if gstst == "true":
+#             gststatus = True
+#         else:
+#             gststatus = False
+        
+#         expenseid = request.POST.get('expenseid')
+#         if detailid == "-1":
+#             try:
+#                 ExpensesClaimDetail.objects.create(
+#                     proj_id=proj_id,
+#                     vendor=vendor,
+#                     description=description,
+#                     amount=detail_amount,
+#                     date=detail_date,
+#                     gst=gststatus,
+#                     remark=remark,
+#                     expensesclaim_id=expenseid
+#                 )
+#                 if ExpensesClaimDetail.objects.filter(expensesclaim_id=expenseid).exists():
+#                     subtotal = ExpensesClaimDetail.objects.filter(expensesclaim_id=expenseid).aggregate(Sum('amount'))['amount__sum']
+#                     gst_sum = 0
+#                     for gstrow in ExpensesClaimDetail.objects.filter(expensesclaim_id=expenseid):
+#                         if gstrow.gst:
+#                             gst_sum += gstrow.amount * 0.09
+#                             gstrow.gstval = gstrow.amount * 0.09
+                    
+#                     if ExpensesClaim.objects.filter(id=expenseid):
+#                         expense_amount = ExpensesClaim.objects.get(id=expenseid)
+#                         expense_amount.total = subtotal + gst_sum
+#                         expense_amount.save()
+#                 return JsonResponse({
+#                     "status": "Success",
+#                     "messages": "Expenses Claim Detail information added!"
+#                 })
+#             except IntegrityError as e: 
+#                 return JsonResponse({
+#                     "status": "Error",
+#                     "messages": "Error is existed!"
+#                 })
+#         else:
+#             try:
+#                 expensedetail = ExpensesClaimDetail.objects.get(id=detailid)
+#                 expensedetail.proj_id=proj_id
+#                 expensedetail.vendor=vendor
+#                 expensedetail.description=description
+#                 expensedetail.amount=detail_amount
+#                 expensedetail.date=detail_date
+#                 expensedetail.gst=gststatus
+#                 expensedetail.remark=remark
+#                 expensedetail.expensesclaim_id=expenseid
+#                 expensedetail.save()
+                
+#                 if ExpensesClaimDetail.objects.filter(expensesclaim_id=expenseid).exists():
+#                     subtotal = ExpensesClaimDetail.objects.filter(expensesclaim_id=expenseid).aggregate(Sum('amount'))['amount__sum']
+#                     gst = subtotal * 0.09
+                    
+#                     if ExpensesClaim.objects.filter(id=expenseid):
+#                         expense_amount = ExpensesClaim.objects.get(id=expenseid)
+#                         expense_amount.total = subtotal + gst
+#                         expense_amount.save()
+#                 return JsonResponse({
+#                     "status": "Success",
+#                     "messages": "Expenses Claim Detail information Updated!"
+#                 })
+#             except IntegrityError as e: 
+#                 return JsonResponse({
+#                     "status": "Error",
+#                     "messages": "Error is existed!"
+#                 })
+     
+
 @ajax_login_required
 def expensesclaimfilesadd(request):
     if request.method == "POST":
@@ -451,15 +850,100 @@ def expensesclaimfilesadd(request):
                     "status": "Error",
                     "messages": "Error is existed!"
                 })
+                 
+@ajax_login_required
+def expensesclaiminvoicefilesadd(request):
+    if request.method == "POST":
+        projid = request.POST.get('projid')
+        fileid = request.POST.get('fileid')
+        invoicefile=request.FILES.get('receipt_file')
+        expenseid = request.POST.get('expenseid')
+        invoice_summary_id = request.POST.get('invoice_summary_id')
+        if fileid == "-1":
+            # Convert the binary data to a NumPy array (uint8)
+            nparr = np.frombuffer(invoicefile.read(), np.uint8)
+            # Decode the image from the NumPy array
+            try:
+                image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                prices, qtys, descriptions=parse_text(image)
+                if len(prices)==0:
+                    return JsonResponse({
+                            "status": "Error",
+                            "messages": "Cannot detect in OCR. Need to input manually!"
+                        })
+                for index, description in enumerate(descriptions):
+                    try:
+                        price=float(prices[index])
+                        qty=float(qtys[index])
+                        amount=price*qty
+                    except ValueError as e:
+                        price=0.0
+                        qty=0.0
+                        amount=0.0
+                    try:
+                        InvoiceDetail.objects.create(
+                            proj_id=projid,
+                            description=description,
+                            remark="",
+                            qty=qty,
+                            unit_price=price,
+                            amount=amount,
+                            gst=True,
+                            invoicesummary_id=invoice_summary_id
+                        )
 
+                        gst_default=GST.objects.last()
+                        if gst_default:
+                            gst_default=float(gst_default.gst)
+                        else:
+                            gst_default=0.09
+                        if InvoiceDetail.objects.filter(invoicesummary_id=invoice_summary_id).exists():
+                            subtotal = InvoiceDetail.objects.filter(invoicesummary_id=invoice_summary_id).aggregate(Sum('amount'))['amount__sum']
+                            gst_sum = 0
+                            for gstrow in InvoiceDetail.objects.filter(invoicesummary_id=invoice_summary_id):
+                                if gstrow.gst:
+                                    gst_sum += gstrow.amount * gst_default
+                            expenseid=-1
+                            if InvoiceSummary.objects.filter(id=invoice_summary_id):
+                                invoice_summary=InvoiceSummary.objects.get(id=invoice_summary_id)
+                                invoice_summary.total = subtotal + gst_sum
+                                invoice_summary.gstamount = gst_sum
+                                invoice_summary.save()
+                                expenseid=invoice_summary.expensesclaim_id
+                            subtotal = InvoiceSummary.objects.filter(expensesclaim_id=expenseid).aggregate(Sum('total'))['total__sum']
+                            if ExpensesClaim.objects.filter(id=expenseid):
+                                expense_amount = ExpensesClaim.objects.get(id=expenseid)
+                                expense_amount.total = subtotal
+                                expense_amount.save()
+                        
+                    except IntegrityError as e:
+                        return JsonResponse({
+                            "status": "Error",
+                            "messages": "Cannot detect in OCR. Need to input manually!"
+                        })
+            except AttributeError as e:
+                return JsonResponse({
+                    "status": "Error",
+                    "messages": "Cannot detect in OCR. Need to input manually!"
+                })
+            return JsonResponse({
+                "status": "Success",
+                "messages": "Invoice detail information added!"
+            })
+            
 def exportClaimPDF(request, value):
     ecm = ExpensesClaim.objects.get(id=value)    
-    domain = request.META['HTTP_HOST']
+    domain = os.getenv("DOMAIN")
     logo = Image('http://' + domain + '/static/assets/images/printlogo.png', hAlign='LEFT')
     response = HttpResponse(content_type='application/pdf')
     currentdate = datetime.date.today().strftime("%d-%m-%Y")
     pdfname = ecm.ec_id + ".pdf"
-    response['Content-Disposition'] = 'attachment; filename="{}"'.format(pdfname)
+    response['Content-Disposition'] = 'attachment; filename="{}"'.format(pdfname)    
+    gst_default=GST.objects.last()
+    if gst_default:
+        gst_default=float(gst_default.gst)
+    else:
+        gst_default=0.09
     story = []
     buff = BytesIO()
     doc = SimpleDocTemplate(buff, pagesize=landscape(A4), rightMargin=0.25*inch, leftMargin=0.45*inch, topMargin=2.5*inch, bottomMargin=0.25*inch, title=pdfname)
@@ -470,7 +954,7 @@ def exportClaimPDF(request, value):
          Paragraph('''<para align=center><font size=10><b>Project No</b></font></para>'''),
          Paragraph('''<para align=center><font size=10><b>Vendor</b></font></para>'''),
          Paragraph('''<para align=center><font size=10><b>Description</b></font></para>'''),
-         Paragraph('''<para align=center><font size=10><b>GST 9%</b></font></para>'''),
+         Paragraph('''<para align=center><font size=10><b>GST '''+gst_default*100+'''%</b></font></para>'''),
          Paragraph('''<para align=center><font size=10><b>Amount (w/o GST)</b></font></para>'''),
          Paragraph('''<para align=center><font size=10><b>Sub Total</b></font></para>'''),
          Paragraph('''<para align=center><font size=10><b>Remark</b></font></para>''')]
@@ -508,8 +992,9 @@ def exportClaimPDF(request, value):
             temp_data.append(Paragraph(ecmitem.vendor, styleSheet["BodyText"]))
             temp_data.append(ecmdes)
             if ecmitem.gst:
-                gstval = '{0:.2f}'.format(ecmitem.amount * 0.09)
-                total_gst += ecmitem.amount * 0.09
+                
+                gstval = '{0:.2f}'.format(ecmitem.amount * gst_default)
+                total_gst += ecmitem.amount * gst_default
                 total_amount += ecmitem.amount
                 total_subtotal += ecmitem.amount * 1.08
                 subtotal = '{0:.2f}'.format(ecmitem.amount * 1.08)
@@ -712,7 +1197,7 @@ class LandScapeNumberedCanvas(canvas.Canvas):
         self._saved_page_states = []
         self.PAGE_HEIGHT=defaultPageSize[0]
         self.PAGE_WIDTH=defaultPageSize[1]
-        self.domain = settings.HOST_NAME
+        self.domain = os.getenv("DOMAIN")
         self.logo = ImageReader('http://' + self.domain + '/static/assets/images/printlogo.png')
 
     def showPage(self):
@@ -741,21 +1226,52 @@ class LandScapeNumberedCanvas(canvas.Canvas):
             "Page %d of %d" % (self._pageNumber, page_count))
 
 @ajax_login_required
+def getInvoiceItem(request):
+    if request.method == "POST":
+        invoicedetailid = request.POST.get('invoicedetailid')
+        invoicedetail = InvoiceDetail.objects.get(id=invoicedetailid)
+        data = {
+            'proj_id': invoicedetail.proj_id,
+            'description': invoicedetail.description,
+            'remark': invoicedetail.remark,
+            'qty': invoicedetail.qty,
+            'unit_price': invoicedetail.unit_price,
+            'gst': invoicedetail.gst,
+        }
+        return JsonResponse(json.dumps(data), safe=False)
+
+@ajax_login_required
 def getExpenseItem(request):
     if request.method == "POST":
         exidetailid = request.POST.get('exidetailid')
-        expitem = ExpensesClaimDetail.objects.get(id=exidetailid)
+        expitem = InvoiceSummary.objects.get(id=exidetailid)
         data = {
             'date': expitem.date.strftime('%d %b, %Y'),
-            'proj_id': expitem.proj_id,
             'vendor': expitem.vendor,
-            'description': expitem.description,
-            'amount': expitem.amount,
-            'remark': expitem.remark,
-            'gst': expitem.gst,
+            'invoice_no': expitem.invoice_no,
+            'amount': expitem.total,
+            'gst': expitem.gstamount,
 
         }
         return JsonResponse(json.dumps(data), safe=False)
+
+
+# @ajax_login_required
+# def getExpenseItem(request):
+#     if request.method == "POST":
+#         exidetailid = request.POST.get('exidetailid')
+#         expitem = ExpensesClaimDetail.objects.get(id=exidetailid)
+#         data = {
+#             'date': expitem.date.strftime('%d %b, %Y'),
+#             'proj_id': expitem.proj_id,
+#             'vendor': expitem.vendor,
+#             'description': expitem.description,
+#             'amount': expitem.amount,
+#             'remark': expitem.remark,
+#             'gst': expitem.gst,
+
+#         }
+#         return JsonResponse(json.dumps(data), safe=False)
 
 
 @ajax_login_required

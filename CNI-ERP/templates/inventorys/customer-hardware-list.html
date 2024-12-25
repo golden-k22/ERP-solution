@@ -46,6 +46,10 @@
     .btn {
         padding: 0.475rem 0.75rem;
     }
+    .space-custom{
+        padding-left: 5px;
+        padding-right: 5px;
+    }
 </style>
 <div class="container-fluid">
     <div id="loading" style="z-index:1151 !important;font-size: 30px; position: absolute; top: 40%; left: 50%;">
@@ -70,25 +74,29 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="row">
-                                <div class="mt-1 col-md-2 space-custom">
+                            <div class="justify-content-start d-flex">
+                                <div class="mt-1 space-custom">
                                     <button type="button" id="hardwareadd" class="btn btn-primary w-100" style="height: 38px;white-space: nowrap;" ><i class="mdi mdi-calendar-plus me-2"></i> New</button>
                                 </div>
 
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 space-custom">
                                     <div class="export_button justify-content-center d-flex"></div>
                                 </div>
-<!--                                <div class="mt-1 col-md-2 space-custom">-->
-<!--                                    <button type="button" id="btn_import" class="btn btn-primary w-100" style="height: 38px;white-space: nowrap;" > Import</button>-->
-<!--                                </div>-->
-<!--                                <div class="mt-1 col-md-2 space-custom">-->
-<!--                                    <a href="{% url 'ajax-export-customer-hardwares' %}" class="btn btn-info" style="height: 38px;white-space: nowrap;" > Template Export</a>-->
-<!--                                </div>-->
+                                <div class="mt-1 space-custom col-md-3">
+                                    <select class="form-control search_filter w-100" id="action_sel" required>
+                                        <option value="edit">Edit</option>
+                                        <option value="clone">Clone</option>
+                                        <option value="delete">Delete</option>
+                                    </select>
+                                </div>
+                                <div class="mt-1 space-custom">
+                                    <button type="button" id="action_go" class="btn btn-secondary w-100" style="height: 38px; margin-left:10px; white-space: nowrap;" > Go</button>
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="row">
-                                <div class="mt-1 col-md-2 space-custom">
+                            <div class="row justify-content-end d-flex">
+                                <div class="mt-1 col-md-4">
 
                                     <select class="form-control search_filter" id="search_customer" required>
                                         <option value="">Customer</option>
@@ -98,7 +106,7 @@
                                     </select>
 
                                 </div>
-                                <div class="mt-1 col-md-2 space-custom">
+                                <div class="mt-1 col-md-3">
                                     <select class="form-control search_filter" id="search_project" required>
                                         <option value="">Project</option>
                                         {% for project in projects %}
@@ -107,34 +115,13 @@
                                     </select>
 
                                 </div>
-                                <div class="col-md-1 space-custom">
-<!--                                    <a href="javascript:void(0);" id="hardwaresearch" class="btn btn-primary m-1"><i class="dripicons-search align-middle"></i></a>-->
-                                </div>
-                                <div class="mt-1 col-md-3 space-custom">
+                                <div class="mt-1 col-md-5">
                                     <div id="newSearchPlace"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="row">
-
-                                <div class="mt-1 col-md-2 space-custom">
-                                    <select class="form-control search_filter" id="action_sel" required>
-                                        <option value="edit">Edit</option>
-                                        <option value="clone">Clone</option>
-                                        <option value="delete">Delete</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-1 space-custom">
-                                    <button type="button" id="action_go" class="btn btn-secondary w-100 mt-1" style="height: 38px; margin-left:10px; white-space: nowrap;" > Go</button>
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
                     <div id="hardware_data"></div>
                 </div>
             </div>
